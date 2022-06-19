@@ -1,0 +1,3 @@
+displayName = Fancy Lighting
+author = RandomComputerUser
+version = 0.1

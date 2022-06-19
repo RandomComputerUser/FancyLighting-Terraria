@@ -1,0 +1,1 @@
+Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the game. Make sure to use color lighting and not the other options when using these new effects.
