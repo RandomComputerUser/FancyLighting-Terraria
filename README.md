@@ -1,0 +1,20 @@
+﻿# The source code of the Fancy Lighting mod for tModLoader 1.4
+
+## [Steam Workshop Page](https://steamcommunity.com/sharedfiles/filedetails/?id=2822950837)
+## [Terraria Community Forums Thread](https://forums.terraria.org/index.php?threads/fancy-lighting-mod.113067/)
+
+### Changelog
+
+v0.1.1 (2022-06-19)
+- Added new options to change the intensity and radius of ambient occlusion
+- The default setting for ambient occlusion has been made slightly more subtle
+- Ambient occlusion now has a higher resolution (1x1 instead of 2x2)
+- Ambient occlusion no longer slightly darkens all walls
+- Added support for meteorite brick as a glowing block
+- Fixed some minor visual bugs with glowing blocks
+- Updated config UI
+- Changed mod to client side only
+- Included source code in tmod file
+
+v0.1 (2022-06-18)
+- Initial release (added to GitHub one day later)

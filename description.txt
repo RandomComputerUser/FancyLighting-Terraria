@@ -1,1 +1,3 @@
-Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the game. Make sure to use color lighting and not the other options when using these new effects.
+Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the game.
+
+This mod will only take effect if lighting is set to color. View the settings for this mod for more information and options.

@@ -16,22 +16,16 @@ namespace FancyLighting
         public AmbientOcclusion() {
 
             GameShaders.Misc["FancyLighting:PreAO"] =
-                    new MiscShaderData(
-                        new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/PreAO", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
-                        "AlphaToGrayscale"
-                    );
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/PreAO", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "AlphaToGrayscale"
+                );
 
-            GameShaders.Misc["FancyLighting:AOHorizontalBlur"] =
-                    new MiscShaderData(
-                        new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AOHorizontalBlur", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
-                        "HorizontalBlur"
-                    );
-
-            GameShaders.Misc["FancyLighting:AOVerticalBlur"] =
-                    new MiscShaderData(
-                        new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AOVerticalBlur", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
-                        "VerticalBlur"
-                    );
+            GameShaders.Misc["FancyLighting:AOBlur"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AOBlur", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "Blur"
+                );
 
         }
 
@@ -47,11 +41,35 @@ namespace FancyLighting
             }
         }
 
+        internal void ApplyBlurPass(ref bool useSurface2, int dx, int dy, bool finalPass, float raiseBrightness=0f)
+        {
+            var surfaceDestination = useSurface2 ? surface2 : surface;
+            var surfaceSource = useSurface2 ? surface : surface2;
+
+            Main.instance.GraphicsDevice.SetRenderTarget(surfaceDestination);
+
+            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+            GameShaders.Misc["FancyLighting:AOBlur"]
+                .UseShaderSpecificData(new Vector4((float)dx / surfaceSource.Width, (float)dy / surfaceSource.Height, finalPass ? 1f : -1f, raiseBrightness))
+                .Apply(null);
+            Main.spriteBatch.Draw(
+                surfaceSource,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
+
+            useSurface2 = !useSurface2;
+        }
+
         internal void ApplyAmbientOcclusion()
         {
             if (!FancyLightingMod.AmbientOcclusionEnabled) return;
 
             initSurfaces();
+
+            Main.instance.GraphicsDevice.SetRenderTarget(surface2);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
 
             Main.instance.GraphicsDevice.SetRenderTarget(surface);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -65,54 +83,67 @@ namespace FancyLighting
             );
             Main.spriteBatch.End();
 
-            // For some reason we need to switch between render targets, or else this doesn't work
-            Main.instance.GraphicsDevice.SetRenderTarget(surface2);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            // For some reason we need to alternate between render targets, or else this doesn't work
+            bool useSurface2 = true;
 
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            GameShaders.Misc["FancyLighting:AOHorizontalBlur"].UseShaderSpecificData(new Vector4(1f / surface.Width, 1f / surface.Height, 0f, 0f)).Apply(null);
-            Main.spriteBatch.Draw(
-                surface,
-                Vector2.Zero,
-                Color.White
-            );
-            Main.spriteBatch.End();
-
-            Main.instance.GraphicsDevice.SetRenderTarget(surface);
-
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            GameShaders.Misc["FancyLighting:AOHorizontalBlur"].UseShaderSpecificData(new Vector4(1f / surface.Width, 1f / surface.Height, 0f, 0f)).Apply(null);
-            Main.spriteBatch.Draw(
-                surface2,
-                Vector2.Zero,
-                Color.White
-            );
-            Main.spriteBatch.End();
-
-            Main.instance.GraphicsDevice.SetRenderTarget(surface2);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
-
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            GameShaders.Misc["FancyLighting:AOVerticalBlur"].UseShaderSpecificData(new Vector4(1f / surface.Width, 1f / surface.Height, 0f, 0f)).Apply(null);
-            Main.spriteBatch.Draw(
-                surface,
-                Vector2.Zero,
-                Color.White
-            );
-            Main.spriteBatch.End();
-
-            Main.instance.GraphicsDevice.SetRenderTarget(surface);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
-
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            GameShaders.Misc["FancyLighting:AOVerticalBlur"].UseShaderSpecificData(new Vector4(1f / surface.Width, 1f / surface.Height, 1f, 0f)).Apply(null);
-            Main.spriteBatch.Draw(
-                surface2,
-                Vector2.Zero,
-                Color.White
-            );
-            Main.spriteBatch.End();
-
+            switch (FancyLightingMod.AmbientOcclusionRadius)
+            {
+                case 1:
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 2:
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 3:
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 4:
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 5:
+                default:
+                    ApplyBlurPass(ref useSurface2, 3, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 3, false);
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 6:
+                    ApplyBlurPass(ref useSurface2, 4, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 4, false);
+                    ApplyBlurPass(ref useSurface2, 3, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 3, false);
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+                case 7:
+                    ApplyBlurPass(ref useSurface2, 5, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 5, false);
+                    ApplyBlurPass(ref useSurface2, 4, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 4, false);
+                    ApplyBlurPass(ref useSurface2, 3, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 3, false);
+                    ApplyBlurPass(ref useSurface2, 2, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 1, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    break;
+            }
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -135,7 +166,7 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
-                surface,
+                useSurface2 ? surface : surface2,
                 Vector2.Zero,
                 Color.White
             );
@@ -145,8 +176,6 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.SetRenderTarget(null);
 
         }
-
-
 
     }
 }

@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+Shaders/fxcompiler.exe
+Shaders/Microsoft.Xna.Framework.Content.Pipeline.dll
+Shaders/Microsoft.Xna.Framework.Content.Pipeline.EffectImporter.dll
+
 # User-specific files
 *.rsuser
 *.suo
