@@ -5,7 +5,10 @@
 
 ### Changelog
 
-v0.1.1 (2022-06-19)
+**v0.2.0 (2022-06-19)**
+- Added a new lighting engine with directional shadows
+
+**v0.1.1 (2022-06-19)**
 - Added new options to change the intensity and radius of ambient occlusion
 - The default setting for ambient occlusion has been made slightly more subtle
 - Ambient occlusion now has a higher resolution (1x1 instead of 2x2)
@@ -16,5 +19,5 @@ v0.1.1 (2022-06-19)
 - Changed mod to client side only
 - Included source code in tmod file
 
-v0.1 (2022-06-18)
+**v0.1 (2022-06-18)**
 - Initial release (added to GitHub one day later)

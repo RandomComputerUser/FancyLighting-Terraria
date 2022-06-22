@@ -22,9 +22,16 @@ namespace FancyLighting
             TileLightScannerObj = new TileLightScanner();
         }
 
-        internal static bool IsGlowingTile(int x, int y)
+        internal static bool IsGlowingTile(int x, int y, bool inWallsMode)
         {
             if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY) return false;
+
+            // Illuminant Paint
+            if ((!inWallsMode && Main.tile[x, y].TileColor == (byte)31) || (inWallsMode && Main.tile[x, y].WallColor == (byte)31))
+                return true;
+
+            if (inWallsMode)
+                return false;
 
             // Dangersense Potion
             if (Main.LocalPlayer.dangerSense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
@@ -32,10 +39,6 @@ namespace FancyLighting
 
             // Spelunker Potion
             if (Main.LocalPlayer.findTreasure && Main.IsTileSpelunkable(x, y))
-                return true;
-
-            // Illuminant Paint
-            if (Main.tile[x, y].TileColor == (byte)31 || Main.tile[x, y].WallColor == (byte)31)
                 return true;
 
             // Crystal Shards and Gelatin Crystal, Meteorite Brick

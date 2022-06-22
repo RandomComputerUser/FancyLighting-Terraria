@@ -39,6 +39,20 @@ namespace FancyLighting
         [Label("Ambient Occlusion Intensity")]
         [Tooltip("Controls the intensity of shadows in ambient occlusion.\nHigher values correspond to darker shadows.")]
         public int AmbientOcclusionIntensity;
+
+        [Header("Fancy Lighting Engine (Experimental)")]
+        [DefaultValue(false)]
+        [ReloadRequired]
+        [Label("Enable Fancy Lighting Engine (Reload Required)")]
+        [Tooltip("Toggles whether or not to use a modified lighting engine.\nIf turned on, light will travel in straight lines in all directions from a light source.\nShadows should face nearly directly away from light sources.\nRequires lighting to be set to color.\nSeverely degrades performance; use only with a fast computer.")]
+        public bool UseFancyLightingEngine;
+
+        [Range(1, 24)]
+        [Increment(1)]
+        [DefaultValue(8)]
+        [Label("Fancy Lighting Engine Thread Count")]
+        [Tooltip("Controls how many threads the fancy lighting engine uses.\nFor good results, set this to the number of threads your CPU has.\n")]
+        public int FancyLightingEngineThreadCount;
     }
 
 }
