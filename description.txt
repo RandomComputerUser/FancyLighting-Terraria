@@ -1,3 +1,5 @@
 Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the game. Also adds a new lighting engine making shadows point in the correct directions.
 
 This mod will only take effect if lighting is set to color. The new lighting engine is disabled by default and must be enabled in the config for this mod.
+
+Requires OpenGL 2.1 or later

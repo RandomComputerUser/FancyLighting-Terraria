@@ -5,8 +5,18 @@
 
 ### Changelog
 
-**v0.2.0 (2022-06-19)**
+**v0.2.1 (2022-06-22)**
+- Added a new option to make shadows darker when using the fancy lighting engine
+- Enabling or disabling the fancy lighting engine no longer requires a reload
+- Added a temporal optimization option to the fancy lighting engine
+- Made other general optimizations to the fancy lighting engine
+- The background can now also have smooth lighting when using the fancy lighting engine
+- Shadow paint now absorbs even more light with the fancy lighting engine
+- Fixed a visual bug when using the fancy lighting engine
+
+**v0.2.0 (2022-06-21)**
 - Added a new lighting engine with directional shadows
+- Fixed a smooth lighting visual bug that occurred in deep water
 
 **v0.1.1 (2022-06-19)**
 - Added new options to change the intensity and radius of ambient occlusion

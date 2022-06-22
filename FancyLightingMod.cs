@@ -20,6 +20,8 @@ namespace FancyLighting
         internal static int _ambientOcclusionIntensity;
         internal static bool _fancyLightingEngineEnabled;
         internal static int _fancyLightingEngineThreadCount;
+        internal static bool _fancyLightingEngineUseTemporal;
+        internal static int _fancyLightingEngineLightLoss;
 
         internal static bool _overrideLightingColor;
         internal static bool _currentlyOverridingWallLighting;
@@ -29,6 +31,10 @@ namespace FancyLighting
         internal FancyLightingEngine FancyLightingEngineObj;
         internal SmoothLighting SmoothLightingObj;
         internal AmbientOcclusion AmbientOcclusionObj;
+
+        protected FieldInfo field_workingProcessedArea;
+        protected FieldInfo field_colors;
+        protected FieldInfo field_mask;
 
         public static bool SmoothLightingEnabled
         {
@@ -86,6 +92,22 @@ namespace FancyLighting
             }
         }
 
+        public static bool FancyLightingEngineUseTemporal
+        {
+            get
+            {
+                return _fancyLightingEngineUseTemporal;
+            }
+        }
+
+        public static float FancyLightingEngineLightLoss
+        {
+            get
+            {
+                return (100 - _fancyLightingEngineLightLoss) / 100f;
+            }
+        }
+
         public override void Load()
         {
             if (Main.netMode == NetmodeID.Server) return;
@@ -105,8 +127,11 @@ namespace FancyLighting
 
             SmoothLightingObj = new SmoothLighting();
             AmbientOcclusionObj = new AmbientOcclusion();
-            if (_fancyLightingEngineEnabled)
-                FancyLightingEngineObj = new FancyLightingEngine();
+            FancyLightingEngineObj = new FancyLightingEngine();
+
+            field_workingProcessedArea = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
+            field_colors = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
+            field_mask = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
 
             AddHooks();
         }
@@ -172,6 +197,42 @@ namespace FancyLighting
                     slices[i] = Vector3.One;
             };
 
+            On.Terraria.Main.RenderBackground +=
+            (
+                On.Terraria.Main.orig_RenderBackground orig,
+                Terraria.Main self
+            ) =>
+            {
+                if (!FancyLightingEngineEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+                orig(self);
+                _overrideLightingColor = false;
+                if (Main.drawToScreen)
+                    return;
+                if (SmoothLightingObj.CalculateSmoothLighting(false, true))
+                    SmoothLightingObj.DrawSmoothLighting(Main.instance.backgroundTarget);
+            };
+
+            On.Terraria.Main.DrawBackground +=
+            (
+                On.Terraria.Main.orig_DrawBackground orig,
+                Terraria.Main self
+            ) =>
+            {
+                if (!FancyLightingEngineEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+                _overrideLightingColor = true;
+                _currentlyOverridingWallLighting = false;
+                orig(self);
+                _overrideLightingColor = false;
+            };
+
             On.Terraria.Main.RenderTiles +=
             (
                 On.Terraria.Main.orig_RenderTiles orig,
@@ -222,10 +283,6 @@ namespace FancyLighting
                 SmoothLightingObj.DrawSmoothLighting(Main.instance.tile2Target);
             };
 
-            // Don't want to add conditions to FastRandom and make it not fast all for an experimental feature
-            // Unless that experimental feature is enabled for this reload
-            if (!_fancyLightingEngineEnabled) return;
-
             On.Terraria.Graphics.Light.LightingEngine.ProcessBlur +=
             (
                 On.Terraria.Graphics.Light.LightingEngine.orig_ProcessBlur orig,
@@ -239,7 +296,7 @@ namespace FancyLighting
                 }
 
                 FancyLightingEngineObj.lightMapArea = 
-                    (Rectangle)(typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(self));
+                    (Rectangle)field_workingProcessedArea.GetValue(self);
                 orig(self);
             };
 
@@ -254,8 +311,8 @@ namespace FancyLighting
                     orig(self);
                     return;
                 }
-                Vector3[] colors = (Vector3[])(typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(self));
-                LightMaskMode[] lightDecay = (LightMaskMode[])(typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(self));
+                Vector3[] colors = (Vector3[])field_colors.GetValue(self);
+                LightMaskMode[] lightDecay = (LightMaskMode[])field_mask.GetValue(self);
                 if (colors is null || lightDecay is null)
                 {
                     orig(self);
@@ -278,26 +335,6 @@ namespace FancyLighting
                 _overrideFastRandom = true;
                 orig(self, x, y, out outputColor);
                 _overrideFastRandom = false;
-            };
-
-            On.Terraria.Utilities.FastRandom.NextFloat +=
-            (
-                On.Terraria.Utilities.FastRandom.orig_NextFloat orig,
-                ref Terraria.Utilities.FastRandom self
-            ) =>
-            {
-                if (_overrideFastRandom) return 0.5f;
-                return orig(ref self);
-            };
-
-            On.Terraria.Utilities.FastRandom.NextDouble +=
-            (
-                On.Terraria.Utilities.FastRandom.orig_NextDouble orig,
-                ref Terraria.Utilities.FastRandom self
-            ) =>
-            {
-                if (_overrideFastRandom) return 0.5;
-                return orig(ref self);
             };
 
             On.Terraria.Utilities.FastRandom.Next_int +=

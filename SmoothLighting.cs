@@ -48,9 +48,9 @@ namespace FancyLighting
             return false;
         }
 
-        internal void CalculateSmoothLighting(bool walls)
+        internal bool CalculateSmoothLighting(bool walls, bool background = false)
         {
-            if (!FancyLightingMod.SmoothLightingEnabled) return;
+            if (!FancyLightingMod.SmoothLightingEnabled) return false;
 
             FancyLightingMod._overrideLightingColor = false;
 
@@ -69,6 +69,12 @@ namespace FancyLighting
             xmax = Math.Clamp(xmax, 0, Main.maxTilesX - 1);
             ymin = Math.Clamp(ymin, 0, Main.maxTilesY - 1);
             ymax = Math.Clamp(ymax, 0, Main.maxTilesY - 1);
+
+            if (background)
+            {
+                ymin = Math.Max((int)(Main.worldSurface / 16), ymin);
+                if (ymin >= ymax) return false;
+            }
 
             int width = (xmax - xmin) + 1;
             int height = (ymax - ymin) + 1;
@@ -119,6 +125,7 @@ namespace FancyLighting
             }
 
             i = 0;
+            if (!background)
             for (int y = ymin; y <= ymax; ++y)
             {
                 for (int x = xmin; x <= xmax; ++x)
@@ -169,6 +176,8 @@ namespace FancyLighting
             colors.SetData(lights, 0, width * height);
 
             colorsPosition = 16f * new Vector2(xmin, ymin) - Main.screenPosition;
+
+            return true;
         }
 
         internal void initSurfaceAndColor()

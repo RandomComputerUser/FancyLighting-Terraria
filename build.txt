@@ -1,6 +1,6 @@
 displayName = Fancy Lighting
 author = RandomComputerUser
-version = 0.2.0
+version = 0.2.1
 side = Client
 homepage = https://github.com/RandomComputerUser/FancyLighting-Terraria
 buildIgnore = Shaders/fxcompiler.exe, Shaders/Microsoft.Xna.Framework.Content.Pipeline.dll, Shaders/Microsoft.Xna.Framework.Content.Pipeline.EffectImporter.dll, README.md
