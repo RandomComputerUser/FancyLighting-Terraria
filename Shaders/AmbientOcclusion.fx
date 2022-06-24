@@ -16,7 +16,14 @@ float2 uImageSize1;
 float2 uImageSize2;
 float4 uShaderSpecificData;
 
-float4 PixelShaderFunction(float2 coords : TEXCOORD0) : COLOR0
+float4 AlphaToGrayscale(float2 coords : TEXCOORD0) : COLOR0
+{
+    float4 color = float4(1, 1, 1, 1);
+    color.rgb -= tex2D(uImage0, coords).a;
+    return color;
+}
+
+float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
 
@@ -45,8 +52,13 @@ float4 PixelShaderFunction(float2 coords : TEXCOORD0) : COLOR0
 
 technique Technique1
 {
+    pass AlphaToGrayscale
+    {
+        PixelShader = compile ps_2_0 AlphaToGrayscale();
+    }
+
     pass Blur
     {
-        PixelShader = compile ps_2_0 PixelShaderFunction();
+        PixelShader = compile ps_2_0 Blur();
     }
 }

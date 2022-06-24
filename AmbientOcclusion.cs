@@ -15,15 +15,15 @@ namespace FancyLighting
 
         public AmbientOcclusion() {
 
-            GameShaders.Misc["FancyLighting:PreAO"] =
+            GameShaders.Misc["FancyLighting:AOPrePass"] =
                 new MiscShaderData(
-                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/PreAO", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "AlphaToGrayscale"
                 );
 
             GameShaders.Misc["FancyLighting:AOBlur"] =
                 new MiscShaderData(
-                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AOBlur", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "Blur"
                 );
 
@@ -75,7 +75,7 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
 
             Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
-            GameShaders.Misc["FancyLighting:PreAO"].Apply(null);
+            GameShaders.Misc["FancyLighting:AOPrePass"].Apply(null);
             Main.spriteBatch.Draw(
                 Main.instance.tileTarget,
                 Main.sceneTilePos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
@@ -105,41 +105,27 @@ namespace FancyLighting
                     ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 4:
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 3, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 3, false);
                     ApplyBlurPass(ref useSurface2, 1, 0, false);
                     ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 5:
                 default:
-                    ApplyBlurPass(ref useSurface2, 3, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 3, false);
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 4, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 4, false);
                     ApplyBlurPass(ref useSurface2, 1, 0, false);
                     ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 6:
-                    ApplyBlurPass(ref useSurface2, 4, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 4, false);
-                    ApplyBlurPass(ref useSurface2, 3, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 3, false);
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 5, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 5, false);
                     ApplyBlurPass(ref useSurface2, 1, 0, false);
                     ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 7:
-                    ApplyBlurPass(ref useSurface2, 5, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 5, false);
-                    ApplyBlurPass(ref useSurface2, 4, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 4, false);
-                    ApplyBlurPass(ref useSurface2, 3, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 3, false);
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
+                    ApplyBlurPass(ref useSurface2, 6, 0, false);
+                    ApplyBlurPass(ref useSurface2, 0, 6, false);
                     ApplyBlurPass(ref useSurface2, 1, 0, false);
                     ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;

@@ -43,15 +43,8 @@ namespace FancyLighting
         [Header("Lighting Engine")]
         [DefaultValue(false)]
         [Label("Enable Fancy Lighting Engine")]
-        [Tooltip("Toggles whether or not to use a modified lighting engine.\nIf turned on, light will travel in straight lines in all directions from a light source.\nShadows should face nearly directly away from light sources.\nRequires lighting to be set to color.\nRequires a fast CPU to run smoothly.")]
+        [Tooltip("Toggles whether or not to use a modified lighting engine.\nIf turned on, light will travel in straight lines in all directions from a light source.\nShadows should face nearly directly away from light sources.\nRequires lighting to be set to color.\nPerformance is significantly reduced in areas with more light sources.")]
         public bool UseFancyLightingEngine;
-
-        [Range(1, 24)]
-        [Increment(1)]
-        [DefaultValue(8)]
-        [Label("Fancy Lighting Engine Thread Count")]
-        [Tooltip("Controls how many threads the fancy lighting engine uses.\nFor good results, set this to the number of threads your CPU has.\n")]
-        public int FancyLightingEngineThreadCount;
 
         [DefaultValue(true)]
         [Label("Temporal Optimization")]
@@ -66,6 +59,14 @@ namespace FancyLighting
         [Label("Light Loss (%) When Exiting Solid Blocks")]
         [Tooltip("Controls how much light is lost when light exits a solid block into the air.\nHigher values correspond to darker shadows.")]
         public int FancyLightingEngineLightLoss;
+
+        [Header("General")]
+        [Range(1, 24)]
+        [Increment(1)]
+        [DefaultValue(8)]
+        [Label("Thread Count")]
+        [Tooltip("Controls how many threads smooth lighting and the fancy lighting engine use.\nFor good results, set this to the number of threads your CPU has.\n")]
+        public int ThreadCount;
     }
 
 }

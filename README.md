@@ -5,6 +5,12 @@
 
 ### Changelog
 
+**v0.2.2 (2022-06-23)**
+- Optimized and multithreaded smooth lighting
+- Cave backgrounds are now always smoothly lit when using smooth lighting
+- Fixed a bug with light map blurring
+- Tweaked and optimized ambient occlusion
+
 **v0.2.1 (2022-06-22)**
 - Added a new option to make shadows darker when using the fancy lighting engine
 - Enabling or disabling the fancy lighting engine no longer requires a reload

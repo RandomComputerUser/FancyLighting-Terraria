@@ -239,31 +239,35 @@ namespace FancyLighting
 
             Parallel.For(
                 0,
-                length,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.FancyLightingEngineThreadCount },
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                 (i) =>
                 {
-                    switch (lightDecay[i])
+                    for (int j = height * i; j < height * (i + 1); ++j)
                     {
-                        case LightMaskMode.None:
-                        default:
-                            _lightMask[i] = lightAirDecay;
-                            break;
-                        case LightMaskMode.Solid:
-                            int x = i / height + lightMapArea.X;
-                            int y = i % height + lightMapArea.Y;
-                            // Check Shadow Paint
-                            if (Main.tile[x, y].TileColor == (byte)29)
-                                _lightMask[i] = lightShadowPaintDecay;
-                            else
-                                _lightMask[i] = lightSolidDecay;
-                            break;
-                        case LightMaskMode.Water:
-                            _lightMask[i] = lightWaterDecay;
-                            break;
-                        case LightMaskMode.Honey:
-                            _lightMask[i] = lightHoneyDecay;
-                            break;
+                        switch (lightDecay[j])
+                        {
+                            case LightMaskMode.None:
+                            default:
+                                _lightMask[j] = lightAirDecay;
+                                break;
+                            case LightMaskMode.Solid:
+                                int x = j / height + lightMapArea.X;
+                                int y = j % height + lightMapArea.Y;
+                                // Check Shadow Paint
+                                if (Main.tile[x, y].TileColor == (byte)29)
+                                    _lightMask[j] = lightShadowPaintDecay;
+                                else
+                                    _lightMask[j] = lightSolidDecay;
+                                break;
+                            case LightMaskMode.Water:
+                                _lightMask[j] = lightWaterDecay;
+                                break;
+                            case LightMaskMode.Honey:
+                                _lightMask[j] = lightHoneyDecay;
+                                break;
+                        }
+
                     }
                 }
             );
@@ -271,7 +275,7 @@ namespace FancyLighting
             Parallel.For(
                 0, 
                 length, 
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.FancyLightingEngineThreadCount }, 
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount }, 
                 (i) => ProcessLightThreaded(i, colors, width, height)
             );
 

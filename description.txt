@@ -2,4 +2,6 @@ Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the gam
 
 This mod will only take effect if lighting is set to color. The new lighting engine is disabled by default and must be enabled in the config for this mod.
 
+Effects such as illuminant paint and the spelunker and dangersense potions will be displayed properly with smooth lighting, unlike in my 1.3 mod titled Smooth Lighting. Effects and glowing blocks from other mods may not work.
+
 Requires OpenGL 2.1 or later

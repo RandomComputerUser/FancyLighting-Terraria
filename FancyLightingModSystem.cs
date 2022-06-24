@@ -5,25 +5,31 @@ namespace FancyLighting
 {
     class FancyLightingModSystem : ModSystem
     {
+        internal static bool SmoothLightingBase;
+        internal static bool SmoothLightingForeground;
+        internal static bool SmoothLightingBackground;
 
         public override void PostUpdateEverything()
         {
-            UpdateSettings();
+            UpdatePerFrameInfo();
 
             base.PostUpdateEverything();
         }
 
-        internal static void UpdateSettings()
+        internal static void UpdatePerFrameInfo()
         {
+            SmoothLightingBase = false;
+            SmoothLightingForeground = false;
+            SmoothLightingBackground = false;
+
             FancyLightingMod._smoothLightingEnabled = ModContent.GetInstance<LightingConfig>().UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._ambientOcclusionEnabled = ModContent.GetInstance<LightingConfig>().UseAmbientOcclusion && Lighting.UsingNewLighting;
             FancyLightingMod._ambientOcclusionRadius = ModContent.GetInstance<LightingConfig>().AmbientOcclusionRadius;
             FancyLightingMod._ambientOcclusionIntensity = ModContent.GetInstance<LightingConfig>().AmbientOcclusionIntensity;
             FancyLightingMod._fancyLightingEngineEnabled = ModContent.GetInstance<LightingConfig>().UseFancyLightingEngine;
-            FancyLightingMod._fancyLightingEngineThreadCount = ModContent.GetInstance<LightingConfig>().FancyLightingEngineThreadCount;
             FancyLightingMod._fancyLightingEngineUseTemporal = ModContent.GetInstance<LightingConfig>().FancyLightingEngineUseTemporal;
             FancyLightingMod._fancyLightingEngineLightLoss = ModContent.GetInstance<LightingConfig>().FancyLightingEngineLightLoss;
+            FancyLightingMod._threadCount = ModContent.GetInstance<LightingConfig>().ThreadCount;
         }
-
     }
 }
