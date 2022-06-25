@@ -5,9 +5,12 @@
 
 ### Changelog
 
+**v0.2.3 (2022-06-24)**
+- Optimized smooth lighting calculations, mitigating some visual issues
+- Attempted to fix a bug that could cause a crash in some cases
+
 **v0.2.2 (2022-06-23)**
 - Optimized and multithreaded smooth lighting
-- Cave backgrounds are now always smoothly lit when using smooth lighting
 - Fixed a bug with light map blurring
 - Tweaked and optimized ambient occlusion
 

@@ -5,10 +5,6 @@ namespace FancyLighting
 {
     class FancyLightingModSystem : ModSystem
     {
-        internal static bool SmoothLightingBase;
-        internal static bool SmoothLightingForeground;
-        internal static bool SmoothLightingBackground;
-
         public override void PostUpdateEverything()
         {
             UpdatePerFrameInfo();
@@ -18,10 +14,6 @@ namespace FancyLighting
 
         internal static void UpdatePerFrameInfo()
         {
-            SmoothLightingBase = false;
-            SmoothLightingForeground = false;
-            SmoothLightingBackground = false;
-
             FancyLightingMod._smoothLightingEnabled = ModContent.GetInstance<LightingConfig>().UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._ambientOcclusionEnabled = ModContent.GetInstance<LightingConfig>().UseAmbientOcclusion && Lighting.UsingNewLighting;
             FancyLightingMod._ambientOcclusionRadius = ModContent.GetInstance<LightingConfig>().AmbientOcclusionRadius;

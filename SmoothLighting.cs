@@ -19,8 +19,11 @@ namespace FancyLighting
         internal Rectangle lightMapTileArea;
         internal RenderTarget2D surface;
         internal Vector3[] lights;
-        internal Vector3[] lightsPostBlur;
         internal Color[] finalLights;
+
+        private bool _smoothLightingPositionValid;
+        private bool _smoothLightingBackComplete;
+        private bool _smoothLightingForeComplete;
 
         internal TileLightScanner TileLightScannerObj;
 
@@ -30,11 +33,15 @@ namespace FancyLighting
             TileLightScannerObj = new TileLightScanner();
             ModInstance = mod;
 
+            lightMapTileArea = new Rectangle(0, 0, 0, 0);
+            lightMapRenderArea = new Rectangle(0, 0, 0, 0);
+
+            _smoothLightingPositionValid = false;
         }
 
         internal static bool IsGlowingTile(int x, int y)
         {
-            if (x < 0 || x >= Main.maxTilesX || y < 0 || y >= Main.maxTilesY) return false;
+            if (x < 0 || x >= Main.tile.Width || y < 0 || y >= Main.tile.Height) return false;
 
             // Illuminant Paint
             if (Main.tile[x, y].TileColor == (byte)31 || Main.tile[x, y].WallColor == (byte)31)
@@ -55,33 +62,15 @@ namespace FancyLighting
             return false;
         }
 
-        protected void GetBlurredLighting()
+        internal void BlurLightMap(Vector3[] colors, int width, int height)
         {
-            LightingEngine lightEngine = (LightingEngine)ModInstance.field_activeEngine.GetValue(null);
-            Rectangle lightingArea = (Rectangle)ModInstance.field_activeProcessedArea.GetValue(lightEngine);
-            Vector3[] lighting = (Vector3[])ModInstance.field_colors.GetValue((LightMap)ModInstance.field_activeLightMap.GetValue(lightEngine));
-
-            int xmin = lightingArea.X;
-            int ymin = lightingArea.Y;
-            int width = lightingArea.Width;
-            int height = lightingArea.Height;
-            int ymax = ymin + height;
-
-            if (width == 0 || height == 0) return;
-
             if (lights is null || lights.Length < height * width)
             {
                 lights = new Vector3[height * width];
             }
 
-            if (lightsPostBlur is null || lightsPostBlur.Length < height * width)
-            {
-                lightsPostBlur = new Vector3[height * width];
-            }
+            if (width == 0 || height == 0) return;
 
-            Array.Copy(lighting, lights, height * width);
-
-            float multiplier = Lighting.GlobalBrightness / 16f;
             Parallel.For(
                 1,
                 width - 1,
@@ -93,42 +82,76 @@ namespace FancyLighting
                     {
                         ++i;
 
-                        lightsPostBlur[i].X = multiplier * (
-                            1 * lights[i - height - 1].X + 2 * lights[i - 1].X + 1 * lights[i + height - 1].X
-                          + 2 * lights[i - height].X     + 4 * lights[i].X     + 2 * lights[i + height].X
-                          + 1 * lights[i - height + 1].X + 2 * lights[i + 1].X + 1 * lights[i + height + 1].X
-                        );
+                        lights[i].X = (
+                            1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
+                          + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
+                          + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
+                        ) / 16f;
 
-                        lightsPostBlur[i].Y = multiplier * (
-                            1 * lights[i - height - 1].Y + 2 * lights[i - 1].Y + 1 * lights[i + height - 1].Y
-                          + 2 * lights[i - height].Y     + 4 * lights[i].Y     + 2 * lights[i + height].Y
-                          + 1 * lights[i - height + 1].Y + 2 * lights[i + 1].Y + 1 * lights[i + height + 1].Y
-                        );
+                        lights[i].Y = (
+                            1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
+                          + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
+                          + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
+                        ) / 16f;
 
-                        lightsPostBlur[i].Z = multiplier * (
-                            1 * lights[i - height - 1].Z + 2 * lights[i - 1].Z + 1 * lights[i + height - 1].Z
-                          + 2 * lights[i - height].Z     + 4 * lights[i].Z     + 2 * lights[i + height].Z
-                          + 1 * lights[i - height + 1].Z + 2 * lights[i + 1].Z + 1 * lights[i + height + 1].Z
-                        );
+                        lights[i].Z = (
+                            1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
+                          + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
+                          + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
+                        ) / 16f;
                     }
                 }
             );
 
-            colorsPosition = 16f * new Vector2(xmin + width, ymin);
-            lightMapTileArea = new Rectangle(xmin, ymin, width, height);
-            lightMapRenderArea = new Rectangle(0, 0, height, width);
+            int offset = (width - 1) * height;
+            for (int i = 0; i < height; ++i)
+            {
+                lights[i] = colors[i];
+                lights[i + offset] = colors[i + offset];
+            }
 
-            FancyLightingModSystem.SmoothLightingBase = true;
+            int end = (width - 1) * height;
+            offset = height - 1;
+            for (int i = height; i < end; i += height)
+            {
+                lights[i] = colors[i];
+                lights[i + offset] = colors[i + offset];
+            }
+
+            Array.Copy(lights, colors, height * width);
+
+            LightingEngine lightEngine = (LightingEngine)ModInstance.field_activeEngine.GetValue(null);
+            lightMapTileArea = (Rectangle)ModInstance.field_workingProcessedArea.GetValue(lightEngine);
+            lightMapRenderArea = new Rectangle(0, 0, lightMapTileArea.Height, lightMapTileArea.Width);
+
+            _smoothLightingPositionValid = false;
+            _smoothLightingBackComplete = false;
+            _smoothLightingForeComplete = false;
+        }
+
+        protected void GetLightingPosition()
+        {
+            int xmin = lightMapTileArea.X;
+            int ymin = lightMapTileArea.Y;
+            int width = lightMapTileArea.Width;
+            int height = lightMapTileArea.Height;
+
+            if (width == 0 || height == 0) return;
+
+            colorsPosition = 16f * new Vector2(xmin + width, ymin);
+
+            _smoothLightingPositionValid = true;
         }
 
         internal void CalculateSmoothLighting(bool background)
         {
             if (!FancyLightingMod.SmoothLightingEnabled) return;
 
-            if (!FancyLightingModSystem.SmoothLightingBase)
-                GetBlurredLighting();
+            if (!_smoothLightingPositionValid)
+                GetLightingPosition();
 
-            if (!FancyLightingModSystem.SmoothLightingBase) return;
+            if (!_smoothLightingPositionValid) return;
+            if (Main.tile.Height == 0 || Main.tile.Width == 0) return;
 
             int xmin = lightMapTileArea.X;
             int ymin = lightMapTileArea.Y;
@@ -141,17 +164,30 @@ namespace FancyLighting
                 finalLights = new Color[height * width];
             }
 
-            if (background)
+            int clampedXmin = Math.Clamp(xmin, 0, Main.tile.Width);
+            int clampedXmax = Math.Clamp(xmin + width, 0, Main.tile.Width);
+            if (clampedXmax - clampedXmin < 1) return;
+            int clampedStart = Math.Clamp(clampedXmin - xmin, 0, width);
+            int clampedEnd = Math.Clamp(clampedXmax - clampedXmin, 0, width);
+            if (clampedEnd - clampedStart < 1) return;
+
+            int clampedYmin = Math.Clamp(ymin, 0, Main.tile.Height);
+            int clampedYmax = Math.Clamp(ymax, 0, Main.tile.Height);
+            if (clampedYmax - clampedYmin < 1) return;
+            int offset = clampedYmin - ymin;
+            if (offset < 0 || offset >= height) return;
+
+            if (background && !_smoothLightingBackComplete)
             {
                 Parallel.For(
-                    0,
-                    width,
+                    clampedStart,
+                    clampedEnd,
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        int i = height * x1;
+                        int i = height * x1 + offset;
                         int x = x1 + xmin;
-                        for (int y = ymin; y < ymax; ++y)
+                        for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
                             // Also see: internal static bool IsGlowingTile(int x, int y)
 
@@ -162,7 +198,7 @@ namespace FancyLighting
                                 continue;
                             }
 
-                            finalLights[i] = new Color(lightsPostBlur[i]);
+                            finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
                             ++i;
                         }
                     }
@@ -175,19 +211,19 @@ namespace FancyLighting
 
                 colorsBackground.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
 
-                FancyLightingModSystem.SmoothLightingBackground = true;
+                _smoothLightingBackComplete = true;
             }
-            else
+            else if (!_smoothLightingForeComplete)
             {
                 Parallel.For(
-                    0,
-                    width,
+                    clampedStart,
+                    clampedEnd,
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        int i = height * x1;
+                        int i = height * x1 + offset;
                         int x = x1 + xmin;
-                        for (int y = ymin; y < ymax; ++y)
+                        for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
                             // Also see: internal static bool IsGlowingTile(int x, int y)
 
@@ -205,7 +241,7 @@ namespace FancyLighting
                                 continue;
                             }
 
-                            finalLights[i] = new Color(lightsPostBlur[i]);
+                            finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
 
                             // Meteorite Brick
                             if (Main.tile[x, y].TileType == 370)
@@ -242,21 +278,22 @@ namespace FancyLighting
 
                 colors.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
 
-                FancyLightingModSystem.SmoothLightingForeground = true;
+                _smoothLightingForeComplete = true;
             }
         }
 
         internal void DrawSmoothLighting(RenderTarget2D target, bool background)
         {
             if (!FancyLightingMod.SmoothLightingEnabled) return;
-            if (!background && !FancyLightingModSystem.SmoothLightingForeground) return;
-            if (background && !FancyLightingModSystem.SmoothLightingBackground) return;
+            if (!background && !_smoothLightingForeComplete) return;
+            if (background && !_smoothLightingBackComplete) return;
 
             if (surface is null || surface.GraphicsDevice != Main.graphics.GraphicsDevice || (surface.Width != Main.instance.tileTarget.Width || surface.Height != Main.instance.tileTarget.Height))
             {
                 surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
             }
 
+            // Main.instance.GraphicsDevice set its render target to null, so we need to switch to surface to do blending
             Main.instance.GraphicsDevice.SetRenderTarget(surface);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
 
@@ -274,8 +311,6 @@ namespace FancyLighting
                 0f
             );
             Main.spriteBatch.End();
-
-            // Hacky workaround for getting multiply blend to work with alpha blending
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,

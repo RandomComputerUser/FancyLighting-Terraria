@@ -32,8 +32,6 @@ namespace FancyLighting
         internal AmbientOcclusion AmbientOcclusionObj;
 
         internal FieldInfo field_activeEngine;
-        internal FieldInfo field_activeLightMap;
-        internal FieldInfo field_activeProcessedArea;
         internal FieldInfo field_workingProcessedArea;
         internal FieldInfo field_colors;
         internal FieldInfo field_mask;
@@ -51,14 +49,6 @@ namespace FancyLighting
             get
             {
                 return _ambientOcclusionEnabled;
-            }
-        }
-
-        public static bool OverrideLightingColor
-        {
-            get
-            {
-                return SmoothLightingEnabled && _overrideLightingColor;
             }
         }
 
@@ -131,8 +121,6 @@ namespace FancyLighting
             FancyLightingEngineObj = new FancyLightingEngine();
 
             field_activeEngine = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
-            field_activeLightMap = typeof(LightingEngine).GetField("_activeLightMap", BindingFlags.NonPublic | BindingFlags.Instance);
-            field_activeProcessedArea = typeof(LightingEngine).GetField("_activeProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
             field_workingProcessedArea = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
             field_colors = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
             field_mask = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -150,12 +138,12 @@ namespace FancyLighting
                 int y
             ) =>
             {
-                if (OverrideLightingColor)
+                if (_overrideLightingColor)
                 {
                     if (SmoothLighting.IsGlowingTile(x, y))
                         return Vector3.One;
                     Vector3 color = orig(self, x, y);
-                    if (color.X < 1 / 255f && color.Y < 1 / 255f && color.Z < 1 / 255f)
+                    if (color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f)
                     {
                         color.X = 1f / 255f;
                         color.Y = 1f / 255f;
@@ -207,7 +195,7 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (!FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
                 {
                     orig(self);
                     return;
@@ -226,7 +214,7 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (!FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
                 {
                     orig(self);
                     return;
@@ -235,36 +223,18 @@ namespace FancyLighting
                 orig(self);
                 _overrideLightingColor = false;
             };
-
+            
             On.Terraria.Main.RenderTiles +=
             (
                 On.Terraria.Main.orig_RenderTiles orig,
                 Terraria.Main self
             ) =>
             {
-                _overrideLightingColor = true;
+                _overrideLightingColor = SmoothLightingEnabled;
                 orig(self);
                 _overrideLightingColor = false;
-                if (Main.drawToScreen)
-                    return;
                 SmoothLightingObj.CalculateSmoothLighting(false);
                 SmoothLightingObj.DrawSmoothLighting(Main.instance.tileTarget, false);
-            };
-
-            On.Terraria.Main.RenderWalls +=
-            (
-                On.Terraria.Main.orig_RenderWalls orig,
-                Terraria.Main self
-            ) =>
-            {
-                _overrideLightingColor = true;
-                orig(self);
-                _overrideLightingColor = false;
-                if (Main.drawToScreen)
-                    return;
-                SmoothLightingObj.CalculateSmoothLighting(true);
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.wallTarget, true);
-                AmbientOcclusionObj.ApplyAmbientOcclusion();
             };
 
             On.Terraria.Main.RenderTiles2 +=
@@ -273,13 +243,27 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                _overrideLightingColor = true;
+                _overrideLightingColor = SmoothLightingEnabled;
+                orig(self);
+                _overrideLightingColor = false;
+                SmoothLightingObj.CalculateSmoothLighting(false);
+                SmoothLightingObj.DrawSmoothLighting(Main.instance.tile2Target, false);
+            };
+
+            On.Terraria.Main.RenderWalls +=
+            (
+                On.Terraria.Main.orig_RenderWalls orig,
+                Terraria.Main self
+            ) =>
+            {
+                _overrideLightingColor = SmoothLightingEnabled;
                 orig(self);
                 _overrideLightingColor = false;
                 if (Main.drawToScreen)
                     return;
-                SmoothLightingObj.CalculateSmoothLighting(false);
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.tile2Target, false);
+                SmoothLightingObj.CalculateSmoothLighting(true);
+                SmoothLightingObj.DrawSmoothLighting(Main.instance.wallTarget, true);
+                AmbientOcclusionObj.ApplyAmbientOcclusion();
             };
 
             On.Terraria.Graphics.Light.LightingEngine.ProcessBlur +=
@@ -305,7 +289,7 @@ namespace FancyLighting
                 Terraria.Graphics.Light.LightMap self
             ) =>
             {
-                if (!FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled && !FancyLightingEngineEnabled)
                 {
                     orig(self);
                     return;
@@ -317,7 +301,12 @@ namespace FancyLighting
                     orig(self);
                     return;
                 }
-                FancyLightingEngineObj.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
+                if (FancyLightingEngineEnabled)
+                    FancyLightingEngineObj.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
+                else
+                    orig(self);
+                if (SmoothLightingEnabled)
+                    SmoothLightingObj.BlurLightMap(colors, self.Width, self.Height);
             };
 
             // Necessary for acceptable performance with the Fancy Lighting Engine
