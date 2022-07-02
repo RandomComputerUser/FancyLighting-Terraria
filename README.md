@@ -5,6 +5,9 @@
 
 ### Changelog
 
+**v0.2.4.1 (2022-07-01)**
+- Attempted to fix a potential crash
+
 **v0.2.4 (2022-07-01)**
 - Implemented and added an option to toggle high-quality light map upscaling
 - Added a new option to toggle light map blurring

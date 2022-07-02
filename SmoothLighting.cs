@@ -52,7 +52,8 @@ namespace FancyLighting
 
             _smoothLightingPositionValid = false;
 
-            glowingTiles = TileID.Sets.Factory.CreateBoolSet(
+            glowingTiles = new bool[ushort.MaxValue + 1];
+            foreach (ushort id in new ushort[] {
                 TileID.Crystals,
                 TileID.LavaMoss,
                 TileID.LavaMossBrick,
@@ -63,7 +64,9 @@ namespace FancyLighting
                 TileID.XenonMoss,
                 TileID.XenonMossBrick,
                 TileID.MeteoriteBrick
-            );
+            }) {
+                glowingTiles[id] = true;
+            }
 
             glowingTileColors = new Color[glowingTiles.Length];
 
@@ -100,7 +103,7 @@ namespace FancyLighting
 
         internal bool IsGlowingTile(int x, int y)
         {
-            if (!lightMapTileArea.Contains(x, y)) return false;
+            if (x < 0 || y < 0 || x >= Main.tile.Width || y >= Main.tile.Height) return false;
 
             // Illuminant Paint
             if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint) return true;
