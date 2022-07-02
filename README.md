@@ -5,6 +5,15 @@
 
 ### Changelog
 
+**v0.2.4 (2022-07-01)**
+- Implemented and added an option to toggle high-quality light map upscaling
+- Added a new option to toggle light map blurring
+- Added a new debug option to render only lighting
+- Glowing moss now glows properly with smooth lighting enabled
+- Fixed a minor visual bug with glowing meteorite brick
+- Applied some minor optimizations all around
+- Updated config tooltips
+
 **v0.2.3 (2022-06-24)**
 - Optimized smooth lighting calculations, mitigating some visual issues
 - Attempted to fix a bug that could cause a crash in some cases

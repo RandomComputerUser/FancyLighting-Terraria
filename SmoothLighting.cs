@@ -1,5 +1,8 @@
 ﻿using Terraria;
+using Terraria.ID;
+using Terraria.ModLoader;
 using Terraria.Graphics.Light;
+using Terraria.Graphics.Shaders;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,11 +18,21 @@ namespace FancyLighting
         internal Texture2D colors;
         internal Texture2D colorsBackground;
         internal Vector2 colorsPosition;
-        internal Rectangle lightMapRenderArea;
+        internal Vector2 colorsPass1Position;
+        internal Vector2 colorsPass2Position;
         internal Rectangle lightMapTileArea;
+        internal Rectangle lightMapRenderArea;
+        internal Rectangle lightMapPass2RenderArea;
         internal RenderTarget2D surface;
+        internal RenderTarget2D surface2;
         internal Vector3[] lights;
         internal Color[] finalLights;
+
+        protected bool[] glowingTiles;
+        protected Color[] glowingTileColors;
+
+        protected bool dangersense;
+        protected bool spelunker;
 
         private bool _smoothLightingPositionValid;
         private bool _smoothLightingBackComplete;
@@ -35,29 +48,71 @@ namespace FancyLighting
 
             lightMapTileArea = new Rectangle(0, 0, 0, 0);
             lightMapRenderArea = new Rectangle(0, 0, 0, 0);
+            lightMapPass2RenderArea = new Rectangle(0, 0, 0, 0);
 
             _smoothLightingPositionValid = false;
+
+            glowingTiles = TileID.Sets.Factory.CreateBoolSet(
+                TileID.Crystals,
+                TileID.LavaMoss,
+                TileID.LavaMossBrick,
+                TileID.ArgonMoss,
+                TileID.ArgonMossBrick,
+                TileID.KryptonMoss,
+                TileID.KryptonMossBrick,
+                TileID.XenonMoss,
+                TileID.XenonMossBrick,
+                TileID.MeteoriteBrick
+            );
+
+            glowingTileColors = new Color[glowingTiles.Length];
+
+            glowingTileColors[TileID.Crystals] = Color.White;
+
+            glowingTileColors[TileID.LavaMoss] = glowingTileColors[TileID.LavaMossBrick]       = new Color(254, 122, 0);
+            glowingTileColors[TileID.ArgonMoss] = glowingTileColors[TileID.ArgonMossBrick]     = new Color(254, 92, 186);
+            glowingTileColors[TileID.KryptonMoss] = glowingTileColors[TileID.KryptonMossBrick] = new Color(215, 255, 0);
+            glowingTileColors[TileID.XenonMoss] = glowingTileColors[TileID.XenonMossBrick]     = new Color(0, 254, 242);
+
+            glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
+
+            dangersense = false;
+            spelunker = false;
+            
+            GameShaders.Misc["FancyLighting:UpscalingSmooth"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "UpscaleSmooth"
+                );
+
+            GameShaders.Misc["FancyLighting:UpscalingRegular"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "UpscaleNoFilter"
+                );
         }
 
-        internal static bool IsGlowingTile(int x, int y)
+        internal void Unload()
         {
-            if (x < 0 || x >= Main.tile.Width || y < 0 || y >= Main.tile.Height) return false;
+            surface?.Dispose();
+            surface2?.Dispose();
+        }
+
+        internal bool IsGlowingTile(int x, int y)
+        {
+            if (!lightMapTileArea.Contains(x, y)) return false;
 
             // Illuminant Paint
-            if (Main.tile[x, y].TileColor == (byte)31 || Main.tile[x, y].WallColor == (byte)31)
-                return true;
+            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint) return true;
 
-            // Crystal Shards and Gelatin Crystal, Meteorite Brick
-            if (Main.tile[x, y].TileType == 129 || Main.tile[x, y].TileType == 370)
-                return true;
+            // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
+            if (glowingTiles[Main.tile[x, y].TileType]) return true;
 
             // Dangersense Potion
-            if (Main.LocalPlayer.dangerSense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
-                return true;
+            if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer)) return true;
 
             // Spelunker Potion
-            if (Main.LocalPlayer.findTreasure && Main.IsTileSpelunkable(x, y))
-                return true;
+            if (spelunker && Main.IsTileSpelunkable(x, y)) return true;
 
             return false;
         }
@@ -71,37 +126,44 @@ namespace FancyLighting
 
             if (width == 0 || height == 0) return;
 
-            Parallel.For(
-                1,
-                width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
-                (x) =>
-                {
-                    int i = height * x;
-                    for (int y = 1; y < height - 1; ++y)
+            if (FancyLightingMod.BlurLightMap)
+            {
+                Parallel.For(
+                    1,
+                    width - 1,
+                    new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                    (x) =>
                     {
-                        ++i;
+                        int i = height * x;
+                        for (int y = 1; y < height - 1; ++y)
+                        {
+                            ++i;
 
-                        lights[i].X = (
-                            1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
-                          + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
-                          + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
-                        ) / 16f;
+                            lights[i].X = (
+                                1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
+                              + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
+                              + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
+                            ) / 16f;
 
-                        lights[i].Y = (
-                            1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
-                          + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
-                          + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
-                        ) / 16f;
+                            lights[i].Y = (
+                                1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
+                              + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
+                              + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
+                            ) / 16f;
 
-                        lights[i].Z = (
-                            1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
-                          + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
-                          + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
-                        ) / 16f;
+                            lights[i].Z = (
+                                1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
+                              + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
+                              + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
+                            ) / 16f;
+                        }
                     }
-                }
-            );
+                );
+            }
+            else
+            {
+                Array.Copy(colors, lights, height * width);
+            }
 
             int offset = (width - 1) * height;
             for (int i = 0; i < height; ++i)
@@ -123,13 +185,14 @@ namespace FancyLighting
             LightingEngine lightEngine = (LightingEngine)ModInstance.field_activeEngine.GetValue(null);
             lightMapTileArea = (Rectangle)ModInstance.field_workingProcessedArea.GetValue(lightEngine);
             lightMapRenderArea = new Rectangle(0, 0, lightMapTileArea.Height, lightMapTileArea.Width);
+            lightMapPass2RenderArea = new Rectangle(0, 0, 16 * lightMapTileArea.Width, 16 * lightMapTileArea.Height);
 
             _smoothLightingPositionValid = false;
             _smoothLightingBackComplete = false;
             _smoothLightingForeComplete = false;
         }
 
-        protected void GetLightingPosition()
+        protected void GetColorsPosition()
         {
             int xmin = lightMapTileArea.X;
             int ymin = lightMapTileArea.Y;
@@ -139,6 +202,8 @@ namespace FancyLighting
             if (width == 0 || height == 0) return;
 
             colorsPosition = 16f * new Vector2(xmin + width, ymin);
+            colorsPass1Position = 16f * new Vector2(width, 0);
+            colorsPass2Position = 16f * new Vector2(xmin, ymin);
 
             _smoothLightingPositionValid = true;
         }
@@ -148,7 +213,10 @@ namespace FancyLighting
             if (!FancyLightingMod.SmoothLightingEnabled) return;
 
             if (!_smoothLightingPositionValid)
-                GetLightingPosition();
+                GetColorsPosition();
+
+            dangersense = Main.LocalPlayer.dangerSense;
+            spelunker = Main.LocalPlayer.findTreasure;
 
             if (!_smoothLightingPositionValid) return;
             if (Main.tile.Height == 0 || Main.tile.Width == 0) return;
@@ -189,10 +257,10 @@ namespace FancyLighting
                         int x = x1 + xmin;
                         for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
-                            // Also see: internal static bool IsGlowingTile(int x, int y)
+                            // Also see IsGlowingTile
 
                             // Illuminant Paint
-                            if (Main.tile[x, y].WallColor == (byte)31)
+                            if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
                             {
                                 finalLights[i++] = Color.White;
                                 continue;
@@ -225,34 +293,30 @@ namespace FancyLighting
                         int x = x1 + xmin;
                         for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
-                            // Also see: internal static bool IsGlowingTile(int x, int y)
+                            // Also see IsGlowingTile
 
                             // Illuminant Paint
-                            if (Main.tile[x, y].TileColor == (byte)31)
+                            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
                             {
                                 finalLights[i++] = Color.White;
                                 continue;
                             }
 
-                            // Crystal Shards and Gelatin Crystal
-                            if (Main.tile[x, y].TileType == 129)
+                            // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
+                            if (glowingTiles[Main.tile[x, y].TileType])
                             {
-                                finalLights[i++] = Color.White;
+                                ref Color glow = ref glowingTileColors[Main.tile[x, y].TileType];
+                                finalLights[i].R = Math.Max(finalLights[i].R, glow.R);
+                                finalLights[i].G = Math.Max(finalLights[i].G, glow.G);
+                                finalLights[i].B = Math.Max(finalLights[i].B, glow.B);
+                                ++i;
                                 continue;
                             }
 
                             finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
 
-                            // Meteorite Brick
-                            if (Main.tile[x, y].TileType == 370)
-                            {
-                                if (finalLights[i].R < (byte)219) finalLights[i].R = (byte)219;
-                                if (finalLights[i].G < (byte)219) finalLights[i].G = (byte)104;
-                                if (finalLights[i].B < (byte)219) finalLights[i].B = (byte)19;
-                            }
-
                             // Dangersense Potion
-                            else if (Main.LocalPlayer.dangerSense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
+                            if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
                             {
                                 if (finalLights[i].R < (byte)255) finalLights[i].R = (byte)255;
                                 if (finalLights[i].G < (byte)50) finalLights[i].G = (byte)50;
@@ -260,7 +324,7 @@ namespace FancyLighting
                             }
 
                             // Spelunker Potion
-                            else if (Main.LocalPlayer.findTreasure && Main.IsTileSpelunkable(x, y))
+                            else if (spelunker && Main.IsTileSpelunkable(x, y))
                             {
                                 if (finalLights[i].R < (byte)200) finalLights[i].R = (byte)200;
                                 if (finalLights[i].G < (byte)170) finalLights[i].G = (byte)170;
@@ -288,45 +352,124 @@ namespace FancyLighting
             if (!background && !_smoothLightingForeComplete) return;
             if (background && !_smoothLightingBackComplete) return;
 
-            if (surface is null || surface.GraphicsDevice != Main.graphics.GraphicsDevice || (surface.Width != Main.instance.tileTarget.Width || surface.Height != Main.instance.tileTarget.Height))
+            if (surface is null
+                || surface.GraphicsDevice != Main.graphics.GraphicsDevice
+                || surface.Width != Main.instance.tileTarget.Width
+                || surface.Height != Main.instance.tileTarget.Height)
             {
+                surface?.Dispose();
                 surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
             }
 
-            // Main.instance.GraphicsDevice set its render target to null, so we need to switch to surface to do blending
-            Main.instance.GraphicsDevice.SetRenderTarget(surface);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Texture2D lightMapTexture = background ? colorsBackground : colors;
 
-            Main.spriteBatch.Begin();
+            if (FancyLightingMod.CustomUpscalingEnabled)
+            {
+                if (surface2 is null
+                    || surface2.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || surface2.Width < 16f * lightMapTexture.Height
+                    || surface2.Height < 16f * lightMapTexture.Width)
+                {
+                    surface2?.Dispose();
+                    surface2 = new RenderTarget2D(
+                        Main.graphics.GraphicsDevice,
+                        Math.Max(16 * lightMapTexture.Height, surface2?.Width ?? 0),
+                        Math.Max(16 * lightMapTexture.Width, surface2?.Height ?? 0)
+                    );
+                }
 
-            Main.spriteBatch.Draw(
-                background ? colorsBackground : colors,
-                colorsPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                lightMapRenderArea,
-                Color.White,
-                (float)(Math.PI / 2.0),
-                Vector2.Zero,
-                16f,
-                SpriteEffects.FlipVertically,
-                0f
-            );
-            Main.spriteBatch.End();
+                Main.instance.GraphicsDevice.SetRenderTarget(surface2);
 
-            Main.spriteBatch.Begin(
-                SpriteSortMode.Immediate,
-                FancyLightingMod.MultiplyBlend
-            );
-            Main.spriteBatch.Draw(
-                target,
-                Vector2.Zero,
-                null,
-                Color.White,
-                0f,
-                new Vector2(0, 0),
-                1f,
-                SpriteEffects.None,
-                0f
-            );
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    BlendState.Opaque,
+                    SamplerState.PointClamp,
+                    DepthStencilState.None,
+                    RasterizerState.CullNone
+                );
+
+                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
+                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Width, lightMapTexture.Width, 1f / lightMapTexture.Width, 0f))
+                    .Apply(null);
+                Main.spriteBatch.Draw(
+                    lightMapTexture,
+                    colorsPass1Position,
+                    lightMapRenderArea,
+                    Color.White,
+                    (float)(Math.PI / 2.0),
+                    Vector2.Zero,
+                    16f,
+                    SpriteEffects.FlipVertically,
+                    0f
+                );
+
+                Main.spriteBatch.End();
+
+                Main.instance.GraphicsDevice.SetRenderTarget(surface);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend,
+                    SamplerState.PointClamp,
+                    DepthStencilState.None,
+                    RasterizerState.CullNone
+                );
+
+                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
+                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Height, lightMapTexture.Height, 1f / lightMapTexture.Height, 0f))
+                    .Apply(null);
+                Main.spriteBatch.Draw(
+                    surface2,
+                    colorsPass2Position - (Main.screenPosition - new Vector2(Main.offScreenRange)),
+                    lightMapPass2RenderArea,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    0f
+                );
+                GameShaders.Misc["FancyLighting:UpscalingRegular"]
+                    .Apply(null);
+            }
+            else
+            {
+                Main.instance.GraphicsDevice.SetRenderTarget(surface);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend
+                );
+                Main.spriteBatch.Draw(
+                    lightMapTexture,
+                    colorsPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
+                    lightMapRenderArea,
+                    Color.White,
+                    (float)(Math.PI / 2.0),
+                    Vector2.Zero,
+                    16f,
+                    SpriteEffects.FlipVertically,
+                    0f
+                );
+            }
+
+            if (!FancyLightingMod.RenderOnlyLight)
+            {
+                Main.spriteBatch.Draw(
+                    target,
+                    Vector2.Zero,
+                    null,
+                    Color.White,
+                    0f,
+                    new Vector2(0, 0),
+                    1f,
+                    SpriteEffects.None,
+                    0f
+                );
+            }
+
             Main.spriteBatch.End();
 
             Main.instance.GraphicsDevice.SetRenderTarget(target);

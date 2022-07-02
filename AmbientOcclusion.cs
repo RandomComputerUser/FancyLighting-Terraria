@@ -29,14 +29,28 @@ namespace FancyLighting
 
         }
 
+        internal void Unload()
+        {
+            surface?.Dispose();
+            surface2?.Dispose();
+        }
+
         internal void initSurfaces()
         {
-            if (surface is null || surface.GraphicsDevice != Main.graphics.GraphicsDevice || (surface.Width != Main.instance.tileTarget.Width || surface.Height != Main.instance.tileTarget.Height))
+            if (surface is null 
+                || surface.GraphicsDevice != Main.graphics.GraphicsDevice
+                || surface.Width != Main.instance.tileTarget.Width
+                || surface.Height != Main.instance.tileTarget.Height)
             {
+                surface?.Dispose();
                 surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
             }
-            if (surface2 is null || surface2.GraphicsDevice != Main.graphics.GraphicsDevice || (surface2.Width != Main.instance.tileTarget.Width || surface2.Height != Main.instance.tileTarget.Height))
+            if (surface2 is null
+                || surface2.GraphicsDevice != Main.graphics.GraphicsDevice
+                || surface2.Width != Main.instance.tileTarget.Width
+                || surface2.Height != Main.instance.tileTarget.Height)
             {
+                surface2?.Dispose();
                 surface2 = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
             }
         }
@@ -48,7 +62,13 @@ namespace FancyLighting
 
             Main.instance.GraphicsDevice.SetRenderTarget(surfaceDestination);
 
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.Opaque,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
+            );
             GameShaders.Misc["FancyLighting:AOBlur"]
                 .UseShaderSpecificData(new Vector4((float)dx / surfaceSource.Width, (float)dy / surfaceSource.Height, finalPass ? 1f : -1f, raiseBrightness))
                 .Apply(null);
@@ -74,7 +94,13 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.SetRenderTarget(surface);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
 
-            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None, 
+                RasterizerState.CullNone
+            );
             GameShaders.Misc["FancyLighting:AOPrePass"].Apply(null);
             Main.spriteBatch.Draw(
                 Main.instance.tileTarget,
@@ -133,7 +159,10 @@ namespace FancyLighting
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
-                FancyLightingMod.MultiplyBlend
+                FancyLightingMod.MultiplyBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
             );
             Main.spriteBatch.Draw(
                 Main.instance.wallTarget,

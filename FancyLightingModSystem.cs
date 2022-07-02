@@ -5,6 +5,13 @@ namespace FancyLighting
 {
     class FancyLightingModSystem : ModSystem
     {
+        private LightingConfig _configInstance;
+
+        FancyLightingModSystem() : base()
+        {
+            _configInstance = ModContent.GetInstance<LightingConfig>();
+        }
+
         public override void PostUpdateEverything()
         {
             UpdatePerFrameInfo();
@@ -12,16 +19,22 @@ namespace FancyLighting
             base.PostUpdateEverything();
         }
 
-        internal static void UpdatePerFrameInfo()
+        internal void UpdatePerFrameInfo()
         {
-            FancyLightingMod._smoothLightingEnabled = ModContent.GetInstance<LightingConfig>().UseSmoothLighting && Lighting.UsingNewLighting;
-            FancyLightingMod._ambientOcclusionEnabled = ModContent.GetInstance<LightingConfig>().UseAmbientOcclusion && Lighting.UsingNewLighting;
-            FancyLightingMod._ambientOcclusionRadius = ModContent.GetInstance<LightingConfig>().AmbientOcclusionRadius;
-            FancyLightingMod._ambientOcclusionIntensity = ModContent.GetInstance<LightingConfig>().AmbientOcclusionIntensity;
-            FancyLightingMod._fancyLightingEngineEnabled = ModContent.GetInstance<LightingConfig>().UseFancyLightingEngine;
-            FancyLightingMod._fancyLightingEngineUseTemporal = ModContent.GetInstance<LightingConfig>().FancyLightingEngineUseTemporal;
-            FancyLightingMod._fancyLightingEngineLightLoss = ModContent.GetInstance<LightingConfig>().FancyLightingEngineLightLoss;
-            FancyLightingMod._threadCount = ModContent.GetInstance<LightingConfig>().ThreadCount;
+            FancyLightingMod._smoothLightingEnabled = _configInstance.UseSmoothLighting && Lighting.UsingNewLighting;
+            FancyLightingMod._blurLightMap = _configInstance.UseLightMapBlurring;
+            FancyLightingMod._customUpscalingEnabled = _configInstance.UseCustomUpscaling;
+            FancyLightingMod._renderOnlyLight = _configInstance.RenderOnlyLight;
+
+            FancyLightingMod._ambientOcclusionEnabled = _configInstance.UseAmbientOcclusion && Lighting.UsingNewLighting;
+            FancyLightingMod._ambientOcclusionRadius = _configInstance.AmbientOcclusionRadius;
+            FancyLightingMod._ambientOcclusionIntensity = _configInstance.AmbientOcclusionIntensity;
+
+            FancyLightingMod._fancyLightingEngineEnabled = _configInstance.UseFancyLightingEngine;
+            FancyLightingMod._fancyLightingEngineUseTemporal = _configInstance.FancyLightingEngineUseTemporal;
+            FancyLightingMod._fancyLightingEngineLightLoss = _configInstance.FancyLightingEngineLightLoss;
+
+            FancyLightingMod._threadCount = _configInstance.ThreadCount;
         }
     }
 }

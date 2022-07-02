@@ -1,4 +1,5 @@
 ﻿using Terraria;
+using Terraria.ID;
 using Terraria.Graphics.Light;
 
 using Microsoft.Xna.Framework;
@@ -255,7 +256,7 @@ namespace FancyLighting
                                 int x = j / height + lightMapArea.X;
                                 int y = j % height + lightMapArea.Y;
                                 // Check Shadow Paint
-                                if (Main.tile[x, y].TileColor == (byte)29)
+                                if (Main.tile[x, y].TileColor == PaintID.ShadowPaint)
                                     _lightMask[j] = lightShadowPaintDecay;
                                 else
                                     _lightMask[j] = lightSolidDecay;
@@ -298,11 +299,12 @@ namespace FancyLighting
 
             void SetLightMap(int i, float value)
             {
+                ref Vector3 light = ref _tmp[i];
                 lock (_locks[i])
                 {
-                    if (value * color.X > _tmp[i].X) _tmp[i].X = value * color.X;
-                    if (value * color.Y > _tmp[i].Y) _tmp[i].Y = value * color.Y;
-                    if (value * color.Z > _tmp[i].Z) _tmp[i].Z = value * color.Z;
+                    if (value * color.X > light.X) light.X = value * color.X;
+                    if (value * color.Y > light.Y) light.Y = value * color.Y;
+                    if (value * color.Z > light.Z) light.Z = value * color.Z;
                 }
             }
 
@@ -447,7 +449,7 @@ namespace FancyLighting
                                 if (_lightMask[i - height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
                                 if (_lightMask[i + 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
                             }
-                            LightingSpread spread = precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
                             SetLightMap(i,
                                   spread.left * horizontalLight
                                 + spread.bottom * workingLights[x1]
@@ -491,7 +493,7 @@ namespace FancyLighting
                                 if (_lightMask[i + height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
                                 if (_lightMask[i + 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
                             }
-                            LightingSpread spread = precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
                             SetLightMap(i,
                                   spread.left * horizontalLight
                                 + spread.bottom * workingLights[x1]
@@ -535,7 +537,7 @@ namespace FancyLighting
                                 if (_lightMask[i - height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
                                 if (_lightMask[i - 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
                             }
-                            LightingSpread spread = precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
                             SetLightMap(i,
                                   spread.left * horizontalLight
                                 + spread.bottom * workingLights[x1]
@@ -579,7 +581,7 @@ namespace FancyLighting
                                 if (_lightMask[i + height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
                                 if (_lightMask[i - 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
                             }
-                            LightingSpread spread = precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
                             SetLightMap(i,
                                   spread.left * horizontalLight
                                 + spread.bottom * workingLights[x1]
@@ -611,8 +613,6 @@ namespace FancyLighting
                     temporalData += approximateWorkDone;
                 }
             }
-
-
         }
 
     }
