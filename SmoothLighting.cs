@@ -14,7 +14,6 @@ namespace FancyLighting
 {
     class SmoothLighting
     {
-
         internal Texture2D colors;
         internal Texture2D colorsBackground;
         internal Vector2 colorsPosition;
@@ -38,9 +37,28 @@ namespace FancyLighting
         private bool _smoothLightingBackComplete;
         private bool _smoothLightingForeComplete;
 
+        internal bool DrawSmoothLightingBack
+        {
+            get
+            {
+                return _smoothLightingBackComplete && FancyLightingMod.SmoothLightingEnabled;
+            }
+        }
+
+        internal bool DrawSmoothLightingFore
+        {
+            get
+            {
+                return _smoothLightingForeComplete && FancyLightingMod.SmoothLightingEnabled;
+            }
+        }
+
         internal TileLightScanner TileLightScannerObj;
 
         protected FancyLightingMod ModInstance;
+
+        internal uint printExceptionTime;
+        private object _exceptionLock;
 
         public SmoothLighting(FancyLightingMod mod) {
             TileLightScannerObj = new TileLightScanner();
@@ -93,31 +111,21 @@ namespace FancyLighting
                     new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "UpscaleNoFilter"
                 );
+
+            printExceptionTime = 0;
+            _exceptionLock = new object();
         }
 
         internal void Unload()
         {
             surface?.Dispose();
             surface2?.Dispose();
-        }
-
-        internal bool IsGlowingTile(int x, int y)
-        {
-            if (x < 0 || y < 0 || x >= Main.tile.Width || y >= Main.tile.Height) return false;
-
-            // Illuminant Paint
-            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint) return true;
-
-            // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
-            if (glowingTiles[Main.tile[x, y].TileType]) return true;
-
-            // Dangersense Potion
-            if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer)) return true;
-
-            // Spelunker Potion
-            if (spelunker && Main.IsTileSpelunkable(x, y)) return true;
-
-            return false;
+            colors?.Dispose();
+            colorsBackground?.Dispose();
+            GameShaders.Misc["FancyLighting:UpscalingSmooth"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:UpscalingSmooth");
+            GameShaders.Misc["FancyLighting:UpscalingRegular"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:UpscalingRegular");
         }
 
         internal void BlurLightMap(Vector3[] colors, int width, int height)
@@ -128,6 +136,7 @@ namespace FancyLighting
             }
 
             if (width == 0 || height == 0) return;
+            if (colors.Length < height * width) return;
 
             if (FancyLightingMod.BlurLightMap)
             {
@@ -144,19 +153,19 @@ namespace FancyLighting
 
                             lights[i].X = (
                                 1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
-                              + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
+                              + 2 * colors[i - height].X     + 4 * colors[i].X     + 2 * colors[i + height].X
                               + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
                             ) / 16f;
 
                             lights[i].Y = (
                                 1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
-                              + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
+                              + 2 * colors[i - height].Y     + 4 * colors[i].Y     + 2 * colors[i + height].Y
                               + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
                             ) / 16f;
 
                             lights[i].Z = (
                                 1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
-                              + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
+                              + 2 * colors[i - height].Z     + 4 * colors[i].Z     + 2 * colors[i + height].Z
                               + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
                             ) / 16f;
                         }
@@ -215,11 +224,11 @@ namespace FancyLighting
         {
             if (!FancyLightingMod.SmoothLightingEnabled) return;
 
-            if (!_smoothLightingPositionValid)
-                GetColorsPosition();
-
             dangersense = Main.LocalPlayer.dangerSense;
             spelunker = Main.LocalPlayer.findTreasure;
+
+            if (!_smoothLightingPositionValid)
+                GetColorsPosition();
 
             if (!_smoothLightingPositionValid) return;
             if (Main.tile.Height == 0 || Main.tile.Width == 0) return;
@@ -248,6 +257,8 @@ namespace FancyLighting
             int offset = clampedYmin - ymin;
             if (offset < 0 || offset >= height) return;
 
+            bool caughtException = false;
+
             if (background && !_smoothLightingBackComplete)
             {
                 Parallel.For(
@@ -256,29 +267,49 @@ namespace FancyLighting
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        int i = height * x1 + offset;
-                        int x = x1 + xmin;
-                        for (int y = clampedYmin; y < clampedYmax; ++y)
+                        try
                         {
-                            // Also see IsGlowingTile
-
-                            // Illuminant Paint
-                            if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
+                            int i = height * x1 + offset;
+                            int x = x1 + xmin;
+                            for (int y = clampedYmin; y < clampedYmax; ++y)
                             {
-                                finalLights[i++] = Color.White;
-                                continue;
-                            }
+                                // Illuminant Paint
+                                if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
+                                {
+                                    finalLights[i++] = Color.White;
+                                    continue;
+                                }
 
-                            finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
-                            ++i;
+                                finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
+                                ++i;
+                            }
+                        }
+                        catch (IndexOutOfRangeException ex)
+                        {
+                            lock (_exceptionLock)
+                            {
+                                caughtException = true;
+                            }
                         }
                     }
                 );
 
-                if (colorsBackground is null)
-                    colorsBackground = new Texture2D(Main.graphics.GraphicsDevice, height, width, false, SurfaceFormat.Color);
-                else if (colorsBackground.GraphicsDevice != Main.graphics.GraphicsDevice || (colorsBackground.Width < height || colorsBackground.Height < width))
-                    colorsBackground = new Texture2D(Main.graphics.GraphicsDevice, Math.Max(colorsBackground.Width, height), Math.Max(colorsBackground.Height, width), false, SurfaceFormat.Color);
+                if (caughtException) goto HandleException;
+
+                if (colorsBackground is null
+                    || colorsBackground.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || colorsBackground.Width < height
+                    || colorsBackground.Height < width)
+                {
+                    colorsBackground?.Dispose();
+                    colorsBackground = new Texture2D(
+                        Main.graphics.GraphicsDevice,
+                        Math.Max(height, colorsBackground?.Width ?? 0),
+                        Math.Max(width, colorsBackground?.Height ?? 0),
+                        false,
+                        SurfaceFormat.Color
+                    );
+                }
 
                 colorsBackground.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
 
@@ -292,64 +323,93 @@ namespace FancyLighting
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        int i = height * x1 + offset;
-                        int x = x1 + xmin;
-                        for (int y = clampedYmin; y < clampedYmax; ++y)
+                        try
                         {
-                            // Also see IsGlowingTile
-
-                            // Illuminant Paint
-                            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
+                            int i = height * x1 + offset;
+                            int x = x1 + xmin;
+                            for (int y = clampedYmin; y < clampedYmax; ++y)
                             {
-                                finalLights[i++] = Color.White;
-                                continue;
-                            }
+                                // Illuminant Paint
+                                if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
+                                {
+                                    finalLights[i++] = Color.White;
+                                    continue;
+                                }
 
-                            // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
-                            if (glowingTiles[Main.tile[x, y].TileType])
-                            {
-                                ref Color glow = ref glowingTileColors[Main.tile[x, y].TileType];
-                                finalLights[i].R = Math.Max(finalLights[i].R, glow.R);
-                                finalLights[i].G = Math.Max(finalLights[i].G, glow.G);
-                                finalLights[i].B = Math.Max(finalLights[i].B, glow.B);
+                                finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
+
+                                // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
+                                if (glowingTiles[Main.tile[x, y].TileType])
+                                {
+                                    ref Color glow = ref glowingTileColors[Main.tile[x, y].TileType];
+                                    if (finalLights[i].R < glow.R) finalLights[i].R = glow.R;
+                                    if (finalLights[i].G < glow.G) finalLights[i].G = glow.G;
+                                    if (finalLights[i].B < glow.B) finalLights[i].B = glow.B;
+                                }
+
+                                // Dangersense Potion
+                                else if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
+                                {
+                                    if (finalLights[i].R < (byte)255) finalLights[i].R = (byte)255;
+                                    if (finalLights[i].G < (byte)50) finalLights[i].G = (byte)50;
+                                    if (finalLights[i].B < (byte)50) finalLights[i].B = (byte)50;
+                                }
+
+                                // Spelunker Potion
+                                else if (spelunker && Main.IsTileSpelunkable(x, y))
+                                {
+                                    if (finalLights[i].R < (byte)200) finalLights[i].R = (byte)200;
+                                    if (finalLights[i].G < (byte)170) finalLights[i].G = (byte)170;
+                                }
+
                                 ++i;
-                                continue;
                             }
-
-                            finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
-
-                            // Dangersense Potion
-                            if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
+                        }
+                        catch (IndexOutOfRangeException ex)
+                        {
+                            lock (_exceptionLock)
                             {
-                                if (finalLights[i].R < (byte)255) finalLights[i].R = (byte)255;
-                                if (finalLights[i].G < (byte)50) finalLights[i].G = (byte)50;
-                                if (finalLights[i].B < (byte)50) finalLights[i].B = (byte)50;
+                                caughtException = true;
                             }
-
-                            // Spelunker Potion
-                            else if (spelunker && Main.IsTileSpelunkable(x, y))
-                            {
-                                if (finalLights[i].R < (byte)200) finalLights[i].R = (byte)200;
-                                if (finalLights[i].G < (byte)170) finalLights[i].G = (byte)170;
-                            }
-
-                            ++i;
                         }
                     }
                 );
-                
-                if (colors is null)
-                    colors = new Texture2D(Main.graphics.GraphicsDevice, height, width, false, SurfaceFormat.Color);
-                else if (colors.GraphicsDevice != Main.graphics.GraphicsDevice || (colors.Width < height || colors.Height < width))
-                    colors = new Texture2D(Main.graphics.GraphicsDevice, Math.Max(colors.Width, height), Math.Max(colors.Height, width), false, SurfaceFormat.Color);
+
+                if (caughtException) goto HandleException;
+
+                if (colors is null
+                    || colors.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || colors.Width < height
+                    || colors.Height < width)
+                {
+                    colors?.Dispose();
+                    colors = new Texture2D(
+                        Main.graphics.GraphicsDevice,
+                        Math.Max(height, colors?.Width ?? 0),
+                        Math.Max(width, colors?.Height ?? 0),
+                        false,
+                        SurfaceFormat.Color
+                    );
+                }
 
                 colors.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
 
                 _smoothLightingForeComplete = true;
             }
+
+            return;
+
+        HandleException:
+
+            if (Main.GameUpdateCount >= printExceptionTime)
+            {
+                Main.NewText("[Fancy Lighting] Caught an IndexOutOfRangeException; smooth lighting will be skipped this time.", Color.Orange);
+                Main.NewText("[Fancy Lighting] Disable smooth lighting if this message repeatedly appears.", Color.Orange);
+                printExceptionTime = Main.GameUpdateCount + 5 * 60;
+            }
         }
 
-        internal void DrawSmoothLighting(RenderTarget2D target, bool background)
+        internal void DrawSmoothLighting(RenderTarget2D target, bool background, bool endSpriteBatch = true)
         {
             if (!FancyLightingMod.SmoothLightingEnabled) return;
             if (!background && !_smoothLightingForeComplete) return;
@@ -486,6 +546,5 @@ namespace FancyLighting
             Main.spriteBatch.End();
             Main.instance.GraphicsDevice.SetRenderTarget(null);
         }
-
     }
 }

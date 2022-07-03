@@ -1,4 +1,5 @@
 ﻿using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace FancyLighting
@@ -12,14 +13,28 @@ namespace FancyLighting
             _configInstance = ModContent.GetInstance<LightingConfig>();
         }
 
+        public override void OnWorldLoad()
+        {
+            if (Main.netMode == NetmodeID.Server) return;
+
+            SmoothLighting SmoothLightingObj = ModContent.GetInstance<FancyLightingMod>()?.SmoothLightingObj;
+            if (SmoothLightingObj is not null) {
+                SmoothLightingObj.printExceptionTime = 60;
+            }
+
+            base.OnWorldLoad();
+        }
+
         public override void PostUpdateEverything()
         {
-            UpdatePerFrameInfo();
+            if (Main.netMode == NetmodeID.Server) return;
+
+            UpdateSettings();
 
             base.PostUpdateEverything();
         }
 
-        internal void UpdatePerFrameInfo()
+        internal void UpdateSettings()
         {
             FancyLightingMod._smoothLightingEnabled = _configInstance.UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._blurLightMap = _configInstance.UseLightMapBlurring;

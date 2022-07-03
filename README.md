@@ -3,7 +3,15 @@
 ## [Steam Workshop Page](https://steamcommunity.com/sharedfiles/filedetails/?id=2822950837)
 ## [Terraria Community Forums Thread](https://forums.terraria.org/index.php?threads/fancy-lighting-mod.113067/)
 
+This mod is not endorsed by the creators of either Terraria or tModLoader.
+
 ### Changelog
+
+**v0.2.5 (2022-07-03)**
+- Updated the mod icon
+- Added stronger protections against exceptions crashing the game
+- Fixed glowing tiles flickering when using smooth lighting
+- Added some minor optimizations
 
 **v0.2.4.1 (2022-07-01)**
 - Attempted to fix a potential crash

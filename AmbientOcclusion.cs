@@ -9,7 +9,6 @@ namespace FancyLighting
 {
     class AmbientOcclusion
     {
-
         internal RenderTarget2D surface;
         internal RenderTarget2D surface2;
 
@@ -33,6 +32,10 @@ namespace FancyLighting
         {
             surface?.Dispose();
             surface2?.Dispose();
+            GameShaders.Misc["FancyLighting:AOPrePass"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:AOPrePass");
+            GameShaders.Misc["FancyLighting:AOBlur"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:AOBlur");
         }
 
         internal void initSurfaces()
@@ -109,7 +112,7 @@ namespace FancyLighting
             );
             Main.spriteBatch.End();
 
-            // For some reason we need to alternate between render targets, or else this doesn't work
+            // We need to switch between render targets
             bool useSurface2 = true;
 
             switch (FancyLightingMod.AmbientOcclusionRadius)
@@ -191,6 +194,5 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.SetRenderTarget(null);
 
         }
-
     }
 }

@@ -286,7 +286,7 @@ namespace FancyLighting
         internal void ProcessLightThreaded(int index, Vector3[] colors, int width, int height)
         {
             Vector3 color = colors[index];
-            if (color == Vector3.Zero) return;
+            if (color.X <= 0f && color.Y <= 0f && color.Z <= 0f) return;
 
             float initialDecay = _lightMask[index][100];
             float maxComponent = Math.Max(color.X, Math.Max(color.Y, color.Z)) * initialDecay;
@@ -340,10 +340,10 @@ namespace FancyLighting
             if (!up)
             {
                 lightValue = 1f;
+                int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    int i = index - y;
-                    if (i < 0) break;
+                    if (--i < 0) break;
 
                     lightValue *= _lightMask[i + 1][100];
                     if (y > 1 && _lightMask[i] == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
@@ -357,10 +357,10 @@ namespace FancyLighting
             if (!down)
             {
                 lightValue = 1f;
+                int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    int i = index + y;
-                    if (i >= length) break;
+                    if (++i >= length) break;
 
                     lightValue *= _lightMask[i - 1][100];
                     if (y > 1 && _lightMask[i] == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
@@ -374,10 +374,10 @@ namespace FancyLighting
             if (!left)
             {
                 lightValue = 1f;
+                int i = index;
                 for (int x = 1; x <= lightRange; ++x)
                 {
-                    int i = index - height * x;
-                    if (i < 0) break;
+                    if ((i -= height) < 0) break;
 
                     lightValue *= _lightMask[i + height][100];
                     if (x > 1 && _lightMask[i] == lightAirDecay && _lightMask[i + height] == lightSolidDecay)
@@ -391,10 +391,10 @@ namespace FancyLighting
             if (!right)
             {
                 lightValue = 1f;
+                int i = index;
                 for (int x = 1; x <= lightRange; ++x)
                 {
-                    int i = index + height * x;
-                    if (i >= length) break;
+                    if ((i += height) >= length) break;
 
                     lightValue *= _lightMask[i - height][100];
                     if (x > 1 && _lightMask[i] == lightAirDecay && _lightMask[i - height] == lightSolidDecay)
@@ -407,10 +407,14 @@ namespace FancyLighting
             int midX = index / height;
             int midY = index % height;
 
-            int topEdge = Math.Clamp(midY - lightRange, 0, height - 1);
-            int bottomEdge = Math.Clamp(midY + lightRange, 0, height - 1);
-            int leftEdge = Math.Clamp(midX - lightRange, 0, width - 1);
-            int rightEdge = Math.Clamp(midX + lightRange, 0, width - 1);
+            int topEdge = Math.Min(midY, lightRange);
+            int bottomEdge = Math.Min(height - 1 - midY, lightRange);
+            int leftEdge = Math.Min(midX, lightRange);
+            int rightEdge = Math.Min(width - 1 - midX, lightRange);
+
+            // precomputedLightingSpread[,]: 2D arrays in C# are stored such that blocks with a constant first index are stored contiguously
+            // precomputedLightingSpread uses y as the second index, and Terraria's 1D arrays for lighting use height * x + y as the index
+            // So looping over y in the inner loop should be faster and simpler
 
             lock (MultithreadLightMap[index % MultithreadLightMap.Length])
             {
@@ -424,40 +428,46 @@ namespace FancyLighting
                 {
                     workingLights[0] = initialDecay;
                     float value = 1f;
-                    for (int x = midX + 1, i = index, j = 1; x <= rightEdge; ++x, ++j)
+                    for (int i = index, y = 1; y <= topEdge; ++y)
                     {
                         value *= _lightMask[i][100];
-                        if (_lightMask[i += height] == lightAirDecay && j > 1 && _lightMask[i - height] == lightSolidDecay)
+                        var mask = _lightMask[--i];
+
+                        if (y > 1 && mask == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
                             value *= lightLossExitingSolid;
-                        workingLights[j] = value * _lightMask[i][precomputedLightingSpread[j, 0].l2tDecay];
+                        workingLights[y] = value * mask[precomputedLightingSpread[0, y].b2rDecay];
                     }
-                    for (int y = midY - 1, y1 = 1; y >= topEdge; --y, ++y1)
+                    for (int x = 1; x <= rightEdge; ++x)
                     {
-                        int i = height * midX + y;
-                        float horizontalLight = workingLights[0] * _lightMask[i][precomputedLightingSpread[0, y1].b2rDecay];
-                        workingLights[0] *= _lightMask[i][100];
-                        if (y1 > 1 && _lightMask[i] == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
+                        int i = index + height * x;
+                        var mask = _lightMask[i];
+
+                        float verticalLight = workingLights[0] * mask[precomputedLightingSpread[x, 0].l2tDecay];
+                        workingLights[0] *= mask[100];
+                        if (x > 1 && mask == lightAirDecay && _lightMask[i - height] == lightSolidDecay)
                         {
-                            horizontalLight *= lightLossExitingSolid;
+                            verticalLight *= lightLossExitingSolid;
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int x = midX + 1, x1 = 1; x <= rightEdge; ++x, ++x1)
+                        for (int y = 1; y <= topEdge; ++y)
                         {
-                            if (_lightMask[i += height] == lightAirDecay)
+                            mask = _lightMask[--i];
+
+                            if (mask == lightAirDecay)
                             {
-                                if (_lightMask[i - height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
-                                if (_lightMask[i + 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
+                                if (_lightMask[i + 1] == lightSolidDecay) verticalLight *= lightLossExitingSolid;
+                                if (_lightMask[i - height] == lightSolidDecay) workingLights[y] *= lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x, y];
                             SetLightMap(i,
-                                  spread.left * horizontalLight
-                                + spread.bottom * workingLights[x1]
+                                  spread.bottom * verticalLight
+                                + spread.left * workingLights[y]
                             );
-                            (workingLights[x1], horizontalLight) =
+                            (verticalLight, workingLights[y]) =
                             (
-                                spread.topFromLeft * horizontalLight * _lightMask[i][spread.l2tDecay] + (1 - spread.topFromLeft) * workingLights[x1] * _lightMask[i][spread.b2tDecay],
-                                spread.rightFromBottom * workingLights[x1] * _lightMask[i][spread.b2rDecay] + (1 - spread.rightFromBottom) * horizontalLight * _lightMask[i][spread.l2rDecay]
+                                spread.topFromLeft * workingLights[y] * mask[spread.l2tDecay] + (1 - spread.topFromLeft) * verticalLight * mask[spread.b2tDecay],
+                                spread.rightFromBottom * verticalLight * mask[spread.b2rDecay] + (1 - spread.rightFromBottom) * workingLights[y] * mask[spread.l2rDecay]
                             );
                         }
                     }
@@ -468,40 +478,46 @@ namespace FancyLighting
                 {
                     workingLights[0] = initialDecay;
                     float value = 1f;
-                    for (int x = midX - 1, i = index, j = 1; x >= leftEdge; --x, ++j)
+                    for (int i = index, y = 1; y <= topEdge; ++y)
                     {
                         value *= _lightMask[i][100];
-                        if (_lightMask[i -= height] == lightAirDecay && j > 1 && _lightMask[i + height] == lightSolidDecay)
+                        var mask = _lightMask[--i];
+
+                        if (y > 1 && mask == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
                             value *= lightLossExitingSolid;
-                        workingLights[j] = value * _lightMask[i][precomputedLightingSpread[j, 0].l2tDecay];
+                        workingLights[y] = value * mask[precomputedLightingSpread[0, y].b2rDecay];
                     }
-                    for (int y = midY - 1, y1 = 1; y >= topEdge; --y, ++y1)
+                    for (int x = 1; x <= leftEdge; ++x)
                     {
-                        int i = height * midX + y;
-                        float horizontalLight = workingLights[0] * _lightMask[i][precomputedLightingSpread[0, y1].b2rDecay];
-                        workingLights[0] *= _lightMask[i][100];
-                        if (y1 > 1 && _lightMask[i] == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
+                        int i = index - height * x;
+                        var mask = _lightMask[i];
+
+                        float verticalLight = workingLights[0] * mask[precomputedLightingSpread[x, 0].l2tDecay];
+                        workingLights[0] *= mask[100];
+                        if (x > 1 && mask == lightAirDecay && _lightMask[i + height] == lightSolidDecay)
                         {
-                            horizontalLight *= lightLossExitingSolid;
+                            verticalLight *= lightLossExitingSolid;
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int x = midX - 1, x1 = 1; x >= leftEdge; --x, ++x1)
+                        for (int y = 1; y <= topEdge; ++y)
                         {
-                            if (_lightMask[i -= height] == lightAirDecay)
+                            mask = _lightMask[--i];
+
+                            if (mask == lightAirDecay)
                             {
-                                if (_lightMask[i + height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
-                                if (_lightMask[i + 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
+                                if (_lightMask[i + 1] == lightSolidDecay) verticalLight *= lightLossExitingSolid;
+                                if (_lightMask[i + height] == lightSolidDecay) workingLights[y] *= lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x, y];
                             SetLightMap(i,
-                                  spread.left * horizontalLight
-                                + spread.bottom * workingLights[x1]
+                                  spread.bottom * verticalLight
+                                + spread.left * workingLights[y]
                             );
-                            (workingLights[x1], horizontalLight) =
+                            (verticalLight, workingLights[y]) =
                             (
-                                spread.topFromLeft * horizontalLight * _lightMask[i][spread.l2tDecay] + (1 - spread.topFromLeft) * workingLights[x1] * _lightMask[i][spread.b2tDecay],
-                                spread.rightFromBottom * workingLights[x1] * _lightMask[i][spread.b2rDecay] + (1 - spread.rightFromBottom) * horizontalLight * _lightMask[i][spread.l2rDecay]
+                                spread.topFromLeft * workingLights[y] * mask[spread.l2tDecay] + (1 - spread.topFromLeft) * verticalLight * mask[spread.b2tDecay],
+                                spread.rightFromBottom * verticalLight * mask[spread.b2rDecay] + (1 - spread.rightFromBottom) * workingLights[y] * mask[spread.l2rDecay]
                             );
                         }
                     }
@@ -512,40 +528,46 @@ namespace FancyLighting
                 {
                     workingLights[0] = initialDecay;
                     float value = 1f;
-                    for (int x = midX + 1, i = index, j = 1; x <= rightEdge; ++x, ++j)
+                    for (int i = index, y = 1; y <= bottomEdge; ++y)
                     {
                         value *= _lightMask[i][100];
-                        if (_lightMask[i += height] == lightAirDecay && j > 1 && _lightMask[i - height] == lightSolidDecay)
+                        var mask = _lightMask[++i];
+
+                        if (y > 1 && mask == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
                             value *= lightLossExitingSolid;
-                        workingLights[j] = value * _lightMask[i][precomputedLightingSpread[j, 0].l2tDecay];
+                        workingLights[y] = value * mask[precomputedLightingSpread[0, y].b2rDecay];
                     }
-                    for (int y = midY + 1, y1 = 1; y <= bottomEdge; ++y, ++y1)
+                    for (int x = 1; x <= rightEdge; ++x)
                     {
-                        int i = height * midX + y;
-                        float horizontalLight = workingLights[0] * _lightMask[i][precomputedLightingSpread[0, y1].b2rDecay];
-                        workingLights[0] *= _lightMask[i][100];
-                        if (y1 > 1 && _lightMask[i] == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
+                        int i = index + height * x;
+                        var mask = _lightMask[i];
+
+                        float verticalLight = workingLights[0] * mask[precomputedLightingSpread[x, 0].l2tDecay];
+                        workingLights[0] *= mask[100];
+                        if (x > 1 && mask == lightAirDecay && _lightMask[i - height] == lightSolidDecay)
                         {
-                            horizontalLight *= lightLossExitingSolid;
+                            verticalLight *= lightLossExitingSolid;
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int x = midX + 1, x1 = 1; x <= rightEdge; ++x, ++x1)
+                        for (int y = 1; y <= bottomEdge; ++y)
                         {
-                            if (_lightMask[i += height] == lightAirDecay)
+                            mask = _lightMask[++i];
+
+                            if (mask == lightAirDecay)
                             {
-                                if (_lightMask[i - height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
-                                if (_lightMask[i - 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
+                                if (_lightMask[i - 1] == lightSolidDecay) verticalLight *= lightLossExitingSolid;
+                                if (_lightMask[i - height] == lightSolidDecay) workingLights[y] *= lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x, y];
                             SetLightMap(i,
-                                  spread.left * horizontalLight
-                                + spread.bottom * workingLights[x1]
+                                  spread.bottom * verticalLight
+                                + spread.left * workingLights[y]
                             );
-                            (workingLights[x1], horizontalLight) =
+                            (verticalLight, workingLights[y]) =
                             (
-                                spread.topFromLeft * horizontalLight * _lightMask[i][spread.l2tDecay] + (1 - spread.topFromLeft) * workingLights[x1] * _lightMask[i][spread.b2tDecay],
-                                spread.rightFromBottom * workingLights[x1] * _lightMask[i][spread.b2rDecay] + (1 - spread.rightFromBottom) * horizontalLight * _lightMask[i][spread.l2rDecay]
+                                spread.topFromLeft * workingLights[y] * mask[spread.l2tDecay] + (1 - spread.topFromLeft) * verticalLight * mask[spread.b2tDecay],
+                                spread.rightFromBottom * verticalLight * mask[spread.b2rDecay] + (1 - spread.rightFromBottom) * workingLights[y] * mask[spread.l2rDecay]
                             );
                         }
                     }
@@ -556,40 +578,46 @@ namespace FancyLighting
                 {
                     workingLights[0] = initialDecay;
                     float value = 1f;
-                    for (int x = midX - 1, i = index, j = 1; x >= leftEdge; --x, ++j)
+                    for (int i = index, y = 1; y <= bottomEdge; ++y)
                     {
                         value *= _lightMask[i][100];
-                        if (_lightMask[i -= height] == lightAirDecay && j > 1 && _lightMask[i + height] == lightSolidDecay)
+                        var mask = _lightMask[++i];
+
+                        if (y > 1 && mask == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
                             value *= lightLossExitingSolid;
-                        workingLights[j] = value * _lightMask[i][precomputedLightingSpread[j, 0].l2tDecay];
+                        workingLights[y] = value * mask[precomputedLightingSpread[0, y].b2rDecay];
                     }
-                    for (int y = midY + 1, y1 = 1; y <= bottomEdge; ++y, ++y1)
+                    for (int x = 1; x <= leftEdge; ++x)
                     {
-                        int i = height * midX + y;
-                        float horizontalLight = workingLights[0] * _lightMask[i][precomputedLightingSpread[0, y1].b2rDecay];
-                        workingLights[0] *= _lightMask[i][100];
-                        if (y1 > 1 && _lightMask[i] == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
+                        int i = index - height * x;
+                        var mask = _lightMask[i];
+
+                        float verticalLight = workingLights[0] * mask[precomputedLightingSpread[x, 0].l2tDecay];
+                        workingLights[0] *= mask[100];
+                        if (x > 1 && mask == lightAirDecay && _lightMask[i + height] == lightSolidDecay)
                         {
-                            horizontalLight *= lightLossExitingSolid;
+                            verticalLight *= lightLossExitingSolid;
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int x = midX - 1, x1 = 1; x >= leftEdge; --x, ++x1)
+                        for (int y = 1; y <= bottomEdge; ++y)
                         {
-                            if (_lightMask[i -= height] == lightAirDecay)
+                            mask = _lightMask[++i];
+
+                            if (mask == lightAirDecay)
                             {
-                                if (_lightMask[i + height] == lightSolidDecay) horizontalLight *= lightLossExitingSolid;
-                                if (_lightMask[i - 1] == lightSolidDecay) workingLights[x1] *= lightLossExitingSolid;
+                                if (_lightMask[i - 1] == lightSolidDecay) verticalLight *= lightLossExitingSolid;
+                                if (_lightMask[i + height] == lightSolidDecay) workingLights[y] *= lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref precomputedLightingSpread[x1, y1];
+                            ref LightingSpread spread = ref precomputedLightingSpread[x, y];
                             SetLightMap(i,
-                                  spread.left * horizontalLight
-                                + spread.bottom * workingLights[x1]
+                                  spread.bottom * verticalLight
+                                + spread.left * workingLights[y]
                             );
-                            (workingLights[x1], horizontalLight) =
+                            (verticalLight, workingLights[y]) =
                             (
-                                spread.topFromLeft * horizontalLight * _lightMask[i][spread.l2tDecay] + (1 - spread.topFromLeft) * workingLights[x1] * _lightMask[i][spread.b2tDecay],
-                                spread.rightFromBottom * workingLights[x1] * _lightMask[i][spread.b2rDecay] + (1 - spread.rightFromBottom) * horizontalLight * _lightMask[i][spread.l2rDecay]
+                                spread.topFromLeft * workingLights[y] * mask[spread.l2tDecay] + (1 - spread.topFromLeft) * verticalLight * mask[spread.b2tDecay],
+                                spread.rightFromBottom * verticalLight * mask[spread.b2rDecay] + (1 - spread.rightFromBottom) * workingLights[y] * mask[spread.l2rDecay]
                             );
                         }
                     }
@@ -614,7 +642,5 @@ namespace FancyLighting
                 }
             }
         }
-
     }
-
 }

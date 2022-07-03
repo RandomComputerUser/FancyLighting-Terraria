@@ -1,10 +1,10 @@
-﻿using Terraria.ModLoader.Config;
+﻿using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 
 using System.ComponentModel;
 
 namespace FancyLighting
 {
-
     [Label("Fancy Lighting Settings")]
     class LightingConfig : ModConfig
     {
@@ -83,5 +83,4 @@ namespace FancyLighting
         [Tooltip("Controls how many threads smooth lighting and the fancy lighting engine use\nFor good results, set this to the number of threads your CPU has")]
         public int ThreadCount;
     }
-
 }
