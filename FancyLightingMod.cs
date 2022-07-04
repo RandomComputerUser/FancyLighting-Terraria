@@ -357,33 +357,6 @@ namespace FancyLighting
                 if (SmoothLightingEnabled)
                     SmoothLightingObj.BlurLightMap(colors, self.Width, self.Height);
             };
-
-            // Helps improve performance in glowing mushroom areas when using the Fancy Lighting Engine
-
-            On.Terraria.Graphics.Light.TileLightScanner.GetTileLight +=
-            (
-                On.Terraria.Graphics.Light.TileLightScanner.orig_GetTileLight orig,
-                Terraria.Graphics.Light.TileLightScanner self,
-                int x,
-                int y,
-                out Vector3 outputColor
-            ) =>
-            {
-                _overrideFastRandom = true;
-                orig(self, x, y, out outputColor);
-                _overrideFastRandom = false;
-            };
-
-            On.Terraria.Utilities.FastRandom.Next_int +=
-            (
-                On.Terraria.Utilities.FastRandom.orig_Next_int orig,
-                ref Terraria.Utilities.FastRandom self,
-                int max
-            ) =>
-            {
-                if (_overrideFastRandom) return max / 2;
-                return orig(ref self, max);
-            };
         }
     }
 }

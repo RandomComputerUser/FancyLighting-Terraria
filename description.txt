@@ -1,7 +1,7 @@
-Adds fancy lighting (smooth lighting and simulated ambient occlusion) to the game. This mod also adds a new lighting engine making shadows point in the correct directions.
+This mod makes lighting fancier by adding smooth lighting and ambient occlusion. There is also a new lighting engine with directional shadows that can be manually enabled in the config for this mod.
 
-This mod will only take effect if lighting is set to color. The new lighting engine is disabled by default and must be enabled in the config for this mod. A relatively powerful CPU is recommended to run this mod's features smoothly.
+This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. A relatively powerful CPU is recommended to run this mod's features smoothly.
 
-Effects such as illuminant paint and the spelunker and dangersense potions will be displayed properly with smooth lighting, unlike in my 1.3 mod titled Smooth Lighting. Glowing tiles such as crystal shards and glowing moss also work. Effects and glowing blocks from other mods may not work.
+Smooth lighting is compatible with effects such as illuminant paint and the spelunker and dangersense potions, along with glowing tiles such as crystal shards and glowing moss. Effects and glowing blocks from other mods may not work.
 
 Requires OpenGL 2.1 or later

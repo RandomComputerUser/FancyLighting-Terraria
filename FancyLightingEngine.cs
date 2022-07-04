@@ -23,7 +23,7 @@ namespace FancyLighting
             int b2tDecay
         );
 
-        const int MAX_LIGHT_RANGE = 36;
+        const int MAX_LIGHT_RANGE = 44;
         protected float lightAirDecayCache;
         protected float lightSolidDecayCache;
         protected float[] lightAirDecay;
@@ -36,8 +36,8 @@ namespace FancyLighting
         protected float lightLossExitingSolid;
 
         protected LightingSpread[,] precomputedLightingSpread;
-        protected float[,] LightingMap;
         protected float[][] MultithreadLightMap;
+        protected int[][] circles;
 
         private Vector3[] _tmp;
         private float[][] _lightMask;
@@ -51,8 +51,6 @@ namespace FancyLighting
         public FancyLightingEngine() {
             ComputeLightingSpread(ref precomputedLightingSpread);
 
-            LightingMap = new float[2 * MAX_LIGHT_RANGE + 1, 2 * MAX_LIGHT_RANGE + 1];
-
             lightAirDecayCache = 0f;
             lightSolidDecayCache = 0f;
 
@@ -65,8 +63,8 @@ namespace FancyLighting
             {
                 lightAirDecay[exponent] = 1f;
                 lightSolidDecay[exponent] = 1f;
-                lightWaterDecay[exponent] = (float)Math.Pow(0.87, exponent / 100.0);
-                lightHoneyDecay[exponent] = (float)Math.Pow(0.75, exponent / 100.0);
+                lightWaterDecay[exponent] = (float)Math.Pow(0.88, exponent / 100.0);
+                lightHoneyDecay[exponent] = (float)Math.Pow(0.76, exponent / 100.0);
                 lightShadowPaintDecay[exponent] = (float)Math.Pow(0.175, exponent / 100.0);
             }
 
@@ -74,6 +72,25 @@ namespace FancyLighting
             for (int i = 0; i < 256; i++)
             {
                 MultithreadLightMap[i] = new float[MAX_LIGHT_RANGE + 1];
+            }
+
+            circles = new int[MAX_LIGHT_RANGE + 1][];
+            circles[0] = new int[] { 0 };
+            for (int radius = 1; radius <= MAX_LIGHT_RANGE; ++radius)
+            {
+                circles[radius] = new int[radius + 1];
+                circles[radius][0] = radius;
+                double diagonal = radius / Math.Sqrt(2.0);
+                for (int x = 1; x <= radius; ++x)
+                {
+                    if (x <= diagonal)
+                    {
+                        circles[radius][x] = (int)Math.Ceiling(Math.Sqrt(radius * radius - x * x));
+                    } else
+                    {
+                        circles[radius][x] = (int)Math.Ceiling(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
+                    }
+                }
             }
 
             temporalData = 0;
@@ -201,8 +218,8 @@ namespace FancyLighting
             }
             temporalData = 0;
 
-            float lightAirDecayBaseline = 0.97f * lightMap.LightDecayThroughAir;
-            float lightSolidDecayBaseline = 0.97f * lightMap.LightDecayThroughSolid;
+            float lightAirDecayBaseline = 0.975f * lightMap.LightDecayThroughAir;
+            float lightSolidDecayBaseline = 0.975f * lightMap.LightDecayThroughSolid;
 
             if (lightAirDecayBaseline != lightAirDecayCache)
             {
@@ -244,7 +261,8 @@ namespace FancyLighting
                 new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                 (i) =>
                 {
-                    for (int j = height * i; j < height * (i + 1); ++j)
+                    int endIndex = height * (i + 1);
+                    for (int j = height * i; j < endIndex; ++j)
                     {
                         switch (lightDecay[j])
                         {
@@ -310,25 +328,31 @@ namespace FancyLighting
 
             SetLightMap(index, 1f);
 
-            float threshold = _lightMask[index][50];
+            float threshold = _lightMask[index][150];
             int length = width * height;
 
-            bool up = index - 1 >= 0
-                && colors[index - 1].X >= threshold * color.X
-                && colors[index - 1].Y >= threshold * color.Y
-                && colors[index - 1].Z >= threshold * color.Z;
-            bool down = index + 1 < length
-                && colors[index + 1].X >= threshold * color.X
-                && colors[index + 1].Y >= threshold * color.Y
-                && colors[index + 1].Z >= threshold * color.Z;
-            bool left = index - height >= 0
-                && colors[index - height].X >= threshold * color.X
-                && colors[index - height].Y >= threshold * color.Y
-                && colors[index - height].Z >= threshold * color.Z;
-            bool right = index + height < length
-                && colors[index + height].X >= threshold * color.X
-                && colors[index + height].Y >= threshold * color.Y
-                && colors[index + height].Z >= threshold * color.Z;
+            bool up = false, down = false, left = false, right = false;
+
+            if (index - 1 >= 0)
+            {
+                Vector3 otherColor = (_lightMask[index - 1][100] / threshold) * colors[index - 1];
+                up = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            }
+            if (index + 1 < length)
+            {
+                Vector3 otherColor = (_lightMask[index + 1][100] / threshold) * colors[index + 1];
+                down = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            }
+            if (index - height >= 0)
+            {
+                Vector3 otherColor = (_lightMask[index - height][100] / threshold) * colors[index - height];
+                left = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            }
+            if (index + height < length)
+            {
+                Vector3 otherColor = (_lightMask[index + height][100] / threshold) * colors[index + height];
+                right = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            }
 
             // We blend by taking the max of each component
             if (up && down && left && right)
@@ -412,6 +436,8 @@ namespace FancyLighting
             int leftEdge = Math.Min(midX, lightRange);
             int rightEdge = Math.Min(width - 1 - midX, lightRange);
 
+            var circle = circles[lightRange];
+
             // precomputedLightingSpread[,]: 2D arrays in C# are stored such that blocks with a constant first index are stored contiguously
             // precomputedLightingSpread uses y as the second index, and Terraria's 1D arrays for lighting use height * x + y as the index
             // So looping over y in the inner loop should be faster and simpler
@@ -450,7 +476,8 @@ namespace FancyLighting
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int y = 1; y <= topEdge; ++y)
+                        int edge = Math.Min(topEdge, circle[x]);
+                        for (int y = 1; y <= edge; ++y)
                         {
                             mask = _lightMask[--i];
 
@@ -500,7 +527,8 @@ namespace FancyLighting
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int y = 1; y <= topEdge; ++y)
+                        int edge = Math.Min(topEdge, circle[x]);
+                        for (int y = 1; y <= edge; ++y)
                         {
                             mask = _lightMask[--i];
 
@@ -550,7 +578,8 @@ namespace FancyLighting
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int y = 1; y <= bottomEdge; ++y)
+                        int edge = Math.Min(bottomEdge, circle[x]);
+                        for (int y = 1; y <= edge; ++y)
                         {
                             mask = _lightMask[++i];
 
@@ -600,7 +629,8 @@ namespace FancyLighting
                             workingLights[0] *= lightLossExitingSolid;
                         }
 
-                        for (int y = 1; y <= bottomEdge; ++y)
+                        int edge = Math.Min(bottomEdge, circle[x]);
+                        for (int y = 1; y <= edge; ++y)
                         {
                             mask = _lightMask[++i];
 

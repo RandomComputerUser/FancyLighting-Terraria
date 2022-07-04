@@ -7,6 +7,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.2.6 (2022-07-03)**
+- Tweaked and optimized the fancy lighting engine
+- Reduced unintended flickering in glowing mushroom biomes when using the fancy lighting engine
+
 **v0.2.5 (2022-07-03)**
 - Updated the mod icon
 - Added stronger protections against exceptions crashing the game
