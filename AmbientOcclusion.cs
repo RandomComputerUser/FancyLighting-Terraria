@@ -99,7 +99,7 @@ namespace FancyLighting
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
-                BlendState.AlphaBlend,
+                BlendState.Opaque,
                 SamplerState.PointClamp,
                 DepthStencilState.None, 
                 RasterizerState.CullNone

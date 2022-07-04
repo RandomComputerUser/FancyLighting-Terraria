@@ -2,6 +2,14 @@ This mod makes lighting fancier by adding smooth lighting and ambient occlusion.
 
 This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. A relatively powerful CPU is recommended to run this mod's features smoothly.
 
-Smooth lighting is compatible with effects such as illuminant paint and the spelunker and dangersense potions, along with glowing tiles such as crystal shards and glowing moss. Effects and glowing blocks from other mods may not work.
+Because smooth lighting overrides built-in tile light rendering, glowmasks and tiles that glow independently of the light they emit must be re-implemented. The following effects and glowing tiles are supported:
+- Spelunker Potion
+- Dangersense Potion
+- Crystal Shard and Gelatin Crystal
+- Glowing Moss
+- Meteorite Brick
+- Martian Conduit Plating (partial)
+- Lava Lamp
+Effects and glowing tiles from other mods may not work properly with smooth lighting.
 
 Requires OpenGL 2.1 or later

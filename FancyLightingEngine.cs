@@ -12,7 +12,7 @@ namespace FancyLighting
 
     class FancyLightingEngine
     {
-        protected record struct LightingSpread(
+        protected readonly record struct LightingSpread(
             float left,
             float topFromLeft,
             int l2tDecay,
@@ -22,6 +22,8 @@ namespace FancyLighting
             int b2rDecay,
             int b2tDecay
         );
+
+        protected readonly record struct DistanceCache(double top, double topRounded, double right, double rightRounded);
 
         const int MAX_LIGHT_RANGE = 44;
         protected float lightAirDecayCache;
@@ -64,7 +66,7 @@ namespace FancyLighting
                 lightAirDecay[exponent] = 1f;
                 lightSolidDecay[exponent] = 1f;
                 lightWaterDecay[exponent] = (float)Math.Pow(0.88, exponent / 100.0);
-                lightHoneyDecay[exponent] = (float)Math.Pow(0.76, exponent / 100.0);
+                lightHoneyDecay[exponent] = (float)Math.Pow(0.72, exponent / 100.0);
                 lightShadowPaintDecay[exponent] = (float)Math.Pow(0.175, exponent / 100.0);
             }
 
@@ -88,7 +90,7 @@ namespace FancyLighting
                         circles[radius][x] = (int)Math.Ceiling(Math.Sqrt(radius * radius - x * x));
                     } else
                     {
-                        circles[radius][x] = (int)Math.Ceiling(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
+                        circles[radius][x] = (int)Math.Floor(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
                     }
                 }
             }
@@ -115,7 +117,7 @@ namespace FancyLighting
                 {
                     spread = 1.0;
                     adjacentFrom = 1.0;
-                    adjacentDecay = Hypot(1, (j + 0.5) / (i + 0.5)) / 2.0;
+                    adjacentDecay = Hypot(i, 0.5) - i;
                     oppositeDecay = 1.0;
                     return;
                 }
@@ -150,6 +152,7 @@ namespace FancyLighting
             }
 
             values = new LightingSpread[MAX_LIGHT_RANGE + 1, MAX_LIGHT_RANGE + 1];
+            DistanceCache[,] distances = new DistanceCache[MAX_LIGHT_RANGE + 1, MAX_LIGHT_RANGE + 1];
 
             for (int i = 1; i <= MAX_LIGHT_RANGE; ++i)
             {
@@ -159,12 +162,13 @@ namespace FancyLighting
                     (float)left,
                     (float)topFromLeft,
                     DoubleToIndex(l2tDecay),
-                    DoubleToIndex(l2rDecay),
+                    DoubleToIndex(1.0),
                     0f,
                     0f,
                     DoubleToIndex(1.0),
                     DoubleToIndex(1.0)
                 );
+                distances[i, 0] = new DistanceCache(i + l2tDecay, i + DoubleToIndex(l2tDecay) / 100.0, i, i);
             }
 
             for (int j = 1; j <= MAX_LIGHT_RANGE; ++j)
@@ -179,8 +183,9 @@ namespace FancyLighting
                     (float)bottom,
                     (float)rightFromBottom,
                     DoubleToIndex(b2rDecay),
-                    DoubleToIndex(b2tDecay)
+                    DoubleToIndex(1.0)
                 );
+                distances[0, j] = new DistanceCache(j, j, j + b2rDecay, j + DoubleToIndex(b2rDecay) / 100.0);
             }
 
             for (int j = 1; j <= MAX_LIGHT_RANGE; ++j)
@@ -191,6 +196,28 @@ namespace FancyLighting
                     CalculateLeftStats(i, j, out left, out topFromLeft, out l2tDecay, out l2rDecay);
                     double bottom, rightFromBottom, b2rDecay, b2tDecay;
                     CalculateLeftStats(j, i, out bottom, out rightFromBottom, out b2rDecay, out b2tDecay);
+
+                    double error = left * distances[i - 1, j].rightRounded + bottom * distances[i, j - 1].topRounded - Hypot(i, j);
+                    l2tDecay -= error;
+                    b2tDecay -= error;
+                    b2rDecay -= error;
+                    l2rDecay -= error;
+
+                    l2tDecay += distances[i - 1, j].right - distances[i - 1, j].rightRounded;
+                    if (rightFromBottom != 1.0) l2rDecay += distances[i - 1, j].right - distances[i - 1, j].rightRounded;
+                    b2rDecay += distances[i, j - 1].top - distances[i, j - 1].topRounded;
+                    if (topFromLeft != 1.0) b2tDecay += distances[i, j - 1].top - distances[i, j - 1].topRounded;
+
+                    distances[i, j] = new DistanceCache(
+                        topFromLeft * (l2tDecay + distances[i - 1, j].right)
+                            + (1 - topFromLeft) * (b2tDecay + distances[i, j - 1].top),
+                        topFromLeft * (DoubleToIndex(l2tDecay) / 100.0 + distances[i - 1, j].rightRounded)
+                            + (1 - topFromLeft) * (DoubleToIndex(b2tDecay) / 100.0 + distances[i, j - 1].topRounded),
+                        rightFromBottom * (b2rDecay + distances[i, j - 1].top)
+                            + (1 - rightFromBottom) * (l2rDecay + distances[i - 1, j].right),
+                        rightFromBottom * (DoubleToIndex(b2rDecay) / 100.0 + distances[i, j - 1].topRounded)
+                            + (1 - rightFromBottom) * (DoubleToIndex(l2rDecay) / 100.0 + distances[i - 1, j].rightRounded)
+                    );
 
                     values[i, j] = new LightingSpread(
                         (float)left,
@@ -331,24 +358,43 @@ namespace FancyLighting
             float threshold = _lightMask[index][150];
             int length = width * height;
 
+            int topEdge = height * (index / height);
+            int bottomEdge = topEdge + (height - 1);
+
             bool up = false, down = false, left = false, right = false;
 
-            if (index - 1 >= 0)
+            if (index == topEdge)
+            {
+                up = true;
+            }
+            else
             {
                 Vector3 otherColor = (_lightMask[index - 1][100] / threshold) * colors[index - 1];
                 up = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
             }
-            if (index + 1 < length)
+            if (index == bottomEdge)
+            {
+                down = true;
+            }
+            else
             {
                 Vector3 otherColor = (_lightMask[index + 1][100] / threshold) * colors[index + 1];
                 down = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
             }
-            if (index - height >= 0)
+            if (index < height)
+            {
+                left = true;
+            }
+            else
             {
                 Vector3 otherColor = (_lightMask[index - height][100] / threshold) * colors[index - height];
                 left = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
             }
-            if (index + height < length)
+            if (index + height >= length)
+            {
+                right = true;
+            }
+            else
             {
                 Vector3 otherColor = (_lightMask[index + height][100] / threshold) * colors[index + height];
                 right = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
@@ -367,7 +413,7 @@ namespace FancyLighting
                 int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    if (--i < 0) break;
+                    if (--i < topEdge) break;
 
                     lightValue *= _lightMask[i + 1][100];
                     if (y > 1 && _lightMask[i] == lightAirDecay && _lightMask[i + 1] == lightSolidDecay)
@@ -384,7 +430,7 @@ namespace FancyLighting
                 int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    if (++i >= length) break;
+                    if (++i > bottomEdge) break;
 
                     lightValue *= _lightMask[i - 1][100];
                     if (y > 1 && _lightMask[i] == lightAirDecay && _lightMask[i - 1] == lightSolidDecay)
@@ -429,12 +475,11 @@ namespace FancyLighting
             }
 
             int midX = index / height;
-            int midY = index % height;
 
-            int topEdge = Math.Min(midY, lightRange);
-            int bottomEdge = Math.Min(height - 1 - midY, lightRange);
             int leftEdge = Math.Min(midX, lightRange);
             int rightEdge = Math.Min(width - 1 - midX, lightRange);
+            topEdge = Math.Min(index - topEdge, lightRange);
+            bottomEdge = Math.Min(bottomEdge - index, lightRange);
 
             var circle = circles[lightRange];
 

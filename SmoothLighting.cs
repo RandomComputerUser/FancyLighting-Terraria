@@ -81,7 +81,9 @@ namespace FancyLighting
                 TileID.KryptonMossBrick,
                 TileID.XenonMoss,
                 TileID.XenonMossBrick,
-                TileID.MeteoriteBrick
+                TileID.MeteoriteBrick,
+                TileID.MartianConduitPlating,
+                TileID.LavaLamp
             }) {
                 glowingTiles[id] = true;
             }
@@ -96,6 +98,8 @@ namespace FancyLighting
             glowingTileColors[TileID.XenonMoss] = glowingTileColors[TileID.XenonMossBrick]     = new Color(0, 254, 242);
 
             glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
+            // Martian Conduit Plating is handled separately
+            glowingTileColors[TileID.LavaLamp] = new Color(255, 90, 2);
 
             dangersense = false;
             spelunker = false;
@@ -317,6 +321,10 @@ namespace FancyLighting
             }
             else if (!_smoothLightingForeComplete)
             {
+                glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
+                    (float)(0.4 - 0.4 * Math.Cos((int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1 ? 0.08 * Main.timeForVisualEffects : 0.0))
+                ));
+
                 Parallel.For(
                     clampedStart,
                     clampedEnd,

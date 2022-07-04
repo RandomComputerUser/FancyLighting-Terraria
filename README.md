@@ -7,6 +7,12 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.2.7 (2022-07-04)**
+- Improved the fancy lighting engine so that diagonals are no longer brighter
+- Added support for lava lamps and partial support for Martian conduit plating as glowing tiles
+- Honey now absorbs more light when using the fancy lighting engine
+- Fixed a minor bug with the fancy lighting engine
+
 **v0.2.6 (2022-07-03)**
 - Tweaked and optimized the fancy lighting engine
 - Reduced unintended flickering in glowing mushroom biomes when using the fancy lighting engine
