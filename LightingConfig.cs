@@ -28,7 +28,7 @@ namespace FancyLighting
 
         [DefaultValue(false)]
         [Label("(Debug) Render Only Lighting")]
-        [Tooltip("If enabled, tiles, walls, and the background aren't rendered")]
+        [Tooltip("When enabled, tiles, walls, and the background aren't rendered")]
         public bool RenderOnlyLight;
 
         [Header("Ambient Occlusion")]
@@ -56,15 +56,20 @@ namespace FancyLighting
         public int AmbientOcclusionIntensity;
 
         [Header("Lighting Engine")]
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         [Label("Enable Fancy Lighting Engine")]
-        [Tooltip("Toggles whether or not to use a modified lighting engine\nIf enabled, light will travel in straight lines in all directions from a light source\nShadows should face nearly directly away from light sources\nRequires lighting to be set to color\nPerformance is significantly reduced in areas with more light sources")]
+        [Tooltip("Toggles whether or not to use a modified lighting engine\nWhen enabled, light travels in straight lines in all directions from a light source\nShadows should face nearly directly away from light sources\nRequires lighting to be set to color\nPerformance is significantly reduced in areas with more light sources")]
         public bool UseFancyLightingEngine;
 
         [DefaultValue(true)]
         [Label("Temporal Optimization")]
         [Tooltip("Toggles whether or not to use temporal optimization with the fancy lighting engine\nWhen enabled, data from the previous update is used to optimize lighting during the current update\nMakes lighting quicker in more intensly lit areas\nMay sometimes result in a slightly lowered lighting quality")]
         public bool FancyLightingEngineUseTemporal;
+
+        [DefaultValue(false)]
+        [Label("Brighter Lighting")]
+        [Tooltip("Toggles whether or not to make lighting slightly brighter\nIf disabled, lighting will be slightly darker than when using the vanilla lighting engine\nSlightly degrades performance when enabled")]
+        public bool FancyLightingEngineMakeBrighter;
 
         [Range(0, 65)]
         [Increment(5)]

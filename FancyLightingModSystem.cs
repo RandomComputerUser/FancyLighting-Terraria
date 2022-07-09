@@ -48,6 +48,7 @@ namespace FancyLighting
             FancyLightingMod._fancyLightingEngineEnabled = _configInstance.UseFancyLightingEngine;
             FancyLightingMod._fancyLightingEngineUseTemporal = _configInstance.FancyLightingEngineUseTemporal;
             FancyLightingMod._fancyLightingEngineLightLoss = _configInstance.FancyLightingEngineLightLoss;
+            FancyLightingMod._fancyLightingEngineMakeBrighter = _configInstance.FancyLightingEngineMakeBrighter;
 
             FancyLightingMod._threadCount = _configInstance.ThreadCount;
         }

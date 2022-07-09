@@ -7,6 +7,12 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.2.8 (2022-07-09)**
+- Greatly optimized the fancy lighting engine
+- Added a new option to make lighting brighter when using the fancy lighting engine
+- The fancy lighting engine is now enabled by default
+- Fixed a bug where the sky behind solid blocks could be too bright with smooth lighting enabled
+
 **v0.2.7 (2022-07-04)**
 - Improved the fancy lighting engine so that diagonals are no longer brighter
 - Added support for lava lamps and partial support for Martian conduit plating as glowing tiles

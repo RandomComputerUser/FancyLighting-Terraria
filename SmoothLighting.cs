@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FancyLighting
@@ -58,7 +59,6 @@ namespace FancyLighting
         protected FancyLightingMod ModInstance;
 
         internal uint printExceptionTime;
-        private object _exceptionLock;
 
         public SmoothLighting(FancyLightingMod mod) {
             TileLightScannerObj = new TileLightScanner();
@@ -117,7 +117,6 @@ namespace FancyLighting
                 );
 
             printExceptionTime = 0;
-            _exceptionLock = new object();
         }
 
         internal void Unload()
@@ -261,7 +260,7 @@ namespace FancyLighting
             int offset = clampedYmin - ymin;
             if (offset < 0 || offset >= height) return;
 
-            bool caughtException = false;
+            int caughtException = 0;
 
             if (background && !_smoothLightingBackComplete)
             {
@@ -290,15 +289,12 @@ namespace FancyLighting
                         }
                         catch (IndexOutOfRangeException ex)
                         {
-                            lock (_exceptionLock)
-                            {
-                                caughtException = true;
-                            }
+                            Interlocked.Exchange(ref caughtException, 1);
                         }
                     }
                 );
 
-                if (caughtException) goto HandleException;
+                if (caughtException == 1) goto HandleException;
 
                 if (colorsBackground is null
                     || colorsBackground.GraphicsDevice != Main.graphics.GraphicsDevice
@@ -375,15 +371,12 @@ namespace FancyLighting
                         }
                         catch (IndexOutOfRangeException ex)
                         {
-                            lock (_exceptionLock)
-                            {
-                                caughtException = true;
-                            }
+                            Interlocked.Exchange(ref caughtException, 1);
                         }
                     }
                 );
 
-                if (caughtException) goto HandleException;
+                if (caughtException == 1) goto HandleException;
 
                 if (colors is null
                     || colors.GraphicsDevice != Main.graphics.GraphicsDevice

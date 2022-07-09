@@ -27,6 +27,7 @@ namespace FancyLighting
         internal static bool _fancyLightingEngineEnabled;
         internal static bool _fancyLightingEngineUseTemporal;
         internal static int _fancyLightingEngineLightLoss;
+        internal static bool _fancyLightingEngineMakeBrighter;
 
         internal static int _threadCount;
 
@@ -122,6 +123,14 @@ namespace FancyLighting
             get
             {
                 return (100 - _fancyLightingEngineLightLoss) / 100f;
+            }
+        }
+
+        public static bool FancyLightingEngineMakeBrighter
+        {
+            get
+            {
+                return _fancyLightingEngineMakeBrighter;
             }
         }
 
@@ -271,6 +280,19 @@ namespace FancyLighting
                 _overrideLightingColor = SmoothLightingObj.DrawSmoothLightingBack;
                 orig(self);
                 _overrideLightingColor = false;
+            };
+
+            On.Terraria.Main.RenderBlack +=
+            (
+                On.Terraria.Main.orig_RenderBlack orig,
+                Terraria.Main self
+            ) =>
+            {
+
+                bool initialLightingOverride = _overrideLightingColor;
+                _overrideLightingColor = false;
+                orig(self);
+                _overrideLightingColor = initialLightingOverride;
             };
             
             On.Terraria.Main.RenderTiles +=

@@ -5,6 +5,7 @@ using Terraria.Graphics.Light;
 using Microsoft.Xna.Framework;
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FancyLighting
@@ -25,7 +26,7 @@ namespace FancyLighting
 
         protected readonly record struct DistanceCache(double top, double topRounded, double right, double rightRounded);
 
-        const int MAX_LIGHT_RANGE = 44;
+        const int MAX_LIGHT_RANGE = 64;
         protected float lightAirDecayCache;
         protected float lightSolidDecayCache;
         protected float[] lightAirDecay;
@@ -43,12 +44,11 @@ namespace FancyLighting
 
         private Vector3[] _tmp;
         private float[][] _lightMask;
-        private object[] _locks;
+        // private object[] _locks;
 
         internal Rectangle lightMapArea;
 
         protected int temporalData;
-        private object _temporalLock;
 
         public FancyLightingEngine() {
             ComputeLightingSpread(ref precomputedLightingSpread);
@@ -96,7 +96,6 @@ namespace FancyLighting
             }
 
             temporalData = 0;
-            _temporalLock = new object();
         }
 
         protected void ComputeLightingSpread(ref LightingSpread[,] values)
@@ -245,8 +244,9 @@ namespace FancyLighting
             }
             temporalData = 0;
 
-            float lightAirDecayBaseline = 0.975f * lightMap.LightDecayThroughAir;
-            float lightSolidDecayBaseline = 0.975f * lightMap.LightDecayThroughSolid;
+            float decayMult = FancyLightingMod.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
+            float lightAirDecayBaseline = decayMult * lightMap.LightDecayThroughAir;
+            float lightSolidDecayBaseline = decayMult * lightMap.LightDecayThroughSolid;
 
             if (lightAirDecayBaseline != lightAirDecayCache)
             {
@@ -272,11 +272,13 @@ namespace FancyLighting
             {
                 _tmp = new Vector3[length];
                 _lightMask = new float[length][];
+                /*
                 _locks = new object[length];
                 for (int i = 0; i < length; ++i)
                 {
                     _locks[i] = new object();
                 }
+                */
             }
 
 
@@ -345,12 +347,37 @@ namespace FancyLighting
             void SetLightMap(int i, float value)
             {
                 ref Vector3 light = ref _tmp[i];
+                Vector3 newLight;
+                Vector3.Multiply(ref color, value, out newLight);
+                float oldValue;
+                do
+                {
+                    oldValue = light.X;
+                    if (oldValue >= newLight.X) break;
+                }
+                while (Interlocked.CompareExchange(ref light.X, newLight.X, oldValue) != oldValue);
+                do
+                {
+                    oldValue = light.Y;
+                    if (oldValue >= newLight.Y) break;
+                }
+                while (Interlocked.CompareExchange(ref light.Y, newLight.Y, oldValue) != oldValue);
+                do
+                {
+                    oldValue = light.Z;
+                    if (oldValue >= newLight.Z) break;
+                }
+                while (Interlocked.CompareExchange(ref light.Z, newLight.Z, oldValue) != oldValue);
+                /*
+                // Not a 100% effective optimization because the check happens before the lock
+                // if (newLight.X <= light.X && newLight.Y <= light.Y && newLight.Z <= light.Z) return;
                 lock (_locks[i])
                 {
                     if (value * color.X > light.X) light.X = value * color.X;
                     if (value * color.Y > light.Y) light.Y = value * color.Y;
                     if (value * color.Z > light.Z) light.Z = value * color.Z;
                 }
+                */
             }
 
             SetLightMap(index, 1f);
@@ -711,10 +738,7 @@ namespace FancyLighting
                 if (!(up || left)) approximateWorkDone += 20;
                 if (!(down || right)) approximateWorkDone += 20;
                 if (!(down || left)) approximateWorkDone += 20;
-                lock (_temporalLock)
-                {
-                    temporalData += approximateWorkDone;
-                }
+                Interlocked.Add(ref temporalData, approximateWorkDone);
             }
         }
     }
