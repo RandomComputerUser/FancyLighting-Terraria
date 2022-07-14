@@ -1,10 +1,10 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.Graphics.Light;
-
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 using System;
 using System.Reflection;
@@ -31,20 +31,18 @@ namespace FancyLighting
 
         internal static int _threadCount;
 
-
         internal static bool _overrideLightingColor;
         internal static bool _overrideFastRandom;
         internal static int _mushroomDustCount;
 
-        internal FancyLightingEngine FancyLightingEngineObj;
-        internal SmoothLighting SmoothLightingObj;
-        internal AmbientOcclusion AmbientOcclusionObj;
+        internal FancyLightingEngine _fancyLightingEngineInstance;
+        internal SmoothLighting _smoothLightingInstance;
+        internal AmbientOcclusion _ambientOcclusionInstance;
 
         internal FieldInfo field_activeEngine;
         internal FieldInfo field_workingProcessedArea;
         internal FieldInfo field_colors;
         internal FieldInfo field_mask;
-
 
         public static bool SmoothLightingEnabled
         {
@@ -158,9 +156,9 @@ namespace FancyLighting
             blend.ColorDestinationBlend = Blend.SourceColor;
             MultiplyBlend = blend;
 
-            SmoothLightingObj = new SmoothLighting(this);
-            AmbientOcclusionObj = new AmbientOcclusion();
-            FancyLightingEngineObj = new FancyLightingEngine();
+            _smoothLightingInstance = new SmoothLighting(this);
+            _ambientOcclusionInstance = new AmbientOcclusion();
+            _fancyLightingEngineInstance = new FancyLightingEngine();
 
             field_activeEngine = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
             field_workingProcessedArea = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -174,10 +172,10 @@ namespace FancyLighting
         {
             try
             {
-                SmoothLightingObj.Unload();
-                AmbientOcclusionObj.Unload();
+                _smoothLightingInstance.Unload();
+                _ambientOcclusionInstance.Unload();
             }
-            catch (Exception ex)
+            catch
             {
                 // Ignore
             }
@@ -259,11 +257,11 @@ namespace FancyLighting
                     orig(self);
                     return;
                 }
-                SmoothLightingObj.CalculateSmoothLighting(true);
+                _smoothLightingInstance.CalculateSmoothLighting(true);
                 orig(self);
                 if (Main.drawToScreen)
                     return;
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.backgroundTarget, true);
+                _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true);
             };
 
             On.Terraria.Main.DrawBackground +=
@@ -277,7 +275,7 @@ namespace FancyLighting
                     orig(self);
                     return;
                 }
-                _overrideLightingColor = SmoothLightingObj.DrawSmoothLightingBack;
+                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
                 orig(self);
                 _overrideLightingColor = false;
             };
@@ -288,7 +286,6 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-
                 bool initialLightingOverride = _overrideLightingColor;
                 _overrideLightingColor = false;
                 orig(self);
@@ -301,11 +298,11 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                SmoothLightingObj.CalculateSmoothLighting(false);
-                _overrideLightingColor = SmoothLightingObj.DrawSmoothLightingFore;
+                _smoothLightingInstance.CalculateSmoothLighting(false);
+                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
                 _overrideLightingColor = false;
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.tileTarget, false);
+                _smoothLightingInstance.DrawSmoothLighting(Main.instance.tileTarget, false);
             };
 
             On.Terraria.Main.RenderTiles2 +=
@@ -314,11 +311,11 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                SmoothLightingObj.CalculateSmoothLighting(false);
-                _overrideLightingColor = SmoothLightingObj.DrawSmoothLightingFore;
+                _smoothLightingInstance.CalculateSmoothLighting(false);
+                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
                 _overrideLightingColor = false;
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.tile2Target, false);
+                _smoothLightingInstance.DrawSmoothLighting(Main.instance.tile2Target, false);
             };
 
             On.Terraria.Main.RenderWalls +=
@@ -327,14 +324,14 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                SmoothLightingObj.CalculateSmoothLighting(true);
-                _overrideLightingColor = SmoothLightingObj.DrawSmoothLightingBack;
+                _smoothLightingInstance.CalculateSmoothLighting(true);
+                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
                 orig(self);
                 _overrideLightingColor = false;
                 if (Main.drawToScreen)
                     return;
-                SmoothLightingObj.DrawSmoothLighting(Main.instance.wallTarget, true);
-                AmbientOcclusionObj.ApplyAmbientOcclusion();
+                _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);
+                _ambientOcclusionInstance.ApplyAmbientOcclusion();
             };
 
             On.Terraria.Graphics.Light.LightingEngine.ProcessBlur +=
@@ -349,7 +346,7 @@ namespace FancyLighting
                     return;
                 }
 
-                FancyLightingEngineObj.lightMapArea = 
+                _fancyLightingEngineInstance._lightMapArea = 
                     (Rectangle)field_workingProcessedArea.GetValue(self);
                 orig(self);
             };
@@ -373,11 +370,11 @@ namespace FancyLighting
                     return;
                 }
                 if (FancyLightingEngineEnabled)
-                    FancyLightingEngineObj.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
+                    _fancyLightingEngineInstance.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
                 else
                     orig(self);
                 if (SmoothLightingEnabled)
-                    SmoothLightingObj.BlurLightMap(colors, self.Width, self.Height);
+                    _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
             };
         }
     }

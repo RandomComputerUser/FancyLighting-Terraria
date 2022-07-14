@@ -4,7 +4,7 @@ using Terraria.ModLoader;
 
 namespace FancyLighting
 {
-    class FancyLightingModSystem : ModSystem
+    public class FancyLightingModSystem : ModSystem
     {
         private LightingConfig _configInstance;
 
@@ -17,9 +17,9 @@ namespace FancyLighting
         {
             if (Main.netMode == NetmodeID.Server) return;
 
-            SmoothLighting SmoothLightingObj = ModContent.GetInstance<FancyLightingMod>()?.SmoothLightingObj;
+            SmoothLighting SmoothLightingObj = ModContent.GetInstance<FancyLightingMod>()?._smoothLightingInstance;
             if (SmoothLightingObj is not null) {
-                SmoothLightingObj.printExceptionTime = 60;
+                SmoothLightingObj._printExceptionTime = 60;
             }
 
             base.OnWorldLoad();

@@ -1,4 +1,4 @@
-This mod makes lighting fancier by adding smooth lighting and ambient occlusion. There is also a new lighting engine with directional shadows that can be manually enabled in the config for this mod.
+This mod makes lighting fancier by adding smooth lighting and ambient occlusion. There is also a new lighting engine that makes light cast shadows in the correct directions.
 
 This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. A relatively powerful CPU is recommended to run this mod's features smoothly.
 

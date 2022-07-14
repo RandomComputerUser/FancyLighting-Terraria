@@ -13,27 +13,28 @@ using System.Threading.Tasks;
 
 namespace FancyLighting
 {
-    class SmoothLighting
+    internal sealed class SmoothLighting
     {
-        internal Texture2D colors;
-        internal Texture2D colorsBackground;
-        internal Vector2 colorsPosition;
-        internal Vector2 colorsPass1Position;
-        internal Vector2 colorsPass2Position;
-        internal Rectangle lightMapTileArea;
-        internal Rectangle lightMapRenderArea;
-        internal Rectangle lightMapPass2RenderArea;
-        internal RenderTarget2D surface;
-        internal RenderTarget2D surface2;
-        internal Vector3[] lights;
-        internal Color[] finalLights;
+        internal Texture2D _colors;
+        internal Texture2D _colorsBackground;
+        internal Vector2 _colorsPosition;
+        internal Vector2 _colorsPass1Position;
+        internal Vector2 _colorsPass2Position;
+        internal Rectangle _lightMapTileArea;
+        internal Rectangle _lightMapRenderArea;
+        internal Rectangle _lightMapPass2RenderArea;
+        internal RenderTarget2D _surface;
+        internal RenderTarget2D _surface2;
+        internal Vector3[] _lights;
+        internal Color[] _finalLights;
 
-        protected bool[] glowingTiles;
-        protected Color[] glowingTileColors;
+        private bool[] _glowingTiles;
+        private Color[] _glowingTileColors;
 
-        protected bool dangersense;
-        protected bool spelunker;
+        private bool _isDangersenseActive;
+        private bool _isSpelunkerActive;
 
+        private bool _smoothLightingLightMapValid;
         private bool _smoothLightingPositionValid;
         private bool _smoothLightingBackComplete;
         private bool _smoothLightingForeComplete;
@@ -54,23 +55,26 @@ namespace FancyLighting
             }
         }
 
-        internal TileLightScanner TileLightScannerObj;
+        internal TileLightScanner _tileLightScannerInstance;
 
-        protected FancyLightingMod ModInstance;
+        private FancyLightingMod _modInstance;
 
-        internal uint printExceptionTime;
+        internal uint _printExceptionTime;
 
         public SmoothLighting(FancyLightingMod mod) {
-            TileLightScannerObj = new TileLightScanner();
-            ModInstance = mod;
+            _tileLightScannerInstance = new TileLightScanner();
+            _modInstance = mod;
 
-            lightMapTileArea = new Rectangle(0, 0, 0, 0);
-            lightMapRenderArea = new Rectangle(0, 0, 0, 0);
-            lightMapPass2RenderArea = new Rectangle(0, 0, 0, 0);
+            _lightMapTileArea = new Rectangle(0, 0, 0, 0);
+            _lightMapRenderArea = new Rectangle(0, 0, 0, 0);
+            _lightMapPass2RenderArea = new Rectangle(0, 0, 0, 0);
 
+            _smoothLightingLightMapValid = false;
             _smoothLightingPositionValid = false;
+            _smoothLightingForeComplete = false;
+            _smoothLightingBackComplete = false;
 
-            glowingTiles = new bool[ushort.MaxValue + 1];
+            _glowingTiles = new bool[ushort.MaxValue + 1];
             foreach (ushort id in new ushort[] {
                 TileID.Crystals,
                 TileID.LavaMoss,
@@ -85,57 +89,72 @@ namespace FancyLighting
                 TileID.MartianConduitPlating,
                 TileID.LavaLamp
             }) {
-                glowingTiles[id] = true;
+                _glowingTiles[id] = true;
             }
 
-            glowingTileColors = new Color[glowingTiles.Length];
+            _glowingTileColors = new Color[_glowingTiles.Length];
 
-            glowingTileColors[TileID.Crystals] = Color.White;
+            _glowingTileColors[TileID.Crystals] = Color.White;
 
-            glowingTileColors[TileID.LavaMoss] = glowingTileColors[TileID.LavaMossBrick]       = new Color(254, 122, 0);
-            glowingTileColors[TileID.ArgonMoss] = glowingTileColors[TileID.ArgonMossBrick]     = new Color(254, 92, 186);
-            glowingTileColors[TileID.KryptonMoss] = glowingTileColors[TileID.KryptonMossBrick] = new Color(215, 255, 0);
-            glowingTileColors[TileID.XenonMoss] = glowingTileColors[TileID.XenonMossBrick]     = new Color(0, 254, 242);
+            _glowingTileColors[TileID.LavaMoss] = _glowingTileColors[TileID.LavaMossBrick]       = new Color(254, 122, 0);
+            _glowingTileColors[TileID.ArgonMoss] = _glowingTileColors[TileID.ArgonMossBrick]     = new Color(254, 92, 186);
+            _glowingTileColors[TileID.KryptonMoss] = _glowingTileColors[TileID.KryptonMossBrick] = new Color(215, 255, 0);
+            _glowingTileColors[TileID.XenonMoss] = _glowingTileColors[TileID.XenonMossBrick]     = new Color(0, 254, 242);
 
-            glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
+            _glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
             // Martian Conduit Plating is handled separately
-            glowingTileColors[TileID.LavaLamp] = new Color(255, 90, 2);
+            _glowingTileColors[TileID.LavaLamp] = new Color(255, 90, 2);
 
-            dangersense = false;
-            spelunker = false;
+            _isDangersenseActive = false;
+            _isSpelunkerActive = false;
             
             GameShaders.Misc["FancyLighting:UpscalingSmooth"] =
                 new MiscShaderData(
-                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "UpscaleSmooth"
                 );
 
             GameShaders.Misc["FancyLighting:UpscalingRegular"] =
                 new MiscShaderData(
-                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Shaders/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "UpscaleNoFilter"
                 );
 
-            printExceptionTime = 0;
+            _printExceptionTime = 0;
         }
 
         internal void Unload()
         {
-            surface?.Dispose();
-            surface2?.Dispose();
-            colors?.Dispose();
-            colorsBackground?.Dispose();
+            _surface?.Dispose();
+            _surface2?.Dispose();
+            _colors?.Dispose();
+            _colorsBackground?.Dispose();
             GameShaders.Misc["FancyLighting:UpscalingSmooth"]?.Shader?.Dispose();
             GameShaders.Misc.Remove("FancyLighting:UpscalingSmooth");
             GameShaders.Misc["FancyLighting:UpscalingRegular"]?.Shader?.Dispose();
             GameShaders.Misc.Remove("FancyLighting:UpscalingRegular");
         }
 
-        internal void BlurLightMap(Vector3[] colors, int width, int height)
+        private void PrintException()
         {
-            if (lights is null || lights.Length < height * width)
+            if (Main.GameUpdateCount >= _printExceptionTime)
             {
-                lights = new Vector3[height * width];
+                Main.NewText("[Fancy Lighting] Caught an IndexOutOfRangeException; smooth lighting will be skipped this time.", Color.Orange);
+                Main.NewText("[Fancy Lighting] Disable smooth lighting if this message repeatedly appears.", Color.Orange);
+                _printExceptionTime = Main.GameUpdateCount + 5 * 60;
+            }
+        }
+
+        internal void GetAndBlurLightMap(Vector3[] colors, int width, int height)
+        {
+            _smoothLightingLightMapValid = false;
+            _smoothLightingPositionValid = false;
+            _smoothLightingBackComplete = false;
+            _smoothLightingForeComplete = false;
+
+            if (_lights is null || _lights.Length < height * width)
+            {
+                _lights = new Vector3[height * width];
             }
 
             if (width == 0 || height == 0) return;
@@ -143,6 +162,8 @@ namespace FancyLighting
 
             if (FancyLightingMod.BlurLightMap)
             {
+                int caughtException = 0;
+
                 Parallel.For(
                     1,
                     width - 1,
@@ -154,111 +175,147 @@ namespace FancyLighting
                         {
                             ++i;
 
-                            lights[i].X = (
-                                1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
-                              + 2 * colors[i - height].X     + 4 * colors[i].X     + 2 * colors[i + height].X
-                              + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
-                            ) / 16f;
+                            try
+                            {
+                                _lights[i].X = (
+                                    1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
+                                    + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
+                                    + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
+                                ) / 16f;
 
-                            lights[i].Y = (
-                                1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
-                              + 2 * colors[i - height].Y     + 4 * colors[i].Y     + 2 * colors[i + height].Y
-                              + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
-                            ) / 16f;
+                                _lights[i].Y = (
+                                    1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
+                                    + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
+                                    + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
+                                ) / 16f;
 
-                            lights[i].Z = (
-                                1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
-                              + 2 * colors[i - height].Z     + 4 * colors[i].Z     + 2 * colors[i + height].Z
-                              + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
-                            ) / 16f;
+                                _lights[i].Z = (
+                                    1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
+                                    + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
+                                    + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
+                                ) / 16f;
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
                         }
                     }
                 );
+
+                if (caughtException == 1)
+                {
+                    PrintException();
+                    return;
+                }
+
+                int offset = (width - 1) * height;
+                for (int i = 0; i < height; ++i)
+                {
+                    try
+                    {
+                        _lights[i] = colors[i];
+                        _lights[i + offset] = colors[i + offset];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        PrintException();
+                        return;
+                    }
+                }
+
+                int end = (width - 1) * height;
+                offset = height - 1;
+                for (int i = height; i < end; i += height)
+                {
+                    try
+                    {
+                        _lights[i] = colors[i];
+                        _lights[i + offset] = colors[i + offset];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        PrintException();
+                        return;
+                    }
+                }
+
+                Array.Copy(_lights, colors, height * width);
             }
             else
             {
-                Array.Copy(colors, lights, height * width);
+                Array.Copy(colors, _lights, height * width);
             }
 
-            int offset = (width - 1) * height;
-            for (int i = 0; i < height; ++i)
-            {
-                lights[i] = colors[i];
-                lights[i + offset] = colors[i + offset];
-            }
+            LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
+            _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
+            _lightMapRenderArea = new Rectangle(0, 0, _lightMapTileArea.Height, _lightMapTileArea.Width);
+            _lightMapPass2RenderArea = new Rectangle(0, 0, 16 * _lightMapTileArea.Width, 16 * _lightMapTileArea.Height);
 
-            int end = (width - 1) * height;
-            offset = height - 1;
-            for (int i = height; i < end; i += height)
-            {
-                lights[i] = colors[i];
-                lights[i + offset] = colors[i + offset];
-            }
-
-            Array.Copy(lights, colors, height * width);
-
-            LightingEngine lightEngine = (LightingEngine)ModInstance.field_activeEngine.GetValue(null);
-            lightMapTileArea = (Rectangle)ModInstance.field_workingProcessedArea.GetValue(lightEngine);
-            lightMapRenderArea = new Rectangle(0, 0, lightMapTileArea.Height, lightMapTileArea.Width);
-            lightMapPass2RenderArea = new Rectangle(0, 0, 16 * lightMapTileArea.Width, 16 * lightMapTileArea.Height);
-
-            _smoothLightingPositionValid = false;
-            _smoothLightingBackComplete = false;
-            _smoothLightingForeComplete = false;
+            _smoothLightingLightMapValid = true;
         }
 
-        protected void GetColorsPosition()
+        private void GetColorsPosition()
         {
-            int xmin = lightMapTileArea.X;
-            int ymin = lightMapTileArea.Y;
-            int width = lightMapTileArea.Width;
-            int height = lightMapTileArea.Height;
+            int xmin = _lightMapTileArea.X;
+            int ymin = _lightMapTileArea.Y;
+            int width = _lightMapTileArea.Width;
+            int height = _lightMapTileArea.Height;
 
             if (width == 0 || height == 0) return;
 
-            colorsPosition = 16f * new Vector2(xmin + width, ymin);
-            colorsPass1Position = 16f * new Vector2(width, 0);
-            colorsPass2Position = 16f * new Vector2(xmin, ymin);
+            _colorsPosition = 16f * new Vector2(xmin + width, ymin);
+            _colorsPass1Position = 16f * new Vector2(width, 0);
+            _colorsPass2Position = 16f * new Vector2(xmin, ymin);
 
             _smoothLightingPositionValid = true;
         }
 
         internal void CalculateSmoothLighting(bool background)
         {
-            if (!FancyLightingMod.SmoothLightingEnabled) return;
+            if (!FancyLightingMod.SmoothLightingEnabled)
+                return;
+            if (!_smoothLightingLightMapValid)
+                return;
 
-            dangersense = Main.LocalPlayer.dangerSense;
-            spelunker = Main.LocalPlayer.findTreasure;
+            _isDangersenseActive = Main.LocalPlayer.dangerSense;
+            _isSpelunkerActive = Main.LocalPlayer.findTreasure;
 
             if (!_smoothLightingPositionValid)
                 GetColorsPosition();
 
-            if (!_smoothLightingPositionValid) return;
-            if (Main.tile.Height == 0 || Main.tile.Width == 0) return;
+            if (!_smoothLightingPositionValid)
+                return;
+            if (Main.tile.Height == 0 || Main.tile.Width == 0)
+                return;
 
-            int xmin = lightMapTileArea.X;
-            int ymin = lightMapTileArea.Y;
-            int width = lightMapTileArea.Width;
-            int height = lightMapTileArea.Height;
+            int xmin = _lightMapTileArea.X;
+            int ymin = _lightMapTileArea.Y;
+            int width = _lightMapTileArea.Width;
+            int height = _lightMapTileArea.Height;
             int ymax = ymin + height;
 
-            if (finalLights is null || finalLights.Length < height * width)
+            if (_finalLights is null || _finalLights.Length < height * width)
             {
-                finalLights = new Color[height * width];
+                _finalLights = new Color[height * width];
             }
 
             int clampedXmin = Math.Clamp(xmin, 0, Main.tile.Width);
             int clampedXmax = Math.Clamp(xmin + width, 0, Main.tile.Width);
-            if (clampedXmax - clampedXmin < 1) return;
+            if (clampedXmax - clampedXmin < 1)
+                return;
             int clampedStart = Math.Clamp(clampedXmin - xmin, 0, width);
             int clampedEnd = Math.Clamp(clampedXmax - clampedXmin, 0, width);
-            if (clampedEnd - clampedStart < 1) return;
+            if (clampedEnd - clampedStart < 1)
+                return;
 
             int clampedYmin = Math.Clamp(ymin, 0, Main.tile.Height);
             int clampedYmax = Math.Clamp(ymax, 0, Main.tile.Height);
-            if (clampedYmax - clampedYmin < 1) return;
+            if (clampedYmax - clampedYmin < 1)
+                return;
             int offset = clampedYmin - ymin;
-            if (offset < 0 || offset >= height) return;
+            if (offset < 0 || offset >= height)
+                return;
 
             int caughtException = 0;
 
@@ -270,54 +327,59 @@ namespace FancyLighting
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        try
+                        int i = height * x1 + offset;
+                        int x = x1 + xmin;
+                        for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
-                            int i = height * x1 + offset;
-                            int x = x1 + xmin;
-                            for (int y = clampedYmin; y < clampedYmax; ++y)
+                            try
                             {
                                 // Illuminant Paint
                                 if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
                                 {
-                                    finalLights[i++] = Color.White;
+                                    _finalLights[i++] = Color.White;
                                     continue;
                                 }
 
-                                finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
-                                ++i;
+                                _finalLights[i] = new Color(Lighting.GlobalBrightness * _lights[i]);
                             }
-                        }
-                        catch (IndexOutOfRangeException ex)
-                        {
-                            Interlocked.Exchange(ref caughtException, 1);
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
+
+                            ++i;
                         }
                     }
                 );
 
-                if (caughtException == 1) goto HandleException;
-
-                if (colorsBackground is null
-                    || colorsBackground.GraphicsDevice != Main.graphics.GraphicsDevice
-                    || colorsBackground.Width < height
-                    || colorsBackground.Height < width)
+                if (caughtException == 1)
                 {
-                    colorsBackground?.Dispose();
-                    colorsBackground = new Texture2D(
+                    PrintException();
+                    return;
+                }
+
+                if (_colorsBackground is null
+                    || _colorsBackground.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || _colorsBackground.Width < height
+                    || _colorsBackground.Height < width)
+                {
+                    _colorsBackground?.Dispose();
+                    _colorsBackground = new Texture2D(
                         Main.graphics.GraphicsDevice,
-                        Math.Max(height, colorsBackground?.Width ?? 0),
-                        Math.Max(width, colorsBackground?.Height ?? 0),
+                        Math.Max(height, _colorsBackground?.Width ?? 0),
+                        Math.Max(width, _colorsBackground?.Height ?? 0),
                         false,
                         SurfaceFormat.Color
                     );
                 }
 
-                colorsBackground.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
+                _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
                 _smoothLightingBackComplete = true;
             }
             else if (!_smoothLightingForeComplete)
             {
-                glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
+                _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
                     (float)(0.4 - 0.4 * Math.Cos((int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1 ? 0.08 * Main.timeForVisualEffects : 0.0))
                 ));
 
@@ -327,86 +389,79 @@ namespace FancyLighting
                     new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                     (x1) =>
                     {
-                        try
+                        int i = height * x1 + offset;
+                        int x = x1 + xmin;
+                        for (int y = clampedYmin; y < clampedYmax; ++y)
                         {
-                            int i = height * x1 + offset;
-                            int x = x1 + xmin;
-                            for (int y = clampedYmin; y < clampedYmax; ++y)
+                            try
                             {
                                 // Illuminant Paint
                                 if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
                                 {
-                                    finalLights[i++] = Color.White;
+                                    _finalLights[i++] = Color.White;
                                     continue;
                                 }
 
-                                finalLights[i] = new Color(Lighting.GlobalBrightness * lights[i]);
+                                _finalLights[i] = new Color(Lighting.GlobalBrightness * _lights[i]);
 
                                 // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
-                                if (glowingTiles[Main.tile[x, y].TileType])
+                                if (_glowingTiles[Main.tile[x, y].TileType])
                                 {
-                                    ref Color glow = ref glowingTileColors[Main.tile[x, y].TileType];
-                                    if (finalLights[i].R < glow.R) finalLights[i].R = glow.R;
-                                    if (finalLights[i].G < glow.G) finalLights[i].G = glow.G;
-                                    if (finalLights[i].B < glow.B) finalLights[i].B = glow.B;
+                                    ref Color glow = ref _glowingTileColors[Main.tile[x, y].TileType];
+                                    if (_finalLights[i].R < glow.R) _finalLights[i].R = glow.R;
+                                    if (_finalLights[i].G < glow.G) _finalLights[i].G = glow.G;
+                                    if (_finalLights[i].B < glow.B) _finalLights[i].B = glow.B;
                                 }
 
                                 // Dangersense Potion
-                                else if (dangersense && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
+                                else if (_isDangersenseActive && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
                                 {
-                                    if (finalLights[i].R < (byte)255) finalLights[i].R = (byte)255;
-                                    if (finalLights[i].G < (byte)50) finalLights[i].G = (byte)50;
-                                    if (finalLights[i].B < (byte)50) finalLights[i].B = (byte)50;
+                                    if (_finalLights[i].R < (byte)255) _finalLights[i].R = (byte)255;
+                                    if (_finalLights[i].G < (byte)50) _finalLights[i].G = (byte)50;
+                                    if (_finalLights[i].B < (byte)50) _finalLights[i].B = (byte)50;
                                 }
 
                                 // Spelunker Potion
-                                else if (spelunker && Main.IsTileSpelunkable(x, y))
+                                else if (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
                                 {
-                                    if (finalLights[i].R < (byte)200) finalLights[i].R = (byte)200;
-                                    if (finalLights[i].G < (byte)170) finalLights[i].G = (byte)170;
+                                    if (_finalLights[i].R < (byte)200) _finalLights[i].R = (byte)200;
+                                    if (_finalLights[i].G < (byte)170) _finalLights[i].G = (byte)170;
                                 }
-
-                                ++i;
                             }
-                        }
-                        catch (IndexOutOfRangeException ex)
-                        {
-                            Interlocked.Exchange(ref caughtException, 1);
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
+
+                            ++i;
                         }
                     }
                 );
 
-                if (caughtException == 1) goto HandleException;
-
-                if (colors is null
-                    || colors.GraphicsDevice != Main.graphics.GraphicsDevice
-                    || colors.Width < height
-                    || colors.Height < width)
+                if (caughtException == 1)
                 {
-                    colors?.Dispose();
-                    colors = new Texture2D(
+                    PrintException();
+                    return;
+                }
+
+                if (_colors is null
+                    || _colors.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || _colors.Width < height
+                    || _colors.Height < width)
+                {
+                    _colors?.Dispose();
+                    _colors = new Texture2D(
                         Main.graphics.GraphicsDevice,
-                        Math.Max(height, colors?.Width ?? 0),
-                        Math.Max(width, colors?.Height ?? 0),
+                        Math.Max(height, _colors?.Width ?? 0),
+                        Math.Max(width, _colors?.Height ?? 0),
                         false,
                         SurfaceFormat.Color
                     );
                 }
 
-                colors.SetData(0, lightMapRenderArea, finalLights, 0, height * width);
+                _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
                 _smoothLightingForeComplete = true;
-            }
-
-            return;
-
-        HandleException:
-
-            if (Main.GameUpdateCount >= printExceptionTime)
-            {
-                Main.NewText("[Fancy Lighting] Caught an IndexOutOfRangeException; smooth lighting will be skipped this time.", Color.Orange);
-                Main.NewText("[Fancy Lighting] Disable smooth lighting if this message repeatedly appears.", Color.Orange);
-                printExceptionTime = Main.GameUpdateCount + 5 * 60;
             }
         }
 
@@ -416,33 +471,33 @@ namespace FancyLighting
             if (!background && !_smoothLightingForeComplete) return;
             if (background && !_smoothLightingBackComplete) return;
 
-            if (surface is null
-                || surface.GraphicsDevice != Main.graphics.GraphicsDevice
-                || surface.Width != Main.instance.tileTarget.Width
-                || surface.Height != Main.instance.tileTarget.Height)
+            if (_surface is null
+                || _surface.GraphicsDevice != Main.graphics.GraphicsDevice
+                || _surface.Width != Main.instance.tileTarget.Width
+                || _surface.Height != Main.instance.tileTarget.Height)
             {
-                surface?.Dispose();
-                surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+                _surface?.Dispose();
+                _surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
             }
 
-            Texture2D lightMapTexture = background ? colorsBackground : colors;
+            Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
             if (FancyLightingMod.CustomUpscalingEnabled)
             {
-                if (surface2 is null
-                    || surface2.GraphicsDevice != Main.graphics.GraphicsDevice
-                    || surface2.Width < 16f * lightMapTexture.Height
-                    || surface2.Height < 16f * lightMapTexture.Width)
+                if (_surface2 is null
+                    || _surface2.GraphicsDevice != Main.graphics.GraphicsDevice
+                    || _surface2.Width < 16f * lightMapTexture.Height
+                    || _surface2.Height < 16f * lightMapTexture.Width)
                 {
-                    surface2?.Dispose();
-                    surface2 = new RenderTarget2D(
+                    _surface2?.Dispose();
+                    _surface2 = new RenderTarget2D(
                         Main.graphics.GraphicsDevice,
-                        Math.Max(16 * lightMapTexture.Height, surface2?.Width ?? 0),
-                        Math.Max(16 * lightMapTexture.Width, surface2?.Height ?? 0)
+                        Math.Max(16 * lightMapTexture.Height, _surface2?.Width ?? 0),
+                        Math.Max(16 * lightMapTexture.Width, _surface2?.Height ?? 0)
                     );
                 }
 
-                Main.instance.GraphicsDevice.SetRenderTarget(surface2);
+                Main.instance.GraphicsDevice.SetRenderTarget(_surface2);
 
                 Main.spriteBatch.Begin(
                     SpriteSortMode.Immediate,
@@ -457,8 +512,8 @@ namespace FancyLighting
                     .Apply(null);
                 Main.spriteBatch.Draw(
                     lightMapTexture,
-                    colorsPass1Position,
-                    lightMapRenderArea,
+                    _colorsPass1Position,
+                    _lightMapRenderArea,
                     Color.White,
                     (float)(Math.PI / 2.0),
                     Vector2.Zero,
@@ -469,7 +524,7 @@ namespace FancyLighting
 
                 Main.spriteBatch.End();
 
-                Main.instance.GraphicsDevice.SetRenderTarget(surface);
+                Main.instance.GraphicsDevice.SetRenderTarget(_surface);
                 Main.instance.GraphicsDevice.Clear(Color.White);
 
                 Main.spriteBatch.Begin(
@@ -484,9 +539,9 @@ namespace FancyLighting
                     .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Height, lightMapTexture.Height, 1f / lightMapTexture.Height, 0f))
                     .Apply(null);
                 Main.spriteBatch.Draw(
-                    surface2,
-                    colorsPass2Position - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                    lightMapPass2RenderArea,
+                    _surface2,
+                    _colorsPass2Position - (Main.screenPosition - new Vector2(Main.offScreenRange)),
+                    _lightMapPass2RenderArea,
                     Color.White,
                     0f,
                     Vector2.Zero,
@@ -499,7 +554,7 @@ namespace FancyLighting
             }
             else
             {
-                Main.instance.GraphicsDevice.SetRenderTarget(surface);
+                Main.instance.GraphicsDevice.SetRenderTarget(_surface);
                 Main.instance.GraphicsDevice.Clear(Color.White);
 
                 Main.spriteBatch.Begin(
@@ -508,8 +563,8 @@ namespace FancyLighting
                 );
                 Main.spriteBatch.Draw(
                     lightMapTexture,
-                    colorsPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                    lightMapRenderArea,
+                    _colorsPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
+                    _lightMapRenderArea,
                     Color.White,
                     (float)(Math.PI / 2.0),
                     Vector2.Zero,
@@ -540,7 +595,7 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
-                surface,
+                _surface,
                 Vector2.Zero,
                 Color.White
             );

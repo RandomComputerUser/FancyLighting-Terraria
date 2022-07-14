@@ -41,11 +41,29 @@ float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 
     color.a = 1;
 
-    if (uShaderSpecificData.z > 0)
-    {
-        color.rgb *= color.rgb * color.rgb;
-        color.rgb = uShaderSpecificData.w + (1 - uShaderSpecificData.w) * color.rgb;
-    }
+    return color;
+}
+
+float4 BlurFinal(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
+
+    float4 color = (
+          (tex2D(uImage0, coords - 8 * pix) + tex2D(uImage0, coords + 8 * pix))
+        + 16 * (tex2D(uImage0, coords - 7 * pix) + tex2D(uImage0, coords + 7 * pix))
+        + 120 * (tex2D(uImage0, coords - 6 * pix) + tex2D(uImage0, coords + 6 * pix))
+        + 560 * (tex2D(uImage0, coords - 5 * pix) + tex2D(uImage0, coords + 5 * pix))
+        + 1820 * (tex2D(uImage0, coords - 4 * pix) + tex2D(uImage0, coords + 4 * pix))
+        + 4368 * (tex2D(uImage0, coords - 3 * pix) + tex2D(uImage0, coords + 3 * pix))
+        + 8008 * (tex2D(uImage0, coords - 2 * pix) + tex2D(uImage0, coords + 2 * pix))
+        + 11440 * (tex2D(uImage0, coords - 1 * pix) + tex2D(uImage0, coords + 1 * pix))
+        + 12870 * tex2D(uImage0, coords)
+    ) / 65536.0;
+
+    color.a = 1;
+
+    color.rgb *= color.rgb * color.rgb;
+    color.rgb = uShaderSpecificData.z + (1 - uShaderSpecificData.z) * color.rgb;
 
     return color;
 }
@@ -60,5 +78,10 @@ technique Technique1
     pass Blur
     {
         PixelShader = compile ps_2_0 Blur();
+    }
+
+    pass BlurFinal
+    {
+        PixelShader = compile ps_2_0 BlurFinal();
     }
 }

@@ -7,6 +7,17 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.3.0 (2022-07-13)**
+- Updated the mod icon
+- The fancy lighting engine now uses more vanilla-accurate light masks for liquids
+- Tweaked temporal optimization for the fancy lighting engine
+- Made minor optimizations to the fancy lighting engine and ambient occlusion
+- Optimized using smooth lighting without light map blurring
+- Added more safeguards against uncaught exceptions in smooth lighting
+- Fixed the mod description to reflect that the fancy lighting engine is now enabled by default
+- Renamed some fields and changed access modifiers
+- Renamed the Shaders folder to Effects
+
 **v0.2.8 (2022-07-09)**
 - Greatly optimized the fancy lighting engine
 - Added a new option to make lighting brighter when using the fancy lighting engine

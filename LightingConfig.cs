@@ -1,12 +1,11 @@
-﻿using Terraria.ModLoader;
-using Terraria.ModLoader.Config;
+﻿using Terraria.ModLoader.Config;
 
 using System.ComponentModel;
 
 namespace FancyLighting
 {
     [Label("Fancy Lighting Settings")]
-    class LightingConfig : ModConfig
+    public class LightingConfig : ModConfig
     {
         public override ConfigScope Mode => ConfigScope.ClientSide;
 
@@ -68,7 +67,7 @@ namespace FancyLighting
 
         [DefaultValue(false)]
         [Label("Brighter Lighting")]
-        [Tooltip("Toggles whether or not to make lighting slightly brighter\nIf disabled, lighting will be slightly darker than when using the vanilla lighting engine\nSlightly degrades performance when enabled")]
+        [Tooltip("Toggles whether or not to make lighting slightly brighter\nWhen disabled, lighting is slightly darker than when using the vanilla lighting engine\nSlightly degrades performance when enabled")]
         public bool FancyLightingEngineMakeBrighter;
 
         [Range(0, 65)]
