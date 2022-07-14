@@ -40,9 +40,43 @@ namespace FancyLighting
         internal AmbientOcclusion _ambientOcclusionInstance;
 
         internal FieldInfo field_activeEngine;
+        internal FieldInfo field_activeLightMap;
         internal FieldInfo field_workingProcessedArea;
         internal FieldInfo field_colors;
         internal FieldInfo field_mask;
+
+        public bool OverrideLightingColor
+        {
+            get
+            {
+                return _overrideLightingColor;
+            }
+            internal set
+            {
+                if (value == _overrideLightingColor)
+                    return;
+                if (!Lighting.UsingNewLighting)
+                    return;
+
+                object lightingEngineInstance = field_activeEngine.GetValue(null);
+                if (lightingEngineInstance.GetType() != typeof(LightingEngine))
+                    return;
+
+                LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue((LightingEngine)lightingEngineInstance);
+
+                if (value)
+                {
+                    _smoothLightingInstance._tmpLights = (Vector3[])field_colors.GetValue(lightMapInstance);
+                    field_colors.SetValue(lightMapInstance, _smoothLightingInstance._whiteLights);
+                }
+                else
+                {
+                    field_colors.SetValue(lightMapInstance, _smoothLightingInstance._tmpLights);
+                }
+
+                _overrideLightingColor = value;
+            }
+        }
 
         public static bool SmoothLightingEnabled
         {
@@ -161,6 +195,7 @@ namespace FancyLighting
             _fancyLightingEngineInstance = new FancyLightingEngine();
 
             field_activeEngine = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
+            field_activeLightMap = typeof(LightingEngine).GetField("_activeLightMap", BindingFlags.NonPublic | BindingFlags.Instance);
             field_workingProcessedArea = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
             field_colors = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
             field_mask = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -185,32 +220,6 @@ namespace FancyLighting
 
         protected void AddHooks()
         {
-            On.Terraria.Graphics.Light.LightingEngine.GetColor +=
-            (
-                On.Terraria.Graphics.Light.LightingEngine.orig_GetColor orig,
-                Terraria.Graphics.Light.LightingEngine self,
-                int x,
-                int y
-            ) =>
-            {
-                if (_overrideLightingColor)
-                {
-                    Vector3 color = orig(self, x, y);
-                    if (color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f)
-                    {
-                        color.X = 1f / 255f;
-                        color.Y = 1f / 255f;
-                        color.Z = 1f / 255f;
-                        return color;
-                    }
-                    color.X = 1f;
-                    color.Y = 1f;
-                    color.Z = 1f;
-                    return color;
-                }
-                return orig(self, x, y);
-            };
-
             On.Terraria.Lighting.GetColor9Slice_int_int_refVector3Array +=
             (
                 On.Terraria.Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
@@ -275,9 +284,9 @@ namespace FancyLighting
                     orig(self);
                     return;
                 }
-                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
                 orig(self);
-                _overrideLightingColor = false;
+                OverrideLightingColor = false;
             };
 
             On.Terraria.Main.RenderBlack +=
@@ -286,10 +295,10 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                bool initialLightingOverride = _overrideLightingColor;
-                _overrideLightingColor = false;
+                bool initialLightingOverride = OverrideLightingColor;
+                OverrideLightingColor = false;
                 orig(self);
-                _overrideLightingColor = initialLightingOverride;
+                OverrideLightingColor = initialLightingOverride;
             };
             
             On.Terraria.Main.RenderTiles +=
@@ -299,9 +308,9 @@ namespace FancyLighting
             ) =>
             {
                 _smoothLightingInstance.CalculateSmoothLighting(false);
-                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
-                _overrideLightingColor = false;
+                OverrideLightingColor = false;
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.tileTarget, false);
             };
 
@@ -312,9 +321,9 @@ namespace FancyLighting
             ) =>
             {
                 _smoothLightingInstance.CalculateSmoothLighting(false);
-                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
-                _overrideLightingColor = false;
+                OverrideLightingColor = false;
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.tile2Target, false);
             };
 
@@ -325,9 +334,9 @@ namespace FancyLighting
             ) =>
             {
                 _smoothLightingInstance.CalculateSmoothLighting(true);
-                _overrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
                 orig(self);
-                _overrideLightingColor = false;
+                OverrideLightingColor = false;
                 if (Main.drawToScreen)
                     return;
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);

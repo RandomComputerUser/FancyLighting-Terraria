@@ -17,7 +17,7 @@ namespace FancyLighting
 
         [DefaultValue(true)]
         [Label("Blur Light Map")]
-        [Tooltip("Toggles whether or not to blur the light map\nApplies a per-tile blur to the light map before rendering\nSmooths jagged corners in the light map\nDisabling this setting may increase performance")]
+        [Tooltip("Toggles whether or not to blur the light map\nApplies a per-tile blur to the light map before rendering\nSmooths jagged corners in the light map\nDisabling this setting may slightly increase performance")]
         public bool UseLightMapBlurring;
 
         [DefaultValue(false)]
@@ -57,7 +57,7 @@ namespace FancyLighting
         [Header("Lighting Engine")]
         [DefaultValue(true)]
         [Label("Enable Fancy Lighting Engine")]
-        [Tooltip("Toggles whether or not to use a modified lighting engine\nWhen enabled, light travels in straight lines in all directions from a light source\nShadows should face nearly directly away from light sources\nRequires lighting to be set to color\nPerformance is significantly reduced in areas with more light sources")]
+        [Tooltip("Toggles whether or not to use a modified lighting engine\nWhen enabled, light is spread more accurately\nShadows should face away from light sources and be more noticeable\nPerformance is significantly reduced in areas with more light sources\nRequires lighting to be set to color")]
         public bool UseFancyLightingEngine;
 
         [DefaultValue(true)]

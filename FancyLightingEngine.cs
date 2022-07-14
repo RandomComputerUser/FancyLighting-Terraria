@@ -39,7 +39,6 @@ namespace FancyLighting
         private LightingSpread[,] _precomputedLightingSpread;
         private float[][] _multithreadLightMap;
         private int[][] _circles;
-        private int[] _circleAreas;
 
         private Vector3[] _tmp;
         private float[][] _lightMask;
@@ -73,12 +72,9 @@ namespace FancyLighting
             }
 
             _circles = new int[MAX_LIGHT_RANGE + 1][];
-            _circleAreas = new int[MAX_LIGHT_RANGE + 1];
             _circles[0] = new int[] { 0 };
-            _circleAreas[0] = 0;
             for (int radius = 1; radius <= MAX_LIGHT_RANGE; ++radius)
             {
-                int circleArea = 0;
                 _circles[radius] = new int[radius + 1];
                 _circles[radius][0] = radius;
                 double diagonal = radius / Math.Sqrt(2.0);
@@ -92,9 +88,7 @@ namespace FancyLighting
                     {
                         _circles[radius][x] = (int)Math.Floor(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
                     }
-                    circleArea += _circles[radius][x];
                 }
-                _circleAreas[radius] = circleArea;
             }
 
             _temporalData = 0;
@@ -365,8 +359,7 @@ namespace FancyLighting
             void SetLightMap(int i, float value)
             {
                 ref Vector3 light = ref _tmp[i];
-                Vector3 newLight;
-                Vector3.Multiply(ref color, value, out newLight);
+                Vector3.Multiply(ref color, value, out Vector3 newLight);
                 float oldValue;
                 do
                 {

@@ -26,6 +26,8 @@ namespace FancyLighting
         internal RenderTarget2D _surface;
         internal RenderTarget2D _surface2;
         internal Vector3[] _lights;
+        internal Vector3[] _whiteLights;
+        internal Vector3[] _tmpLights;
         internal Color[] _finalLights;
 
         private bool[] _glowingTiles;
@@ -156,14 +158,18 @@ namespace FancyLighting
             {
                 _lights = new Vector3[height * width];
             }
+            if (_whiteLights is null || _whiteLights.Length < height * width)
+            {
+                _whiteLights = new Vector3[height * width];
+            }
 
             if (width == 0 || height == 0) return;
             if (colors.Length < height * width) return;
 
+            int caughtException = 0;
+
             if (FancyLightingMod.BlurLightMap)
             {
-                int caughtException = 0;
-
                 Parallel.For(
                     1,
                     width - 1,
@@ -177,22 +183,23 @@ namespace FancyLighting
 
                             try
                             {
+                                // Faster to do it separately for each component
                                 _lights[i].X = (
-                                    1 * colors[i - height - 1].X + 2 * colors[i - 1].X + 1 * colors[i + height - 1].X
-                                    + 2 * colors[i - height].X + 4 * colors[i].X + 2 * colors[i + height].X
-                                    + 1 * colors[i - height + 1].X + 2 * colors[i + 1].X + 1 * colors[i + height + 1].X
+                                      1f * colors[i - height - 1].X + 2f * colors[i - 1].X + 1f * colors[i + height - 1].X
+                                    + 2f * colors[i - height].X     + 4f * colors[i].X     + 2f * colors[i + height].X
+                                    + 1f * colors[i - height + 1].X + 2f * colors[i + 1].X + 1f * colors[i + height + 1].X
                                 ) / 16f;
 
                                 _lights[i].Y = (
-                                    1 * colors[i - height - 1].Y + 2 * colors[i - 1].Y + 1 * colors[i + height - 1].Y
-                                    + 2 * colors[i - height].Y + 4 * colors[i].Y + 2 * colors[i + height].Y
-                                    + 1 * colors[i - height + 1].Y + 2 * colors[i + 1].Y + 1 * colors[i + height + 1].Y
+                                      1f * colors[i - height - 1].Y + 2f * colors[i - 1].Y + 1f * colors[i + height - 1].Y
+                                    + 2f * colors[i - height].Y     + 4f * colors[i].Y     + 2f * colors[i + height].Y
+                                    + 1f * colors[i - height + 1].Y + 2f * colors[i + 1].Y + 1f * colors[i + height + 1].Y
                                 ) / 16f;
 
                                 _lights[i].Z = (
-                                    1 * colors[i - height - 1].Z + 2 * colors[i - 1].Z + 1 * colors[i + height - 1].Z
-                                    + 2 * colors[i - height].Z + 4 * colors[i].Z + 2 * colors[i + height].Z
-                                    + 1 * colors[i - height + 1].Z + 2 * colors[i + 1].Z + 1 * colors[i + height + 1].Z
+                                      1f * colors[i - height - 1].Z + 2f * colors[i - 1].Z + 1f * colors[i + height - 1].Z
+                                    + 2f * colors[i - height].Z     + 4f * colors[i].Z     + 2f * colors[i + height].Z
+                                    + 1f * colors[i - height + 1].Z + 2f * colors[i + 1].Z + 1f * colors[i + height + 1].Z
                                 ) / 16f;
                             }
                             catch (IndexOutOfRangeException)
@@ -246,6 +253,35 @@ namespace FancyLighting
             {
                 Array.Copy(colors, _lights, height * width);
             }
+
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                (x) =>
+                {
+                    int i = height * x;
+                    for (int y = 0; y < height; ++y)
+                    {
+                        try
+                        {
+                            ref Vector3 color = ref _lights[i];
+                            if (color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f)
+                            {
+                                _whiteLights[i++] = new Vector3(1f / 255f, 1f / 255f, 1f / 255f);
+                            }
+                            else
+                            {
+                                _whiteLights[i++] = Vector3.One;
+                            }
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                        }
+                    }
+                }
+            );
 
             LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
             _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);

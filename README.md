@@ -7,6 +7,11 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.3.1 (2022-07-14)**
+- Optimized rendering with smooth lighting enabled
+- Updated some config tooltips
+- Removed some unnecessary code
+
 **v0.3.0 (2022-07-13)**
 - Updated the mod icon
 - The fancy lighting engine now uses more vanilla-accurate light masks for liquids
