@@ -1,6 +1,6 @@
-This mod makes lighting fancier by adding smooth lighting and ambient occlusion. There is also a new lighting engine that makes light cast shadows in the correct directions.
+This mod makes lighting fancier by adding smooth lighting and ambient occlusion. There is also a new lighting engine with more defined shadows and new sky colors.
 
-This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. A relatively powerful CPU is recommended to run this mod's features smoothly.
+This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. A relatively powerful CPU is recommended to run this mod's features at 60 FPS.
 
 Because smooth lighting overrides built-in tile light rendering, glowmasks and tiles that glow independently of the light they emit must be re-implemented. The following effects and glowing tiles are supported:
 - Spelunker Potion

@@ -42,13 +42,16 @@ namespace FancyLighting
             FancyLightingMod._renderOnlyLight = _configInstance.RenderOnlyLight;
 
             FancyLightingMod._ambientOcclusionEnabled = _configInstance.UseAmbientOcclusion && Lighting.UsingNewLighting;
+            FancyLightingMod._ambientOcclusionExtra = _configInstance.UseExtraAmbientOcclusion;
             FancyLightingMod._ambientOcclusionRadius = _configInstance.AmbientOcclusionRadius;
             FancyLightingMod._ambientOcclusionIntensity = _configInstance.AmbientOcclusionIntensity;
 
-            FancyLightingMod._fancyLightingEngineEnabled = _configInstance.UseFancyLightingEngine;
+            FancyLightingMod._fancyLightingEngineEnabled = _configInstance.UseFancyLightingEngine && Lighting.UsingNewLighting;
             FancyLightingMod._fancyLightingEngineUseTemporal = _configInstance.FancyLightingEngineUseTemporal;
             FancyLightingMod._fancyLightingEngineLightLoss = _configInstance.FancyLightingEngineLightLoss;
             FancyLightingMod._fancyLightingEngineMakeBrighter = _configInstance.FancyLightingEngineMakeBrighter;
+
+            FancyLightingMod._skyColorsEnabled = _configInstance.UseCustomSkyColors && Lighting.UsingNewLighting;
 
             FancyLightingMod._threadCount = _configInstance.ThreadCount;
         }

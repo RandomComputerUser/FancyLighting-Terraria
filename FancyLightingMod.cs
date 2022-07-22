@@ -2,9 +2,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using Terraria;
+using Terraria.Graphics.Capture;
+using Terraria.Graphics.Effects;
+using Terraria.Graphics.Light;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.Graphics.Light;
 
 using System;
 using System.Reflection;
@@ -13,7 +15,7 @@ namespace FancyLighting
 {
     public class FancyLightingMod : Mod
     {
-        internal static BlendState MultiplyBlend;
+        public static BlendState MultiplyBlend { get; private set; }
 
         internal static bool _smoothLightingEnabled;
         internal static bool _blurLightMap;
@@ -21,6 +23,7 @@ namespace FancyLighting
         internal static bool _renderOnlyLight;
 
         internal static bool _ambientOcclusionEnabled;
+        internal static bool _ambientOcclusionExtra;
         internal static int _ambientOcclusionRadius;
         internal static int _ambientOcclusionIntensity;
 
@@ -29,11 +32,12 @@ namespace FancyLighting
         internal static int _fancyLightingEngineLightLoss;
         internal static bool _fancyLightingEngineMakeBrighter;
 
+        internal static bool _skyColorsEnabled;
+
         internal static int _threadCount;
 
         internal static bool _overrideLightingColor;
-        internal static bool _overrideFastRandom;
-        internal static int _mushroomDustCount;
+        internal static bool _inCameraMode;
 
         internal FancyLightingEngine _fancyLightingEngineInstance;
         internal SmoothLighting _smoothLightingInstance;
@@ -44,6 +48,10 @@ namespace FancyLighting
         internal FieldInfo field_workingProcessedArea;
         internal FieldInfo field_colors;
         internal FieldInfo field_mask;
+
+        private static RenderTarget2D _cameraModeTarget;
+        internal static Rectangle _cameraModeArea;
+        internal static CaptureBiome _cameraModeBiome;
 
         public bool OverrideLightingColor
         {
@@ -78,11 +86,19 @@ namespace FancyLighting
             }
         }
 
+        public static bool ModifyCameraModeRendering
+        {
+            get
+            {
+                return Lighting.UsingNewLighting && (SmoothLightingEnabled || AmbientOcclusionEnabled);
+            }
+        }
+
         public static bool SmoothLightingEnabled
         {
             get
             {
-                return _smoothLightingEnabled;
+                return _smoothLightingEnabled && Lighting.UsingNewLighting;
             }
         }
 
@@ -115,6 +131,14 @@ namespace FancyLighting
             get
             {
                 return _ambientOcclusionEnabled;
+            }
+        }
+
+        public static bool AmbientOcclusionFromExtraTiles
+        {
+            get
+            {
+                return _ambientOcclusionExtra;
             }
         }
 
@@ -166,6 +190,14 @@ namespace FancyLighting
             }
         }
 
+        public static bool CustomSkyColorsEnabled
+        {
+            get
+            {
+                return _skyColorsEnabled;
+            }
+        }
+
         public static int ThreadCount
         {
             get
@@ -179,10 +211,9 @@ namespace FancyLighting
             if (Main.netMode == NetmodeID.Server) return;
 
             _overrideLightingColor = false;
-            _overrideFastRandom = false;
-            _mushroomDustCount = 0;
+            _inCameraMode = false;
 
-            ModContent.GetInstance<FancyLightingModSystem>().UpdateSettings();
+            ModContent.GetInstance<FancyLightingModSystem>()?.UpdateSettings();
 
             BlendState blend = new BlendState();
             blend.ColorBlendFunction = BlendFunction.Add;
@@ -201,19 +232,20 @@ namespace FancyLighting
             field_mask = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
 
             AddHooks();
+            SkyColors.AddSkyColorsHooks();
+            AddCameraModeHooks();
         }
 
         public override void Unload()
         {
-            try
-            {
-                _smoothLightingInstance.Unload();
-                _ambientOcclusionInstance.Unload();
-            }
-            catch
-            {
-                // Ignore
-            }
+            Main.QueueMainThreadAction(
+                () => 
+                {
+                    _cameraModeTarget = null;
+                    _smoothLightingInstance?.Unload();
+                    _ambientOcclusionInstance?.Unload();
+                }
+            );
 
             base.Unload();
         }
@@ -279,7 +311,7 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (_inCameraMode || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
                 {
                     orig(self);
                     return;
@@ -384,6 +416,145 @@ namespace FancyLighting
                     orig(self);
                 if (SmoothLightingEnabled)
                     _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
+            };
+        }
+
+        protected void AddCameraModeHooks()
+        {
+            On.Terraria.Main.DrawWalls +=
+            (
+                On.Terraria.Main.orig_DrawWalls orig,
+                Terraria.Main self
+            ) =>
+            {
+                if (!_inCameraMode)
+                {
+                    orig(self);
+                    return;
+                }
+
+                _smoothLightingInstance.CalculateSmoothLighting(true, true);
+                OverrideLightingColor = SmoothLightingEnabled;
+
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+                Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
+                orig(self);
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+
+                OverrideLightingColor = false;
+                _smoothLightingInstance.DrawSmoothLightingCameraMode(
+                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, true, AmbientOcclusionEnabled);
+
+                if (AmbientOcclusionEnabled)
+                {
+                    _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
+                        _cameraModeTarget, _smoothLightingInstance._cameraModeSurface2, _cameraModeBiome);
+                }
+
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
+            };
+
+            On.Terraria.Main.DrawTiles +=
+            (
+                On.Terraria.Main.orig_DrawTiles orig,
+                Terraria.Main self,
+                bool solidLayer,
+                bool forRenderTargets,
+                bool intoRenderTargets,
+                int waterStyleOverride
+            ) =>
+            {
+                if (!_inCameraMode)
+                {
+                    orig(self, solidLayer, forRenderTargets, intoRenderTargets, waterStyleOverride);
+                    return;
+                }
+
+                _smoothLightingInstance.CalculateSmoothLighting(false, true);
+                OverrideLightingColor = SmoothLightingEnabled;
+
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+                Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
+                orig(self, solidLayer, forRenderTargets, intoRenderTargets, waterStyleOverride);
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+
+                OverrideLightingColor = false;
+                _smoothLightingInstance.DrawSmoothLightingCameraMode(
+                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, false, false);
+
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
+            };
+
+            On.Terraria.Main.DrawCapture +=
+            (
+                On.Terraria.Main.orig_DrawCapture orig,
+                Terraria.Main self,
+                Rectangle area,
+                CaptureSettings settings
+            ) =>
+            {
+                var renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
+                if (renderTargets is null || renderTargets.Length < 1)
+                {
+                    _cameraModeTarget = null;
+                }
+                else
+                {
+                    _cameraModeTarget = (RenderTarget2D)renderTargets[0].RenderTarget;
+                }
+                _inCameraMode = ModifyCameraModeRendering && (_cameraModeTarget is not null);
+                if (_inCameraMode)
+                {
+                    _cameraModeArea = area;
+                    _cameraModeBiome = settings.Biome;
+                }
+                orig(self, area, settings);
+                _inCameraMode = false;
+            };
+
+            On.Terraria.Main.DrawBackground +=
+            (
+                On.Terraria.Main.orig_DrawBackground orig,
+                Terraria.Main self
+            ) =>
+            {
+                if (!_inCameraMode || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+
+                _smoothLightingInstance.CalculateSmoothLighting(true, true);
+                OverrideLightingColor = SmoothLightingEnabled;
+
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+                Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
+                orig(self);
+                Main.tileBatch.End();
+                Main.spriteBatch.End();
+
+                OverrideLightingColor = false;
+                _smoothLightingInstance.DrawSmoothLightingCameraMode(
+                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, true, false);
+
+                Main.tileBatch.Begin();
+                Main.spriteBatch.Begin();
             };
         }
     }

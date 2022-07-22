@@ -7,6 +7,17 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.4.0 (2022-07-22)**
+- Smooth lighting and ambient occlusion now work in camera mode
+- Added a new option to use modified sky colors
+- Added a new option to make non-solid blocks generate ambient occlusion
+- Reduced the default ambient occlusion radius
+- Fixed unloading not disposing textures
+- Removed the option to set the ambient occlusion radius to 7, as it had poor visual quality
+- Slightly tweaked and optimized the fancy lighting engine
+- Made a minor optimization to ambient occlusion
+- Made a minor optimization to cubic upscaling
+
 **v0.3.1 (2022-07-14)**
 - Optimized rendering with smooth lighting enabled
 - Updated some config tooltips

@@ -1,4 +1,5 @@
-﻿using Terraria.ModLoader.Config;
+﻿using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 
 using System.ComponentModel;
 
@@ -36,9 +37,14 @@ namespace FancyLighting
         [Tooltip("Toggles whether or not to use ambient occlusion\nIf enabled, shadows are added around the edges of foreground tiles in front of background walls\nRequires lighting to be set to color")]
         public bool UseAmbientOcclusion;
 
-        [Range(1, 7)]
+        [DefaultValue(true)]
+        [Label("Enable Ambient Occlusion From Non-Solid Tiles")]
+        [Tooltip("Toggles whether non-solid blocks generate ambient occlusion\nNon-solid tiles generate weaker ambient occlusion\nPrimarily affects furniture and torches\nNot all non-solid tiles are affected")]
+        public bool UseExtraAmbientOcclusion;
+
+        [Range(1, 6)]
         [Increment(1)]
-        [DefaultValue(5)]
+        [DefaultValue(4)]
         [Slider]
         [DrawTicks]
         [Label("Ambient Occlusion Radius")]
@@ -79,6 +85,12 @@ namespace FancyLighting
         [Tooltip("Controls how much light is lost when light exits a solid block into the air\nHigher values correspond to darker shadows")]
         public int FancyLightingEngineLightLoss;
 
+        [Header("Sky Color")]
+        [DefaultValue(true)]
+        [Label("Enable Fancy Sky Colors")]
+        [Tooltip("Toggles whether or not to use modified sky colors\nIf disabled, vanilla sky colors are used instead")]
+        public bool UseCustomSkyColors;
+
         [Header("General")]
         [Range(1, 24)]
         [Increment(1)]
@@ -86,5 +98,12 @@ namespace FancyLighting
         [Label("Thread Count")]
         [Tooltip("Controls how many threads smooth lighting and the fancy lighting engine use\nFor good results, set this to the number of threads your CPU has")]
         public int ThreadCount;
+
+        public override void OnChanged()
+        {
+            ModContent.GetInstance<FancyLightingModSystem>()?.UpdateSettings();
+
+            base.OnChanged();
+        }
     }
 }

@@ -1,11 +1,11 @@
-﻿using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+
+using Terraria;
 using Terraria.Graphics.Light;
 using Terraria.Graphics.Shaders;
-
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using Terraria.ID;
+using Terraria.ModLoader;
 
 using System;
 using System.Threading;
@@ -17,14 +17,17 @@ namespace FancyLighting
     {
         internal Texture2D _colors;
         internal Texture2D _colorsBackground;
+
         internal Vector2 _colorsPosition;
         internal Vector2 _colorsPass1Position;
         internal Vector2 _colorsPass2Position;
         internal Rectangle _lightMapTileArea;
         internal Rectangle _lightMapRenderArea;
         internal Rectangle _lightMapPass2RenderArea;
+
         internal RenderTarget2D _surface;
         internal RenderTarget2D _surface2;
+
         internal Vector3[] _lights;
         internal Vector3[] _whiteLights;
         internal Vector3[] _tmpLights;
@@ -40,6 +43,10 @@ namespace FancyLighting
         private bool _smoothLightingPositionValid;
         private bool _smoothLightingBackComplete;
         private bool _smoothLightingForeComplete;
+
+        internal RenderTarget2D _cameraModeSurface;
+        internal RenderTarget2D _cameraModeSurface2;
+        internal RenderTarget2D _cameraModeSurface3;
 
         internal bool DrawSmoothLightingBack
         {
@@ -135,6 +142,9 @@ namespace FancyLighting
             GameShaders.Misc.Remove("FancyLighting:UpscalingSmooth");
             GameShaders.Misc["FancyLighting:UpscalingRegular"]?.Shader?.Dispose();
             GameShaders.Misc.Remove("FancyLighting:UpscalingRegular");
+            _cameraModeSurface?.Dispose();
+            _cameraModeSurface2?.Dispose();
+            _cameraModeSurface3?.Dispose();
         }
 
         private void PrintException()
@@ -291,7 +301,7 @@ namespace FancyLighting
             _smoothLightingLightMapValid = true;
         }
 
-        private void GetColorsPosition()
+        private void GetColorsPosition(bool cameraMode)
         {
             int xmin = _lightMapTileArea.X;
             int ymin = _lightMapTileArea.Y;
@@ -304,10 +314,10 @@ namespace FancyLighting
             _colorsPass1Position = 16f * new Vector2(width, 0);
             _colorsPass2Position = 16f * new Vector2(xmin, ymin);
 
-            _smoothLightingPositionValid = true;
+            _smoothLightingPositionValid = !cameraMode;
         }
 
-        internal void CalculateSmoothLighting(bool background)
+        internal void CalculateSmoothLighting(bool background, bool cameraMode = false)
         {
             if (!FancyLightingMod.SmoothLightingEnabled)
                 return;
@@ -317,10 +327,10 @@ namespace FancyLighting
             _isDangersenseActive = Main.LocalPlayer.dangerSense;
             _isSpelunkerActive = Main.LocalPlayer.findTreasure;
 
-            if (!_smoothLightingPositionValid)
-                GetColorsPosition();
+            if (!_smoothLightingPositionValid || cameraMode)
+                GetColorsPosition(cameraMode);
 
-            if (!_smoothLightingPositionValid)
+            if (!_smoothLightingPositionValid && !cameraMode)
                 return;
             if (Main.tile.Height == 0 || Main.tile.Width == 0)
                 return;
@@ -355,7 +365,7 @@ namespace FancyLighting
 
             int caughtException = 0;
 
-            if (background && !_smoothLightingBackComplete)
+            if (background && (!_smoothLightingBackComplete || cameraMode))
             {
                 Parallel.For(
                     clampedStart,
@@ -411,9 +421,9 @@ namespace FancyLighting
 
                 _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
-                _smoothLightingBackComplete = true;
+                _smoothLightingBackComplete = !cameraMode;
             }
-            else if (!_smoothLightingForeComplete)
+            else if (!background && (!_smoothLightingForeComplete || cameraMode))
             {
                 _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
                     (float)(0.4 - 0.4 * Math.Cos((int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1 ? 0.08 * Main.timeForVisualEffects : 0.0))
@@ -497,15 +507,19 @@ namespace FancyLighting
 
                 _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
-                _smoothLightingForeComplete = true;
+                _smoothLightingForeComplete = !cameraMode;
             }
         }
 
-        internal void DrawSmoothLighting(RenderTarget2D target, bool background, bool endSpriteBatch = true)
+        internal void DrawSmoothLighting(RenderTarget2D target, bool background)
         {
-            if (!FancyLightingMod.SmoothLightingEnabled) return;
-            if (!background && !_smoothLightingForeComplete) return;
-            if (background && !_smoothLightingBackComplete) return;
+            if (!FancyLightingMod.SmoothLightingEnabled)
+                return;
+
+            if (!background && !_smoothLightingForeComplete)
+                return;
+            if (background && !_smoothLightingBackComplete)
+                return;
 
             if (_surface is null
                 || _surface.GraphicsDevice != Main.graphics.GraphicsDevice
@@ -615,13 +629,7 @@ namespace FancyLighting
                 Main.spriteBatch.Draw(
                     target,
                     Vector2.Zero,
-                    null,
-                    Color.White,
-                    0f,
-                    new Vector2(0, 0),
-                    1f,
-                    SpriteEffects.None,
-                    0f
+                    Color.White
                 );
             }
 
@@ -637,6 +645,179 @@ namespace FancyLighting
             );
             Main.spriteBatch.End();
             Main.instance.GraphicsDevice.SetRenderTarget(null);
+        }
+    
+        internal RenderTarget2D GetCameraModeRenderTarget(RenderTarget2D screenTarget)
+        {
+            if (_cameraModeSurface is null
+                || _cameraModeSurface.GraphicsDevice != Main.graphics.GraphicsDevice
+                || _cameraModeSurface.Width != screenTarget.Width
+                || _cameraModeSurface.Height != screenTarget.Height)
+            {
+                _cameraModeSurface?.Dispose();
+                _cameraModeSurface = new RenderTarget2D(Main.graphics.GraphicsDevice, screenTarget.Width, screenTarget.Height);
+            }
+
+            return _cameraModeSurface;
+        }
+
+        internal void DrawSmoothLightingCameraMode(RenderTarget2D screenTarget, RenderTarget2D target, bool background, bool skipFinalPass = false)
+        {
+            Texture2D lightMapTexture = background ? _colorsBackground : _colors;
+            
+            if (_cameraModeSurface2 is null
+                || _cameraModeSurface2.GraphicsDevice != Main.graphics.GraphicsDevice
+                || _cameraModeSurface2.Width < 16f * lightMapTexture.Height
+                || _cameraModeSurface2.Height < 16f * lightMapTexture.Width)
+            {
+                _cameraModeSurface2?.Dispose();
+                _cameraModeSurface2 = new RenderTarget2D(
+                    Main.graphics.GraphicsDevice,
+                    Math.Max(16 * lightMapTexture.Height, _cameraModeSurface2?.Width ?? 0),
+                    Math.Max(16 * lightMapTexture.Width, _cameraModeSurface2?.Height ?? 0)
+                );
+            }
+
+            if (_cameraModeSurface3 is null
+                || _cameraModeSurface3.GraphicsDevice != Main.graphics.GraphicsDevice
+                || _cameraModeSurface3.Width < 16f * lightMapTexture.Height
+                || _cameraModeSurface3.Height < 16f * lightMapTexture.Width)
+            {
+                _cameraModeSurface3?.Dispose();
+                _cameraModeSurface3 = new RenderTarget2D(
+                    Main.graphics.GraphicsDevice,
+                    Math.Max(16 * lightMapTexture.Height, _cameraModeSurface3?.Width ?? 0),
+                    Math.Max(16 * lightMapTexture.Width, _cameraModeSurface3?.Height ?? 0)
+                );
+            }
+
+            if (!FancyLightingMod.SmoothLightingEnabled)
+            {
+                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend
+                );
+            }
+            else if (FancyLightingMod.CustomUpscalingEnabled)
+            {
+                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface3);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    BlendState.Opaque,
+                    SamplerState.PointClamp,
+                    DepthStencilState.None,
+                    RasterizerState.CullNone
+                );
+
+                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
+                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Width, lightMapTexture.Width, 1f / lightMapTexture.Width, 0f))
+                    .Apply(null);
+                Main.spriteBatch.Draw(
+                    lightMapTexture,
+                    _colorsPass1Position,
+                    _lightMapRenderArea,
+                    Color.White,
+                    (float)(Math.PI / 2.0),
+                    Vector2.Zero,
+                    16f,
+                    SpriteEffects.FlipVertically,
+                    0f
+                );
+
+                Main.spriteBatch.End();
+
+                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend,
+                    SamplerState.PointClamp,
+                    DepthStencilState.None,
+                    RasterizerState.CullNone
+                );
+
+                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
+                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Height, lightMapTexture.Height, 1f / lightMapTexture.Height, 0f))
+                    .Apply(null);
+                Main.spriteBatch.Draw(
+                    _cameraModeSurface3,
+                    _colorsPass2Position - 16f * new Vector2(FancyLightingMod._cameraModeArea.X, FancyLightingMod._cameraModeArea.Y),
+                    _lightMapPass2RenderArea,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    0f
+                );
+                GameShaders.Misc["FancyLighting:UpscalingRegular"]
+                    .Apply(null);
+            }
+            else
+            {
+                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend
+                );
+                Main.spriteBatch.Draw(
+                    lightMapTexture,
+                    _colorsPosition - 16f * new Vector2(FancyLightingMod._cameraModeArea.X, FancyLightingMod._cameraModeArea.Y),
+                    _lightMapRenderArea,
+                    Color.White,
+                    (float)(Math.PI / 2.0),
+                    Vector2.Zero,
+                    16f,
+                    SpriteEffects.FlipVertically,
+                    0f
+                );
+            }
+
+            if (!(FancyLightingMod.SmoothLightingEnabled && FancyLightingMod.RenderOnlyLight))
+            {
+                Main.spriteBatch.Draw(
+                    target,
+                    Vector2.Zero,
+                    Color.White
+                );
+            }
+
+            Main.spriteBatch.End();
+
+            if (skipFinalPass)
+                return;
+
+            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.spriteBatch.Begin();
+            Main.spriteBatch.Draw(
+                screenTarget,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
+
+            Main.instance.GraphicsDevice.SetRenderTarget(screenTarget);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.spriteBatch.Begin();
+            Main.spriteBatch.Draw(
+                _cameraModeSurface,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.Draw(
+                _cameraModeSurface2,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
         }
     }
 }

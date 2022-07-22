@@ -18,54 +18,55 @@ float4 uShaderSpecificData;
 
 float4 AlphaToGrayscale(float2 coords : TEXCOORD0) : COLOR0
 {
-    float4 color = float4(1, 1, 1, 1);
-    color.rgb -= tex2D(uImage0, coords).a;
-    return color;
+    float brightness = 1 - tex2D(uImage0, coords).a;
+    return float4(brightness, brightness, brightness, 1);
+}
+
+float4 AlphaToGrayscaleLighter(float2 coords : TEXCOORD0) : COLOR0
+{
+    float brightness = 1 - 0.5 * tex2D(uImage0, coords).a;
+    return float4(brightness, brightness, brightness, 1);
 }
 
 float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
 
-    float4 color = (
-          (tex2D(uImage0, coords - 8 * pix) + tex2D(uImage0, coords + 8 * pix))
-        + 16 * (tex2D(uImage0, coords - 7 * pix) + tex2D(uImage0, coords + 7 * pix))
-        + 120 * (tex2D(uImage0, coords - 6 * pix) + tex2D(uImage0, coords + 6 * pix))
-        + 560 * (tex2D(uImage0, coords - 5 * pix) + tex2D(uImage0, coords + 5 * pix))
-        + 1820 * (tex2D(uImage0, coords - 4 * pix) + tex2D(uImage0, coords + 4 * pix))
-        + 4368 * (tex2D(uImage0, coords - 3 * pix) + tex2D(uImage0, coords + 3 * pix))
-        + 8008 * (tex2D(uImage0, coords - 2 * pix) + tex2D(uImage0, coords + 2 * pix))
-        + 11440 * (tex2D(uImage0, coords - 1 * pix) + tex2D(uImage0, coords + 1 * pix))
-        + 12870 * tex2D(uImage0, coords)
+    float brightness = (
+          (tex2D(uImage0, coords - 8 * pix).r + tex2D(uImage0, coords + 8 * pix).r)
+        + 16 * (tex2D(uImage0, coords - 7 * pix).r + tex2D(uImage0, coords + 7 * pix).r)
+        + 120 * (tex2D(uImage0, coords - 6 * pix).r + tex2D(uImage0, coords + 6 * pix).r)
+        + 560 * (tex2D(uImage0, coords - 5 * pix).r + tex2D(uImage0, coords + 5 * pix).r)
+        + 1820 * (tex2D(uImage0, coords - 4 * pix).r + tex2D(uImage0, coords + 4 * pix).r)
+        + 4368 * (tex2D(uImage0, coords - 3 * pix).r + tex2D(uImage0, coords + 3 * pix).r)
+        + 8008 * (tex2D(uImage0, coords - 2 * pix).r + tex2D(uImage0, coords + 2 * pix).r)
+        + 11440 * (tex2D(uImage0, coords - 1 * pix).r + tex2D(uImage0, coords + 1 * pix).r)
+        + 12870 * tex2D(uImage0, coords).r
     ) / 65536.0;
 
-    color.a = 1;
-
-    return color;
+    return float4(brightness, brightness, brightness, 1);
 }
 
 float4 BlurFinal(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
 
-    float4 color = (
-          (tex2D(uImage0, coords - 8 * pix) + tex2D(uImage0, coords + 8 * pix))
-        + 16 * (tex2D(uImage0, coords - 7 * pix) + tex2D(uImage0, coords + 7 * pix))
-        + 120 * (tex2D(uImage0, coords - 6 * pix) + tex2D(uImage0, coords + 6 * pix))
-        + 560 * (tex2D(uImage0, coords - 5 * pix) + tex2D(uImage0, coords + 5 * pix))
-        + 1820 * (tex2D(uImage0, coords - 4 * pix) + tex2D(uImage0, coords + 4 * pix))
-        + 4368 * (tex2D(uImage0, coords - 3 * pix) + tex2D(uImage0, coords + 3 * pix))
-        + 8008 * (tex2D(uImage0, coords - 2 * pix) + tex2D(uImage0, coords + 2 * pix))
-        + 11440 * (tex2D(uImage0, coords - 1 * pix) + tex2D(uImage0, coords + 1 * pix))
-        + 12870 * tex2D(uImage0, coords)
+    float brightness = (
+          (tex2D(uImage0, coords - 8 * pix).r + tex2D(uImage0, coords + 8 * pix).r)
+        + 16 * (tex2D(uImage0, coords - 7 * pix).r + tex2D(uImage0, coords + 7 * pix).r)
+        + 120 * (tex2D(uImage0, coords - 6 * pix).r + tex2D(uImage0, coords + 6 * pix).r)
+        + 560 * (tex2D(uImage0, coords - 5 * pix).r + tex2D(uImage0, coords + 5 * pix).r)
+        + 1820 * (tex2D(uImage0, coords - 4 * pix).r + tex2D(uImage0, coords + 4 * pix).r)
+        + 4368 * (tex2D(uImage0, coords - 3 * pix).r + tex2D(uImage0, coords + 3 * pix).r)
+        + 8008 * (tex2D(uImage0, coords - 2 * pix).r + tex2D(uImage0, coords + 2 * pix).r)
+        + 11440 * (tex2D(uImage0, coords - 1 * pix).r + tex2D(uImage0, coords + 1 * pix).r)
+        + 12870 * tex2D(uImage0, coords).r
     ) / 65536.0;
 
-    color.a = 1;
+    brightness *= brightness * brightness;
+    brightness = uShaderSpecificData.z + (1 - uShaderSpecificData.z) * brightness;
 
-    color.rgb *= color.rgb * color.rgb;
-    color.rgb = uShaderSpecificData.z + (1 - uShaderSpecificData.z) * color.rgb;
-
-    return color;
+    return float4(brightness, brightness, brightness, 1);
 }
 
 technique Technique1
@@ -73,6 +74,11 @@ technique Technique1
     pass AlphaToGrayscale
     {
         PixelShader = compile ps_2_0 AlphaToGrayscale();
+    }
+
+    pass AlphaToGrayscaleLighter
+    {
+        PixelShader = compile ps_2_0 AlphaToGrayscaleLighter();
     }
 
     pass Blur
