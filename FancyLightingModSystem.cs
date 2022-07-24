@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using FancyLighting.Config;
+using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -6,11 +7,11 @@ namespace FancyLighting
 {
     public class FancyLightingModSystem : ModSystem
     {
-        private LightingConfig _configInstance;
+        private Config.LightingConfig _configInstance;
 
         FancyLightingModSystem() : base()
         {
-            _configInstance = ModContent.GetInstance<LightingConfig>();
+            _configInstance = ModContent.GetInstance<Config.LightingConfig>();
         }
 
         public override void OnWorldLoad()
@@ -25,24 +26,17 @@ namespace FancyLighting
             base.OnWorldLoad();
         }
 
-        public override void PostUpdateEverything()
-        {
-            if (Main.netMode == NetmodeID.Server) return;
-
-            UpdateSettings();
-
-            base.PostUpdateEverything();
-        }
-
         internal void UpdateSettings()
         {
             FancyLightingMod._smoothLightingEnabled = _configInstance.UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._blurLightMap = _configInstance.UseLightMapBlurring;
-            FancyLightingMod._customUpscalingEnabled = _configInstance.UseCustomUpscaling;
+            FancyLightingMod._useBicubicUpscaling = _configInstance.UseHighQualityUpscaling;
+            FancyLightingMod._simulateNormalMaps = _configInstance.SimulateNormalMaps;
             FancyLightingMod._renderOnlyLight = _configInstance.RenderOnlyLight;
 
             FancyLightingMod._ambientOcclusionEnabled = _configInstance.UseAmbientOcclusion && Lighting.UsingNewLighting;
-            FancyLightingMod._ambientOcclusionExtra = _configInstance.UseExtraAmbientOcclusion;
+            FancyLightingMod._ambientOcclusionNonSolid = _configInstance.DoNonSolidAmbientOcclusion;
+            FancyLightingMod._ambientOcclusionTileEntity = _configInstance.DoTileEntityAmbientOcclusion;
             FancyLightingMod._ambientOcclusionRadius = _configInstance.AmbientOcclusionRadius;
             FancyLightingMod._ambientOcclusionIntensity = _configInstance.AmbientOcclusionIntensity;
 

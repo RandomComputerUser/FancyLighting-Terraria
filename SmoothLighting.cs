@@ -18,9 +18,9 @@ namespace FancyLighting
         internal Texture2D _colors;
         internal Texture2D _colorsBackground;
 
-        internal Vector2 _colorsPosition;
-        internal Vector2 _colorsPass1Position;
-        internal Vector2 _colorsPass2Position;
+        private Texture2D _ditherMask;
+
+        internal Vector2 _lightMapPosition;
         internal Rectangle _lightMapTileArea;
         internal Rectangle _lightMapRenderArea;
         internal Rectangle _lightMapPass2RenderArea;
@@ -117,17 +117,25 @@ namespace FancyLighting
             _isDangersenseActive = false;
             _isSpelunkerActive = false;
             
-            GameShaders.Misc["FancyLighting:UpscalingSmooth"] =
+            GameShaders.Misc["FancyLighting:UpscaleBicubic"] =
                 new MiscShaderData(
                     new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
-                    "UpscaleSmooth"
+                    "UpscaleBicubic"
                 );
 
-            GameShaders.Misc["FancyLighting:UpscalingRegular"] =
+            GameShaders.Misc["FancyLighting:UpscaleNoFilter"] =
                 new MiscShaderData(
                     new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
                     "UpscaleNoFilter"
                 );
+
+            GameShaders.Misc["FancyLighting:SimulateNormals"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "SimulateNormals"
+                );
+
+            _ditherMask = ModContent.Request<Texture2D>("FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value;
 
             _printExceptionTime = 0;
         }
@@ -138,13 +146,16 @@ namespace FancyLighting
             _surface2?.Dispose();
             _colors?.Dispose();
             _colorsBackground?.Dispose();
-            GameShaders.Misc["FancyLighting:UpscalingSmooth"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:UpscalingSmooth");
-            GameShaders.Misc["FancyLighting:UpscalingRegular"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:UpscalingRegular");
             _cameraModeSurface?.Dispose();
             _cameraModeSurface2?.Dispose();
             _cameraModeSurface3?.Dispose();
+            _ditherMask?.Dispose();
+            GameShaders.Misc["FancyLighting:UpscaleBicubic"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:UpscaleBicubic");
+            GameShaders.Misc["FancyLighting:UpscaleNoFilter"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:UpscaleNoFilter");
+            GameShaders.Misc["FancyLighting:SimulateNormals"]?.Shader?.Dispose();
+            GameShaders.Misc.Remove("FancyLighting:SimulateNormals");
         }
 
         private void PrintException()
@@ -264,34 +275,125 @@ namespace FancyLighting
                 Array.Copy(colors, _lights, height * width);
             }
 
-            Parallel.For(
-                0,
-                width,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
-                (x) =>
-                {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
+            if (FancyLightingMod.SimulateNormalMaps)
+            {
+                Parallel.For(
+                    1,
+                    width - 1,
+                    new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                    (x) =>
                     {
-                        try
+                        int i = height * x + 1;
+                        for (int y = 1; y < height - 1; ++y)
                         {
-                            ref Vector3 color = ref _lights[i];
-                            if (color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f)
+                            try
                             {
+                                ref Vector3 color = ref _lights[i];
+                                if (color.X >= 1f / 255f || color.Y >= 1f / 255f || color.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                Vector3 otherColor;
+                                
+                                otherColor = _lights[i - 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i + 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i - height];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i + height];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i - height - 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i - height + 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i + height - 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
+                                otherColor = _lights[i + height + 1];
+                                if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                    continue;
+                                }
+
                                 _whiteLights[i++] = new Vector3(1f / 255f, 1f / 255f, 1f / 255f);
                             }
-                            else
+                            catch (IndexOutOfRangeException)
                             {
-                                _whiteLights[i++] = Vector3.One;
+                                Interlocked.Exchange(ref caughtException, 1);
                             }
                         }
-                        catch (IndexOutOfRangeException)
+                    }
+                );
+            }
+            else
+            {
+                Parallel.For(
+                    0,
+                    width,
+                    new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 0; y < height; ++y)
                         {
-                            Interlocked.Exchange(ref caughtException, 1);
+                            try
+                            {
+                                ref Vector3 color = ref _lights[i];
+                                if (color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f)
+                                {
+                                    _whiteLights[i++] = new Vector3(1f / 255f, 1f / 255f, 1f / 255f);
+                                }
+                                else
+                                {
+                                    _whiteLights[i++] = Vector3.One;
+                                }
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
                         }
                     }
-                }
-            );
+                );
+            }
 
             LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
             _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
@@ -310,9 +412,7 @@ namespace FancyLighting
 
             if (width == 0 || height == 0) return;
 
-            _colorsPosition = 16f * new Vector2(xmin + width, ymin);
-            _colorsPass1Position = 16f * new Vector2(width, 0);
-            _colorsPass2Position = 16f * new Vector2(xmin, ymin);
+            _lightMapPosition = 16f * new Vector2(xmin + width, ymin);
 
             _smoothLightingPositionValid = !cameraMode;
         }
@@ -532,7 +632,7 @@ namespace FancyLighting
 
             Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-            if (FancyLightingMod.CustomUpscalingEnabled)
+            if (FancyLightingMod.SimulateNormalMaps)
             {
                 if (_surface2 is null
                     || _surface2.GraphicsDevice != Main.graphics.GraphicsDevice
@@ -546,83 +646,15 @@ namespace FancyLighting
                         Math.Max(16 * lightMapTexture.Width, _surface2?.Height ?? 0)
                     );
                 }
-
-                Main.instance.GraphicsDevice.SetRenderTarget(_surface2);
-
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    BlendState.Opaque,
-                    SamplerState.PointClamp,
-                    DepthStencilState.None,
-                    RasterizerState.CullNone
-                );
-
-                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
-                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Width, lightMapTexture.Width, 1f / lightMapTexture.Width, 0f))
-                    .Apply(null);
-                Main.spriteBatch.Draw(
-                    lightMapTexture,
-                    _colorsPass1Position,
-                    _lightMapRenderArea,
-                    Color.White,
-                    (float)(Math.PI / 2.0),
-                    Vector2.Zero,
-                    16f,
-                    SpriteEffects.FlipVertically,
-                    0f
-                );
-
-                Main.spriteBatch.End();
-
-                Main.instance.GraphicsDevice.SetRenderTarget(_surface);
-                Main.instance.GraphicsDevice.Clear(Color.White);
-
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    FancyLightingMod.MultiplyBlend,
-                    SamplerState.PointClamp,
-                    DepthStencilState.None,
-                    RasterizerState.CullNone
-                );
-
-                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
-                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Height, lightMapTexture.Height, 1f / lightMapTexture.Height, 0f))
-                    .Apply(null);
-                Main.spriteBatch.Draw(
-                    _surface2,
-                    _colorsPass2Position - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                    _lightMapPass2RenderArea,
-                    Color.White,
-                    0f,
-                    Vector2.Zero,
-                    1f,
-                    SpriteEffects.None,
-                    0f
-                );
-                GameShaders.Misc["FancyLighting:UpscalingRegular"]
-                    .Apply(null);
             }
-            else
-            {
-                Main.instance.GraphicsDevice.SetRenderTarget(_surface);
-                Main.instance.GraphicsDevice.Clear(Color.White);
 
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    FancyLightingMod.MultiplyBlend
-                );
-                Main.spriteBatch.Draw(
-                    lightMapTexture,
-                    _colorsPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                    _lightMapRenderArea,
-                    Color.White,
-                    (float)(Math.PI / 2.0),
-                    Vector2.Zero,
-                    16f,
-                    SpriteEffects.FlipVertically,
-                    0f
-                );
-            }
+            ApplySmoothLighting(
+                lightMapTexture,
+                _surface,
+                _surface2,
+                _lightMapPosition - (Main.screenPosition - new Vector2(Main.offScreenRange)),
+                target
+            );
 
             if (!FancyLightingMod.RenderOnlyLight)
             {
@@ -691,72 +723,15 @@ namespace FancyLighting
                 );
             }
 
-            if (!FancyLightingMod.SmoothLightingEnabled)
+            if (FancyLightingMod.SmoothLightingEnabled)
             {
-                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
-                Main.instance.GraphicsDevice.Clear(Color.White);
-
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    FancyLightingMod.MultiplyBlend
-                );
-            }
-            else if (FancyLightingMod.CustomUpscalingEnabled)
-            {
-                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface3);
-
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    BlendState.Opaque,
-                    SamplerState.PointClamp,
-                    DepthStencilState.None,
-                    RasterizerState.CullNone
-                );
-
-                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
-                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Width, lightMapTexture.Width, 1f / lightMapTexture.Width, 0f))
-                    .Apply(null);
-                Main.spriteBatch.Draw(
+                ApplySmoothLighting(
                     lightMapTexture,
-                    _colorsPass1Position,
-                    _lightMapRenderArea,
-                    Color.White,
-                    (float)(Math.PI / 2.0),
-                    Vector2.Zero,
-                    16f,
-                    SpriteEffects.FlipVertically,
-                    0f
-                );
-
-                Main.spriteBatch.End();
-
-                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
-                Main.instance.GraphicsDevice.Clear(Color.White);
-
-                Main.spriteBatch.Begin(
-                    SpriteSortMode.Immediate,
-                    FancyLightingMod.MultiplyBlend,
-                    SamplerState.PointClamp,
-                    DepthStencilState.None,
-                    RasterizerState.CullNone
-                );
-
-                GameShaders.Misc["FancyLighting:UpscalingSmooth"]
-                    .UseShaderSpecificData(new Vector4(0.5f / lightMapTexture.Height, lightMapTexture.Height, 1f / lightMapTexture.Height, 0f))
-                    .Apply(null);
-                Main.spriteBatch.Draw(
+                    _cameraModeSurface2,
                     _cameraModeSurface3,
-                    _colorsPass2Position - 16f * new Vector2(FancyLightingMod._cameraModeArea.X, FancyLightingMod._cameraModeArea.Y),
-                    _lightMapPass2RenderArea,
-                    Color.White,
-                    0f,
-                    Vector2.Zero,
-                    1f,
-                    SpriteEffects.None,
-                    0f
+                    _lightMapPosition - 16f * new Vector2(FancyLightingMod._cameraModeArea.X, FancyLightingMod._cameraModeArea.Y),
+                    target
                 );
-                GameShaders.Misc["FancyLighting:UpscalingRegular"]
-                    .Apply(null);
             }
             else
             {
@@ -766,17 +741,6 @@ namespace FancyLighting
                 Main.spriteBatch.Begin(
                     SpriteSortMode.Immediate,
                     FancyLightingMod.MultiplyBlend
-                );
-                Main.spriteBatch.Draw(
-                    lightMapTexture,
-                    _colorsPosition - 16f * new Vector2(FancyLightingMod._cameraModeArea.X, FancyLightingMod._cameraModeArea.Y),
-                    _lightMapRenderArea,
-                    Color.White,
-                    (float)(Math.PI / 2.0),
-                    Vector2.Zero,
-                    16f,
-                    SpriteEffects.FlipVertically,
-                    0f
                 );
             }
 
@@ -818,6 +782,84 @@ namespace FancyLighting
                 Color.White
             );
             Main.spriteBatch.End();
+        }
+
+        private void ApplySmoothLighting(
+            Texture2D lightMapTexture,
+            RenderTarget2D surface1,
+            RenderTarget2D surface2,
+            Vector2 lightMapPosition,
+            RenderTarget2D worldTarget)
+        {
+            bool simulateNormalMaps = FancyLightingMod.SimulateNormalMaps;
+            bool doBicubicUpscaling = FancyLightingMod.UseHighQualityUpscaling;
+
+            Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps ? surface2 : surface1);
+            Main.instance.GraphicsDevice.Clear(Color.White);
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                FancyLightingMod.MultiplyBlend
+            );
+
+            if (doBicubicUpscaling)
+            {
+                GameShaders.Misc["FancyLighting:UpscaleBicubic"]
+                    .UseShaderSpecificData(new Vector4(
+                        1f / lightMapTexture.Width,
+                        1f / lightMapTexture.Height,
+                        lightMapTexture.Width,
+                        lightMapTexture.Height))
+                    .UseColor(16f * lightMapTexture.Width / _ditherMask.Width, 16f * lightMapTexture.Height / _ditherMask.Height, 0f)
+                    .Apply(null);
+                Main.instance.GraphicsDevice.Textures[1] = _ditherMask;
+                Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+            }
+
+            Main.spriteBatch.Draw(
+                lightMapTexture,
+                lightMapPosition,
+                _lightMapRenderArea,
+                Color.White,
+                (float)(Math.PI / 2.0),
+                Vector2.Zero,
+                16f,
+                SpriteEffects.FlipVertically,
+                0f
+            );
+
+            if (simulateNormalMaps)
+            {
+                Main.spriteBatch.End();
+
+                Main.instance.GraphicsDevice.SetRenderTarget(surface1);
+                Main.instance.GraphicsDevice.Clear(Color.White);
+                Main.spriteBatch.Begin(
+                    SpriteSortMode.Immediate,
+                    FancyLightingMod.MultiplyBlend
+                );
+                GameShaders.Misc["FancyLighting:SimulateNormals"]
+                    .UseShaderSpecificData(new Vector4(
+                        0.5f / worldTarget.Width,
+                        0.5f / worldTarget.Height,
+                        40f / surface2.Width,
+                        40f / surface2.Height))
+                    .UseColor((float)surface2.Width / worldTarget.Width, (float)surface2.Height / worldTarget.Height, 0f)
+                    .Apply(null);
+                Main.instance.GraphicsDevice.Textures[1] = worldTarget;
+                Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
+
+                Main.spriteBatch.Draw(
+                    surface2,
+                    Vector2.Zero,
+                    Color.White
+                );
+            }
+
+            if (doBicubicUpscaling || simulateNormalMaps)
+            {
+                GameShaders.Misc["FancyLighting:UpscaleNoFilter"]
+                    .Apply(null);
+            }
         }
     }
 }

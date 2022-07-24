@@ -7,6 +7,12 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Changelog
 
+**v0.4.1 (2022-07-24)**
+- Replaced the bicubic upscaling with a better algorithm
+- Added the option to make tile entities generate ambient occlusion
+- Added an experimental feature simulating normal maps
+- Added presets to the config
+
 **v0.4.0 (2022-07-22)**
 - Smooth lighting and ambient occlusion now work in camera mode
 - Added a new option to use modified sky colors

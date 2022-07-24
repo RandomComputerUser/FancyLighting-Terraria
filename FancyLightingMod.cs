@@ -19,11 +19,13 @@ namespace FancyLighting
 
         internal static bool _smoothLightingEnabled;
         internal static bool _blurLightMap;
-        internal static bool _customUpscalingEnabled;
+        internal static bool _useBicubicUpscaling;
+        internal static bool _simulateNormalMaps;
         internal static bool _renderOnlyLight;
 
         internal static bool _ambientOcclusionEnabled;
-        internal static bool _ambientOcclusionExtra;
+        internal static bool _ambientOcclusionNonSolid;
+        internal static bool _ambientOcclusionTileEntity;
         internal static int _ambientOcclusionRadius;
         internal static int _ambientOcclusionIntensity;
 
@@ -110,11 +112,19 @@ namespace FancyLighting
             }
         }
 
-        public static bool CustomUpscalingEnabled
+        public static bool UseHighQualityUpscaling
         {
             get
             {
-                return _customUpscalingEnabled;
+                return _useBicubicUpscaling;
+            }
+        }
+
+        public static bool SimulateNormalMaps
+        {
+            get
+            {
+                return _simulateNormalMaps;
             }
         }
 
@@ -134,11 +144,19 @@ namespace FancyLighting
             }
         }
 
-        public static bool AmbientOcclusionFromExtraTiles
+        public static bool DoNonSolidAmbientOcclusion
         {
             get
             {
-                return _ambientOcclusionExtra;
+                return _ambientOcclusionNonSolid;
+            }
+        }
+
+        public static bool DoTileEntityAmbientOcclusion
+        {
+            get
+            {
+                return _ambientOcclusionTileEntity;
             }
         }
 

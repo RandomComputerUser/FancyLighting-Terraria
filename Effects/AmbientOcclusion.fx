@@ -30,7 +30,7 @@ float4 AlphaToGrayscaleLighter(float2 coords : TEXCOORD0) : COLOR0
 
 float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
+    float2 pix = uShaderSpecificData.xy;
 
     float brightness = (
           (tex2D(uImage0, coords - 8 * pix).r + tex2D(uImage0, coords + 8 * pix).r)
@@ -49,7 +49,7 @@ float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 
 float4 BlurFinal(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 pix = float2(uShaderSpecificData.x, uShaderSpecificData.y);
+    float2 pix = uShaderSpecificData.xy;
 
     float brightness = (
           (tex2D(uImage0, coords - 8 * pix).r + tex2D(uImage0, coords + 8 * pix).r)
