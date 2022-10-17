@@ -1,15 +1,12 @@
+using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-
+using System.Reflection;
 using Terraria;
 using Terraria.Graphics.Capture;
-using Terraria.Graphics.Effects;
 using Terraria.Graphics.Light;
 using Terraria.ID;
 using Terraria.ModLoader;
-
-using System;
-using System.Reflection;
 
 namespace FancyLighting
 {
@@ -19,7 +16,7 @@ namespace FancyLighting
 
         internal static bool _smoothLightingEnabled;
         internal static bool _blurLightMap;
-        internal static bool _useBicubicUpscaling;
+        internal static Config.RenderMode _lightMapRenderMode;
         internal static bool _simulateNormalMaps;
         internal static bool _renderOnlyLight;
 
@@ -55,6 +52,9 @@ namespace FancyLighting
         internal static Rectangle _cameraModeArea;
         internal static CaptureBiome _cameraModeBiome;
 
+        private static RenderTarget2D _screenTarget1;
+        private static RenderTarget2D _screenTarget2;
+
         public bool OverrideLightingColor
         {
             get
@@ -64,13 +64,20 @@ namespace FancyLighting
             internal set
             {
                 if (value == _overrideLightingColor)
+                {
                     return;
+                }
+
                 if (!Lighting.UsingNewLighting)
+                {
                     return;
+                }
 
                 object lightingEngineInstance = field_activeEngine.GetValue(null);
                 if (lightingEngineInstance.GetType() != typeof(LightingEngine))
+                {
                     return;
+                }
 
                 LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue((LightingEngine)lightingEngineInstance);
 
@@ -112,11 +119,19 @@ namespace FancyLighting
             }
         }
 
-        public static bool UseHighQualityUpscaling
+        public static bool UseBicubicScaling
         {
             get
             {
-                return _useBicubicUpscaling;
+                return _lightMapRenderMode != Config.RenderMode.Bilinear;
+            }
+        }
+
+        public static bool DrawOverbright
+        {
+            get
+            {
+                return _lightMapRenderMode == Config.RenderMode.BicubicOverbright;
             }
         }
 
@@ -226,7 +241,10 @@ namespace FancyLighting
 
         public override void Load()
         {
-            if (Main.netMode == NetmodeID.Server) return;
+            if (Main.netMode == NetmodeID.Server)
+            {
+                return;
+            }
 
             _overrideLightingColor = false;
             _inCameraMode = false;
@@ -251,14 +269,16 @@ namespace FancyLighting
 
             AddHooks();
             SkyColors.AddSkyColorsHooks();
-            AddCameraModeHooks();
         }
 
         public override void Unload()
         {
             Main.QueueMainThreadAction(
-                () => 
+                () =>
                 {
+                    _cameraModeTarget?.Dispose();
+                    _screenTarget1?.Dispose();
+                    _screenTarget2?.Dispose();
                     _cameraModeTarget = null;
                     _smoothLightingInstance?.Unload();
                     _ambientOcclusionInstance?.Unload();
@@ -284,9 +304,11 @@ namespace FancyLighting
                     return;
                 }
                 for (int i = 0; i < 9; ++i)
+                {
                     slices[i] = Vector3.One;
+                }
             };
-            
+
             On.Terraria.Lighting.GetColor4Slice_int_int_refVector3Array +=
             (
                 On.Terraria.Lighting.orig_GetColor4Slice_int_int_refVector3Array orig,
@@ -301,7 +323,103 @@ namespace FancyLighting
                     return;
                 }
                 for (int i = 0; i < 4; ++i)
+                {
                     slices[i] = Vector3.One;
+                }
+            };
+
+            // Tile entities
+            On.Terraria.GameContent.Drawing.TileDrawing.PostDrawTiles +=
+            (
+                On.Terraria.GameContent.Drawing.TileDrawing.orig_PostDrawTiles orig,
+                Terraria.GameContent.Drawing.TileDrawing self,
+                bool solidLayer,
+                bool forRenderTargets,
+                bool intoRenderTargets
+            ) =>
+            {
+                if (intoRenderTargets || !DrawOverbright || !SmoothLightingEnabled || _ambientOcclusionInstance._drawingTileEntities)
+                {
+                    orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+                    return;
+                }
+
+                if ((Main.instance.GraphicsDevice.GetRenderTargets()?.Length ?? 0) < 1)
+                {
+                    orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+                    return;
+                }
+
+                RenderTarget2D target = (RenderTarget2D)Main.instance.GraphicsDevice.GetRenderTargets()[0].RenderTarget;
+
+                Textures.MakeSize(ref _screenTarget1, target.Width, target.Height);
+                Textures.MakeSize(ref _screenTarget2, target.Width, target.Height);
+
+                Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget1);
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.spriteBatch.Begin();
+                Main.spriteBatch.Draw(target, Vector2.Zero, Color.White);
+                Main.spriteBatch.End();
+
+                Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget2);
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+
+                _smoothLightingInstance.CalculateSmoothLighting(false, _inCameraMode);
+                _smoothLightingInstance.DrawSmoothLighting(_screenTarget2, false, true, target);
+
+                Main.instance.GraphicsDevice.SetRenderTarget(target);
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.spriteBatch.Begin();
+                Main.spriteBatch.Draw(_screenTarget1, Vector2.Zero, Color.White);
+                Main.spriteBatch.Draw(_screenTarget2, Vector2.Zero, Color.White);
+                Main.spriteBatch.End();
+            };
+
+            On.Terraria.Main.RenderWater +=
+            (
+                On.Terraria.Main.orig_RenderWater orig,
+                Terraria.Main self
+            ) =>
+            {
+                if (RenderOnlyLight && SmoothLightingEnabled)
+                {
+                    Main.instance.GraphicsDevice.SetRenderTarget(Main.waterTarget);
+                    Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                    Main.instance.GraphicsDevice.SetRenderTarget(null);
+                    return;
+                }
+
+                if (!DrawOverbright || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+                _smoothLightingInstance.CalculateSmoothLighting(true);
+                orig(self);
+                if (Main.drawToScreen)
+                {
+                    return;
+                }
+
+                _smoothLightingInstance.DrawSmoothLighting(Main.waterTarget, true, true);
+            };
+
+            On.Terraria.Main.DrawWaters +=
+            (
+                On.Terraria.Main.orig_DrawWaters orig,
+                Terraria.Main self,
+                bool isBackground
+            ) =>
+            {
+                if (_inCameraMode || !SmoothLightingEnabled || !DrawOverbright)
+                {
+                    orig(self, isBackground);
+                    return;
+                }
+                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                orig(self, isBackground);
+                OverrideLightingColor = false;
             };
 
             // Cave backgrounds
@@ -319,8 +437,15 @@ namespace FancyLighting
                 _smoothLightingInstance.CalculateSmoothLighting(true);
                 orig(self);
                 if (Main.drawToScreen)
+                {
                     return;
-                _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true);
+                }
+
+                _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true, true);
+                if (DrawOverbright)
+                {
+                    _smoothLightingInstance.DrawSmoothLighting(Main.instance.backWaterTarget, true, true);
+                }
             };
 
             On.Terraria.Main.DrawBackground +=
@@ -329,14 +454,41 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (_inCameraMode || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
                 {
                     orig(self);
                     return;
                 }
-                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
-                orig(self);
-                OverrideLightingColor = false;
+
+                if (_inCameraMode)
+                {
+                    _smoothLightingInstance.CalculateSmoothLighting(true, true);
+                    OverrideLightingColor = SmoothLightingEnabled;
+
+                    Main.tileBatch.End();
+                    Main.spriteBatch.End();
+                    Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+                    Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                    Main.tileBatch.Begin();
+                    Main.spriteBatch.Begin();
+                    orig(self);
+                    Main.tileBatch.End();
+                    Main.spriteBatch.End();
+
+                    OverrideLightingColor = false;
+                    _smoothLightingInstance.DrawSmoothLightingCameraMode(
+                        _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, false, true
+                    );
+
+                    Main.tileBatch.Begin();
+                    Main.spriteBatch.Begin();
+                }
+                else
+                {
+                    OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                    orig(self);
+                    OverrideLightingColor = false;
+                }
             };
 
             On.Terraria.Main.RenderBlack +=
@@ -350,17 +502,28 @@ namespace FancyLighting
                 orig(self);
                 OverrideLightingColor = initialLightingOverride;
             };
-            
+
             On.Terraria.Main.RenderTiles +=
             (
                 On.Terraria.Main.orig_RenderTiles orig,
                 Terraria.Main self
             ) =>
             {
+                if (!SmoothLightingEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+
                 _smoothLightingInstance.CalculateSmoothLighting(false);
                 OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
                 OverrideLightingColor = false;
+                if (Main.drawToScreen)
+                {
+                    return;
+                }
+
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.tileTarget, false);
             };
 
@@ -370,10 +533,21 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
+                if (!SmoothLightingEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+
                 _smoothLightingInstance.CalculateSmoothLighting(false);
                 OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
                 orig(self);
                 OverrideLightingColor = false;
+                if (Main.drawToScreen)
+                {
+                    return;
+                }
+
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.tile2Target, false);
             };
 
@@ -383,12 +557,21 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
+                if (!SmoothLightingEnabled)
+                {
+                    orig(self);
+                    return;
+                }
+
                 _smoothLightingInstance.CalculateSmoothLighting(true);
                 OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
                 orig(self);
                 OverrideLightingColor = false;
                 if (Main.drawToScreen)
+                {
                     return;
+                }
+
                 _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);
                 _ambientOcclusionInstance.ApplyAmbientOcclusion();
             };
@@ -405,7 +588,7 @@ namespace FancyLighting
                     return;
                 }
 
-                _fancyLightingEngineInstance._lightMapArea = 
+                _fancyLightingEngineInstance._lightMapArea =
                     (Rectangle)field_workingProcessedArea.GetValue(self);
                 orig(self);
             };
@@ -429,53 +612,45 @@ namespace FancyLighting
                     return;
                 }
                 if (FancyLightingEngineEnabled)
+                {
                     _fancyLightingEngineInstance.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
+                }
                 else
+                {
                     orig(self);
-                if (SmoothLightingEnabled)
-                    _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
-            };
-        }
+                }
 
-        protected void AddCameraModeHooks()
-        {
-            On.Terraria.Main.DrawWalls +=
+                if (SmoothLightingEnabled)
+                {
+                    _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
+                }
+            };
+
+            On.Terraria.Main.DrawCapture +=
             (
-                On.Terraria.Main.orig_DrawWalls orig,
-                Terraria.Main self
+                On.Terraria.Main.orig_DrawCapture orig,
+                Terraria.Main self,
+                Rectangle area,
+                CaptureSettings settings
             ) =>
             {
-                if (!_inCameraMode)
+                var renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
+                if (renderTargets is null || renderTargets.Length < 1)
                 {
-                    orig(self);
-                    return;
+                    _cameraModeTarget = null;
                 }
-
-                _smoothLightingInstance.CalculateSmoothLighting(true, true);
-                OverrideLightingColor = SmoothLightingEnabled;
-
-                Main.tileBatch.End();
-                Main.spriteBatch.End();
-                Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
-                Main.instance.GraphicsDevice.Clear(Color.Transparent);
-                Main.tileBatch.Begin();
-                Main.spriteBatch.Begin();
-                orig(self);
-                Main.tileBatch.End();
-                Main.spriteBatch.End();
-
-                OverrideLightingColor = false;
-                _smoothLightingInstance.DrawSmoothLightingCameraMode(
-                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, true, AmbientOcclusionEnabled);
-
-                if (AmbientOcclusionEnabled)
+                else
                 {
-                    _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
-                        _cameraModeTarget, _smoothLightingInstance._cameraModeSurface2, _cameraModeBiome);
+                    _cameraModeTarget = (RenderTarget2D)renderTargets[0].RenderTarget;
                 }
-
-                Main.tileBatch.Begin();
-                Main.spriteBatch.Begin();
+                _inCameraMode = ModifyCameraModeRendering && (_cameraModeTarget is not null);
+                if (_inCameraMode)
+                {
+                    _cameraModeArea = area;
+                    _cameraModeBiome = settings.Biome;
+                }
+                orig(self, area, settings);
+                _inCameraMode = false;
             };
 
             On.Terraria.Main.DrawTiles +=
@@ -509,46 +684,20 @@ namespace FancyLighting
 
                 OverrideLightingColor = false;
                 _smoothLightingInstance.DrawSmoothLightingCameraMode(
-                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, false, false);
+                    _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, false, false
+                );
 
                 Main.tileBatch.Begin();
                 Main.spriteBatch.Begin();
             };
 
-            On.Terraria.Main.DrawCapture +=
+            On.Terraria.Main.DrawWalls +=
             (
-                On.Terraria.Main.orig_DrawCapture orig,
-                Terraria.Main self,
-                Rectangle area,
-                CaptureSettings settings
-            ) =>
-            {
-                var renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
-                if (renderTargets is null || renderTargets.Length < 1)
-                {
-                    _cameraModeTarget = null;
-                }
-                else
-                {
-                    _cameraModeTarget = (RenderTarget2D)renderTargets[0].RenderTarget;
-                }
-                _inCameraMode = ModifyCameraModeRendering && (_cameraModeTarget is not null);
-                if (_inCameraMode)
-                {
-                    _cameraModeArea = area;
-                    _cameraModeBiome = settings.Biome;
-                }
-                orig(self, area, settings);
-                _inCameraMode = false;
-            };
-
-            On.Terraria.Main.DrawBackground +=
-            (
-                On.Terraria.Main.orig_DrawBackground orig,
+                On.Terraria.Main.orig_DrawWalls orig,
                 Terraria.Main self
             ) =>
             {
-                if (!_inCameraMode || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (!_inCameraMode)
                 {
                     orig(self);
                     return;
@@ -569,7 +718,13 @@ namespace FancyLighting
 
                 OverrideLightingColor = false;
                 _smoothLightingInstance.DrawSmoothLightingCameraMode(
-                    _cameraModeTarget, _smoothLightingInstance._cameraModeSurface, true, false);
+                    _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, AmbientOcclusionEnabled);
+
+                if (AmbientOcclusionEnabled)
+                {
+                    _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
+                        _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome);
+                }
 
                 Main.tileBatch.Begin();
                 Main.spriteBatch.Begin();

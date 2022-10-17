@@ -1,5 +1,4 @@
-﻿using FancyLighting.Config;
-using Terraria;
+﻿using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -16,10 +15,14 @@ namespace FancyLighting
 
         public override void OnWorldLoad()
         {
-            if (Main.netMode == NetmodeID.Server) return;
+            if (Main.netMode == NetmodeID.Server)
+            {
+                return;
+            }
 
             SmoothLighting SmoothLightingObj = ModContent.GetInstance<FancyLightingMod>()?._smoothLightingInstance;
-            if (SmoothLightingObj is not null) {
+            if (SmoothLightingObj is not null)
+            {
                 SmoothLightingObj._printExceptionTime = 60;
             }
 
@@ -30,7 +33,7 @@ namespace FancyLighting
         {
             FancyLightingMod._smoothLightingEnabled = _configInstance.UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._blurLightMap = _configInstance.UseLightMapBlurring;
-            FancyLightingMod._useBicubicUpscaling = _configInstance.UseHighQualityUpscaling;
+            FancyLightingMod._lightMapRenderMode = _configInstance.LightMapRenderMode;
             FancyLightingMod._simulateNormalMaps = _configInstance.SimulateNormalMaps;
             FancyLightingMod._renderOnlyLight = _configInstance.RenderOnlyLight;
 

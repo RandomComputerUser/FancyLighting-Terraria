@@ -1,28 +1,28 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FancyLighting.Util;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-
 using Terraria;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Shaders;
 using Terraria.ModLoader;
 
-using System;
-
 namespace FancyLighting
 {
     internal sealed class AmbientOcclusion
     {
-        internal RenderTarget2D _surface;
-        internal RenderTarget2D _surface2;
+        internal RenderTarget2D _drawTarget1;
+        internal RenderTarget2D _drawTarget2;
 
-        internal RenderTarget2D _cameraModeSurface;
-        internal RenderTarget2D _cameraModeSurface2;
-        internal RenderTarget2D _cameraModeSurface3;
+        internal RenderTarget2D _cameraModeTarget1;
+        internal RenderTarget2D _cameraModeTarget2;
+        internal RenderTarget2D _cameraModeTarget3;
 
-        internal RenderTarget2D _tileEntitySurface;
+        internal RenderTarget2D _tileEntityTarget;
 
-        public AmbientOcclusion() {
+        internal bool _drawingTileEntities;
 
+        public AmbientOcclusion()
+        {
             GameShaders.Misc["FancyLighting:AOPrePass"] =
                 new MiscShaderData(
                     new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
@@ -47,16 +47,17 @@ namespace FancyLighting
                     "BlurFinal"
                 );
 
+            _drawingTileEntities = false;
         }
 
         internal void Unload()
         {
-            _surface?.Dispose();
-            _surface2?.Dispose();
-            _cameraModeSurface?.Dispose();
-            _cameraModeSurface2?.Dispose();
-            _cameraModeSurface3?.Dispose();
-            _tileEntitySurface?.Dispose();
+            _drawTarget1?.Dispose();
+            _drawTarget2?.Dispose();
+            _cameraModeTarget1?.Dispose();
+            _cameraModeTarget2?.Dispose();
+            _cameraModeTarget3?.Dispose();
+            _tileEntityTarget?.Dispose();
             GameShaders.Misc["FancyLighting:AOPrePass"]?.Shader?.Dispose();
             GameShaders.Misc.Remove("FancyLighting:AOPrePass");
             GameShaders.Misc["FancyLighting:AOPrePassLight"]?.Shader?.Dispose();
@@ -69,27 +70,16 @@ namespace FancyLighting
 
         internal void initSurfaces()
         {
-            if (_surface is null 
-                || _surface.GraphicsDevice != Main.graphics.GraphicsDevice
-                || _surface.Width != Main.instance.tileTarget.Width
-                || _surface.Height != Main.instance.tileTarget.Height)
-            {
-                _surface?.Dispose();
-                _surface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
-            }
-            if (_surface2 is null
-                || _surface2.GraphicsDevice != Main.graphics.GraphicsDevice
-                || _surface2.Width != Main.instance.tileTarget.Width
-                || _surface2.Height != Main.instance.tileTarget.Height)
-            {
-                _surface2?.Dispose();
-                _surface2 = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
-            }
+            Textures.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+            Textures.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
         }
 
         internal void ApplyAmbientOcclusion()
         {
-            if (!FancyLightingMod.AmbientOcclusionEnabled) return;
+            if (!FancyLightingMod.AmbientOcclusionEnabled)
+            {
+                return;
+            }
 
             initSurfaces();
 
@@ -99,16 +89,16 @@ namespace FancyLighting
                 FancyLightingMod.DoNonSolidAmbientOcclusion ? Main.instance.tile2Target : null,
                 Main.sceneTilePos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
                 Main.sceneTile2Pos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
-                _surface, 
-                _surface2,
+                _drawTarget1,
+                _drawTarget2,
                 out bool useSurface2
-            );;
+            ); ;
 
             Main.instance.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
-                useSurface2 ? _surface : _surface2,
+                useSurface2 ? _drawTarget1 : _drawTarget2,
                 Vector2.Zero,
                 Color.White
             );
@@ -119,49 +109,31 @@ namespace FancyLighting
 
         internal void ApplyAmbientOcclusionCameraMode(RenderTarget2D screenTarget, RenderTarget2D wallTarget, CaptureBiome biome)
         {
-            if (_cameraModeSurface is null
-                || _cameraModeSurface.GraphicsDevice != Main.graphics.GraphicsDevice
-                || _cameraModeSurface.Width != screenTarget.Width
-                || _cameraModeSurface.Height != screenTarget.Height)
-            {
-                _cameraModeSurface?.Dispose();
-                _cameraModeSurface = new RenderTarget2D(Main.graphics.GraphicsDevice, screenTarget.Width, screenTarget.Height);
-            }
+            Textures.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+            Textures.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
+            Textures.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
 
-            if (_cameraModeSurface2 is null
-                || _cameraModeSurface2.GraphicsDevice != Main.graphics.GraphicsDevice
-                || _cameraModeSurface2.Width != screenTarget.Width
-                || _cameraModeSurface2.Height != screenTarget.Height)
-            {
-                _cameraModeSurface2?.Dispose();
-                _cameraModeSurface2 = new RenderTarget2D(Main.graphics.GraphicsDevice, screenTarget.Width, screenTarget.Height);
-            }
-
-            if (_cameraModeSurface3 is null
-                || _cameraModeSurface3.GraphicsDevice != Main.graphics.GraphicsDevice
-                || _cameraModeSurface3.Width != screenTarget.Width
-                || _cameraModeSurface3.Height != screenTarget.Height)
-            {
-                _cameraModeSurface3?.Dispose();
-                _cameraModeSurface3 = new RenderTarget2D(Main.graphics.GraphicsDevice, screenTarget.Width, screenTarget.Height);
-            }
-
-            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface);
+            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.instance.TilesRenderer.PreDrawTiles(true, false, false);
             Main.tileBatch.Begin();
             Main.spriteBatch.Begin();
             if (biome is null)
+            {
                 Main.instance.TilesRenderer.Draw(true, false, false);
+            }
             else
+            {
                 Main.instance.TilesRenderer.Draw(true, false, false, Main.bloodMoon ? 9 : biome.WaterStyle);
+            }
+
             Main.tileBatch.End();
             Main.spriteBatch.End();
 
             bool extraLayer = FancyLightingMod.DoNonSolidAmbientOcclusion || FancyLightingMod.DoTileEntityAmbientOcclusion;
             if (extraLayer)
             {
-                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface2);
+                Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
                 Main.instance.GraphicsDevice.Clear(Color.Transparent);
             }
             if (FancyLightingMod.DoNonSolidAmbientOcclusion)
@@ -170,30 +142,37 @@ namespace FancyLighting
                 Main.tileBatch.Begin();
                 Main.spriteBatch.Begin();
                 if (biome is null)
+                {
                     Main.instance.TilesRenderer.Draw(false, false, false);
+                }
                 else
+                {
                     Main.instance.TilesRenderer.Draw(false, false, false, Main.bloodMoon ? 9 : biome.WaterStyle);
+                }
+
                 Main.tileBatch.End();
                 Main.spriteBatch.End();
             }
             if (FancyLightingMod.DoTileEntityAmbientOcclusion)
             {
+                _drawingTileEntities = true;
                 Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
                 Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
+                _drawingTileEntities = false;
             }
 
             ApplyAmbientOcclusionInner(
                 wallTarget,
-                _cameraModeSurface,
-                extraLayer ? _cameraModeSurface2 : null,
+                _cameraModeTarget1,
+                extraLayer ? _cameraModeTarget2 : null,
                 Vector2.Zero,
                 Vector2.Zero,
-                _cameraModeSurface3,
-                _cameraModeSurface2,
+                _cameraModeTarget3,
+                _cameraModeTarget2,
                 out bool useSurface2
             );
 
-            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeSurface);
+            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
@@ -207,12 +186,12 @@ namespace FancyLighting
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
-                _cameraModeSurface,
+                _cameraModeTarget1,
                 Vector2.Zero,
                 Color.White
             );
             Main.spriteBatch.Draw(
-                useSurface2 ? _cameraModeSurface3 : _cameraModeSurface2,
+                useSurface2 ? _cameraModeTarget3 : _cameraModeTarget2,
                 Vector2.Zero,
                 Color.White
             );
@@ -225,14 +204,14 @@ namespace FancyLighting
             RenderTarget2D tile2Target,
             Vector2 tileTargetPosition,
             Vector2 tile2TargetPosition,
-            RenderTarget2D surface1,
-            RenderTarget2D surface2,
-            out bool useSurface2)
+            RenderTarget2D target1,
+            RenderTarget2D target2,
+            out bool useTarget2)
         {
-            void ApplyBlurPass(ref bool useSurface2, int dx, int dy, bool finalPass, float raiseBrightness = 0f)
+            void ApplyBlurPass(ref bool useTarget2, int dx, int dy, bool finalPass, float raiseBrightness = 0f)
             {
-                var surfaceDestination = useSurface2 ? surface2 : surface1;
-                var surfaceSource = useSurface2 ? surface1 : surface2;
+                var surfaceDestination = useTarget2 ? target2 : target1;
+                var surfaceSource = useTarget2 ? target1 : target2;
 
                 Main.instance.GraphicsDevice.SetRenderTarget(surfaceDestination);
 
@@ -262,13 +241,13 @@ namespace FancyLighting
                 );
                 Main.spriteBatch.End();
 
-                useSurface2 = !useSurface2;
+                useTarget2 = !useTarget2;
             }
 
             bool drawTileEntities = FancyLightingMod.DoTileEntityAmbientOcclusion;
             if (tile2Target is null && !drawTileEntities)
             {
-                Main.instance.GraphicsDevice.SetRenderTarget(surface1);
+                Main.instance.GraphicsDevice.SetRenderTarget(target1);
                 Main.instance.GraphicsDevice.Clear(Color.Transparent);
 
                 Main.spriteBatch.Begin(
@@ -292,26 +271,28 @@ namespace FancyLighting
                 {
                     if (FancyLightingMod.DoTileEntityAmbientOcclusion)
                     {
-                        if (_tileEntitySurface is null
-                        || _tileEntitySurface.GraphicsDevice != Main.graphics.GraphicsDevice
-                        || _tileEntitySurface.Width != Main.instance.tileTarget.Width
-                        || _tileEntitySurface.Height != Main.instance.tileTarget.Height)
+                        if (_tileEntityTarget is null
+                        || _tileEntityTarget.GraphicsDevice != Main.graphics.GraphicsDevice
+                        || _tileEntityTarget.Width != Main.instance.tileTarget.Width
+                        || _tileEntityTarget.Height != Main.instance.tileTarget.Height)
                         {
-                            _tileEntitySurface?.Dispose();
-                            _tileEntitySurface = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+                            _tileEntityTarget?.Dispose();
+                            _tileEntityTarget = new RenderTarget2D(Main.graphics.GraphicsDevice, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
                         }
 
-                        Main.instance.GraphicsDevice.SetRenderTarget(_tileEntitySurface);
+                        Main.instance.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
                         Main.instance.GraphicsDevice.Clear(Color.Transparent);
                         Vector2 currentZoom = Main.GameViewMatrix.Zoom;
                         Main.GameViewMatrix.Zoom = Vector2.One;
+                        _drawingTileEntities = true;
                         Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
                         Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
+                        _drawingTileEntities = false;
                         Main.GameViewMatrix.Zoom = currentZoom;
                     }
                 }
 
-                Main.instance.GraphicsDevice.SetRenderTarget(surface1);
+                Main.instance.GraphicsDevice.SetRenderTarget(target1);
                 Main.instance.GraphicsDevice.Clear(Color.White);
 
                 Main.spriteBatch.Begin(
@@ -339,7 +320,7 @@ namespace FancyLighting
                 if (drawTileEntities)
                 {
                     Main.spriteBatch.Draw(
-                        _tileEntitySurface,
+                        _tileEntityTarget,
                         new Vector2(Main.offScreenRange),
                         null,
                         Color.White,
@@ -350,48 +331,48 @@ namespace FancyLighting
                         1f
                     );
                 }
-                
+
                 Main.spriteBatch.End();
             }
 
             // We need to switch between render targets
-            useSurface2 = true;
+            useTarget2 = true;
             switch (FancyLightingMod.AmbientOcclusionRadius)
             {
                 case 1:
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 2:
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, false);
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, false);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 3:
-                    ApplyBlurPass(ref useSurface2, 2, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 2, false);
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    ApplyBlurPass(ref useTarget2, 2, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 2, false);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 4:
-                    ApplyBlurPass(ref useSurface2, 3, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 3, false);
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                default:
+                    ApplyBlurPass(ref useTarget2, 3, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 3, false);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 5:
-                default:
-                    ApplyBlurPass(ref useSurface2, 4, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 4, false);
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    ApplyBlurPass(ref useTarget2, 4, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 4, false);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
                 case 6:
-                    ApplyBlurPass(ref useSurface2, 5, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 5, false);
-                    ApplyBlurPass(ref useSurface2, 1, 0, false);
-                    ApplyBlurPass(ref useSurface2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+                    ApplyBlurPass(ref useTarget2, 5, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 5, false);
+                    ApplyBlurPass(ref useTarget2, 1, 0, false);
+                    ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
                     break;
             }
 

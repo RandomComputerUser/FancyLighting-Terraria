@@ -1,12 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
-
-using Terraria;
-using Terraria.Graphics.Light;
-using Terraria.ID;
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Terraria;
+using Terraria.Graphics.Light;
+using Terraria.ID;
 
 namespace FancyLighting
 {
@@ -47,7 +45,8 @@ namespace FancyLighting
 
         private int _temporalData;
 
-        public FancyLightingEngine() {
+        public FancyLightingEngine()
+        {
             ComputeLightingSpread(ref _precomputedLightingSpread);
 
             _lightAirDecay = new float[385];
@@ -111,7 +110,9 @@ namespace FancyLighting
                 // Simpson's 3/8 rule
 
                 if (steps <= 0)
+                {
                     steps = 32;
+                }
 
                 double sum = fun(lowerBound);
 
@@ -176,7 +177,7 @@ namespace FancyLighting
                         }
                         return Hypot(x - (i - 0.5), y - (i - 0.5) * tanValue);
                     },
-                    bottomLeftAngle, 
+                    bottomLeftAngle,
                     topLeftAngle);
                 double lightFromBottom = Integrate(
                     (double angle) =>
@@ -281,7 +282,8 @@ namespace FancyLighting
             if (FancyLightingMod.FancyLightingEngineUseTemporal)
             {
                 _brightnessCutoff = (float)Math.Clamp(Math.Sqrt(_temporalData / 1228.8) * 0.02, 0.02, 0.125);
-            } else
+            }
+            else
             {
                 _brightnessCutoff = 0.04f;
             }
@@ -367,9 +369,14 @@ namespace FancyLighting
                                 int y = j % height + _lightMapArea.Y;
                                 // Check Shadow Paint
                                 if (Main.tile[x, y].TileColor == PaintID.ShadowPaint)
+                                {
                                     _lightMask[j] = _lightShadowPaintDecay;
+                                }
                                 else
+                                {
                                     _lightMask[j] = _lightSolidDecay;
+                                }
+
                                 break;
                             case LightMaskMode.Water:
                                 _lightMask[j] = _lightWaterDecay;
@@ -384,9 +391,9 @@ namespace FancyLighting
             );
 
             Parallel.For(
-                0, 
-                length, 
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount }, 
+                0,
+                length,
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
                 (i) => ProcessLight(i, colors, width, height)
             );
 
@@ -396,7 +403,10 @@ namespace FancyLighting
         internal void ProcessLight(int index, Vector3[] colors, int width, int height)
         {
             Vector3 color = colors[index];
-            if (color.X <= 0f && color.Y <= 0f && color.Z <= 0f) return;
+            if (color.X <= 0f && color.Y <= 0f && color.Z <= 0f)
+            {
+                return;
+            }
 
             void SetLightMap(int i, float value)
             {
@@ -406,19 +416,28 @@ namespace FancyLighting
                 do
                 {
                     oldValue = light.X;
-                    if (oldValue >= newLight.X) break;
+                    if (oldValue >= newLight.X)
+                    {
+                        break;
+                    }
                 }
                 while (Interlocked.CompareExchange(ref light.X, newLight.X, oldValue) != oldValue);
                 do
                 {
                     oldValue = light.Y;
-                    if (oldValue >= newLight.Y) break;
+                    if (oldValue >= newLight.Y)
+                    {
+                        break;
+                    }
                 }
                 while (Interlocked.CompareExchange(ref light.Y, newLight.Y, oldValue) != oldValue);
                 do
                 {
                     oldValue = light.Z;
-                    if (oldValue >= newLight.Z) break;
+                    if (oldValue >= newLight.Z)
+                    {
+                        break;
+                    }
                 }
                 while (Interlocked.CompareExchange(ref light.Z, newLight.Z, oldValue) != oldValue);
             }
@@ -472,7 +491,9 @@ namespace FancyLighting
 
             // We blend by taking the max of each component, so this is a valid check to skip
             if (skipUp && skipDown && skipLeft && skipRight)
+            {
                 return;
+            }
 
             float initialDecay = _lightMask[index][256];
             int lightRange = Math.Clamp(
@@ -487,11 +508,16 @@ namespace FancyLighting
                 int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    if (--i < topEdge) break;
+                    if (--i < topEdge)
+                    {
+                        break;
+                    }
 
                     lightValue *= _lightMask[i + 1][256];
                     if (y > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
+                    {
                         lightValue *= _lightLossExitingSolid;
+                    }
 
                     SetLightMap(i, lightValue);
                 }
@@ -504,11 +530,16 @@ namespace FancyLighting
                 int i = index;
                 for (int y = 1; y <= lightRange; ++y)
                 {
-                    if (++i > bottomEdge) break;
+                    if (++i > bottomEdge)
+                    {
+                        break;
+                    }
 
                     lightValue *= _lightMask[i - 1][256];
                     if (y > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
+                    {
                         lightValue *= _lightLossExitingSolid;
+                    }
 
                     SetLightMap(i, lightValue);
                 }
@@ -521,11 +552,16 @@ namespace FancyLighting
                 int i = index;
                 for (int x = 1; x <= lightRange; ++x)
                 {
-                    if ((i -= height) < 0) break;
+                    if ((i -= height) < 0)
+                    {
+                        break;
+                    }
 
                     lightValue *= _lightMask[i + height][256];
                     if (x > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
+                    {
                         lightValue *= _lightLossExitingSolid;
+                    }
 
                     SetLightMap(i, lightValue);
                 }
@@ -538,11 +574,16 @@ namespace FancyLighting
                 int i = index;
                 for (int x = 1; x <= lightRange; ++x)
                 {
-                    if ((i += height) >= length) break;
+                    if ((i += height) >= length)
+                    {
+                        break;
+                    }
 
                     lightValue *= _lightMask[i - height][256];
                     if (x > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
+                    {
                         lightValue *= _lightLossExitingSolid;
+                    }
 
                     SetLightMap(i, lightValue);
                 }
@@ -585,7 +626,10 @@ namespace FancyLighting
                             var mask = _lightMask[--i];
 
                             if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
+                            {
                                 value *= _lightLossExitingSolid;
+                            }
+
                             workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
                         }
                         for (int x = 1; x <= rightEdge; ++x)
@@ -610,9 +654,14 @@ namespace FancyLighting
                                 if (mask == _lightAirDecay)
                                 {
                                     if (_lightMask[i + 1] == _lightSolidDecay)
+                                    {
                                         verticalLight *= _lightLossExitingSolid;
+                                    }
+
                                     if (_lightMask[i - height] == _lightSolidDecay)
+                                    {
                                         horizontalLight *= _lightLossExitingSolid;
+                                    }
                                 }
                                 ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
                                 SetLightMap(i,
@@ -638,7 +687,10 @@ namespace FancyLighting
                             var mask = _lightMask[--i];
 
                             if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
+                            {
                                 value *= _lightLossExitingSolid;
+                            }
+
                             workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
                         }
                         for (int x = 1; x <= leftEdge; ++x)
@@ -663,9 +715,14 @@ namespace FancyLighting
                                 if (mask == _lightAirDecay)
                                 {
                                     if (_lightMask[i + 1] == _lightSolidDecay)
+                                    {
                                         verticalLight *= _lightLossExitingSolid;
+                                    }
+
                                     if (_lightMask[i + height] == _lightSolidDecay)
+                                    {
                                         horizontalLight *= _lightLossExitingSolid;
+                                    }
                                 }
                                 ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
                                 SetLightMap(i,
@@ -691,7 +748,10 @@ namespace FancyLighting
                             var mask = _lightMask[++i];
 
                             if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
+                            {
                                 value *= _lightLossExitingSolid;
+                            }
+
                             workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
                         }
                         for (int x = 1; x <= rightEdge; ++x)
@@ -716,9 +776,14 @@ namespace FancyLighting
                                 if (mask == _lightAirDecay)
                                 {
                                     if (_lightMask[i - 1] == _lightSolidDecay)
+                                    {
                                         verticalLight *= _lightLossExitingSolid;
+                                    }
+
                                     if (_lightMask[i - height] == _lightSolidDecay)
+                                    {
                                         horizontalLight *= _lightLossExitingSolid;
+                                    }
                                 }
                                 ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
                                 SetLightMap(i,
@@ -744,7 +809,10 @@ namespace FancyLighting
                             var mask = _lightMask[++i];
 
                             if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
+                            {
                                 value *= _lightLossExitingSolid;
+                            }
+
                             workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
                         }
                         for (int x = 1; x <= leftEdge; ++x)
@@ -769,9 +837,14 @@ namespace FancyLighting
                                 if (mask == _lightAirDecay)
                                 {
                                     if (_lightMask[i - 1] == _lightSolidDecay)
+                                    {
                                         verticalLight *= _lightLossExitingSolid;
+                                    }
+
                                     if (_lightMask[i + height] == _lightSolidDecay)
+                                    {
                                         horizontalLight *= _lightLossExitingSolid;
+                                    }
                                 }
                                 ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
                                 SetLightMap(i,
@@ -791,14 +864,46 @@ namespace FancyLighting
             if (FancyLightingMod.FancyLightingEngineUseTemporal)
             {
                 int approximateWorkDone = 0;
-                if (!skipUp) approximateWorkDone += 1;
-                if (!skipDown) approximateWorkDone += 1;
-                if (!skipLeft) approximateWorkDone += 1;
-                if (!skipRight) approximateWorkDone += 1;
-                if (doUpperRight) approximateWorkDone += 20;
-                if (doUpperLeft) approximateWorkDone += 20;
-                if (doLowerRight) approximateWorkDone += 20;
-                if (doLowerLeft) approximateWorkDone += 20;
+                if (!skipUp)
+                {
+                    approximateWorkDone += 1;
+                }
+
+                if (!skipDown)
+                {
+                    approximateWorkDone += 1;
+                }
+
+                if (!skipLeft)
+                {
+                    approximateWorkDone += 1;
+                }
+
+                if (!skipRight)
+                {
+                    approximateWorkDone += 1;
+                }
+
+                if (doUpperRight)
+                {
+                    approximateWorkDone += 20;
+                }
+
+                if (doUpperLeft)
+                {
+                    approximateWorkDone += 20;
+                }
+
+                if (doLowerRight)
+                {
+                    approximateWorkDone += 20;
+                }
+
+                if (doLowerLeft)
+                {
+                    approximateWorkDone += 20;
+                }
+
                 Interlocked.Add(ref _temporalData, approximateWorkDone);
             }
         }

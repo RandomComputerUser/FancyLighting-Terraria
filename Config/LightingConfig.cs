@@ -1,8 +1,7 @@
-﻿using Terraria.ModLoader;
-using Terraria.ModLoader.Config;
-
-using System;
+﻿using System;
 using System.ComponentModel;
+using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 
 namespace FancyLighting.Config
 {
@@ -48,25 +47,26 @@ namespace FancyLighting.Config
         }
         private bool _useLightMapBlurring;
 
-        [DefaultValue(false)]
-        [Label("Use High-Quality Upscaling")]
-        [Tooltip("Controls how the light map is upscaled from tile to pixel resolution\nIf enabled, bicubic upscaling is used\nIf disabled, bilinear upscaling is used\nAffects how smooth the lighting appears")]
-        public bool UseHighQualityUpscaling
+        [DrawTicks]
+        [DefaultValue(RenderMode.Bilinear)]
+        [Label("Light Map Render Mode")]
+        [Tooltip("Controls how the light map is rendered\nAffects the smoothness of lighting\nBicubic upscaling is smoother than bilinear upscaling\nOverbright rendering increases the maximum brightness of light")]
+        public RenderMode LightMapRenderMode
         {
             get
             {
-                return _useHighQualityUpscaling;
+                return _lightMapRenderMode;
             }
             set
             {
-                _useHighQualityUpscaling = value;
+                _lightMapRenderMode = value;
                 ConfigPreset = Preset.CustomPreset;
             }
         }
-        private bool _useHighQualityUpscaling;
+        private RenderMode _lightMapRenderMode;
 
         [DefaultValue(false)]
-        [Label("(Experimental) Simulate Normal Maps")]
+        [Label("Simulate Normal Maps")]
         [Tooltip("Toggles whether or not to simulate normal maps\nWhen enabled, tiles have simulated normal maps and appear bumpy")]
         public bool SimulateNormalMaps
         {
@@ -337,7 +337,7 @@ namespace FancyLighting.Config
                 {
                     _useSmoothLighting = true;
                     _useLightMapBlurring = true;
-                    _useHighQualityUpscaling = false;
+                    _lightMapRenderMode = RenderMode.Bilinear;
                     _simulateNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -360,7 +360,7 @@ namespace FancyLighting.Config
                 {
                     _useSmoothLighting = true;
                     _useLightMapBlurring = true;
-                    _useHighQualityUpscaling = true;
+                    _lightMapRenderMode = RenderMode.Bicubic;
                     _simulateNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -383,7 +383,7 @@ namespace FancyLighting.Config
                 {
                     _useSmoothLighting = true;
                     _useLightMapBlurring = true;
-                    _useHighQualityUpscaling = false;
+                    _lightMapRenderMode = RenderMode.Bilinear;
                     _simulateNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -402,24 +402,70 @@ namespace FancyLighting.Config
 
                     _threadCount = Environment.ProcessorCount;
                 }
+                else if (_preset == Preset.UltraPreset)
+                {
+                    _useSmoothLighting = true;
+                    _useLightMapBlurring = true;
+                    _lightMapRenderMode = RenderMode.BicubicOverbright;
+                    _simulateNormalMaps = true;
+                    _renderOnlyLight = false;
+
+                    _useAmbientOcclusion = true;
+                    _doNonSolidAmbientOcclusion = true;
+                    _doTileEntityAmbientOcclusion = true;
+                    _ambientOcclusionRadius = 4;
+                    _ambientOcclusionIntensity = 35;
+
+                    _useFancyLightingEngine = true;
+                    _fancyLightingEngineUseTemporal = true;
+                    _fancyLightingEngineMakeBrighter = true;
+                    _fancyLightingEngineLightLoss = 50;
+
+                    _useCustomSkyColors = true;
+
+                    _threadCount = Environment.ProcessorCount;
+                }
+                else if (_preset == Preset.DisableAllPreset)
+                {
+                    _useSmoothLighting = false;
+                    _useLightMapBlurring = true;
+                    _lightMapRenderMode = RenderMode.Bilinear;
+                    _simulateNormalMaps = false;
+                    _renderOnlyLight = false;
+
+                    _useAmbientOcclusion = false;
+                    _doNonSolidAmbientOcclusion = false;
+                    _doTileEntityAmbientOcclusion = false;
+                    _ambientOcclusionRadius = 4;
+                    _ambientOcclusionIntensity = 35;
+
+                    _useFancyLightingEngine = false;
+                    _fancyLightingEngineUseTemporal = true;
+                    _fancyLightingEngineMakeBrighter = false;
+                    _fancyLightingEngineLightLoss = 50;
+
+                    _useCustomSkyColors = false;
+
+                    _threadCount = Environment.ProcessorCount;
+                }
                 else
                 {
                     if (
                            _useSmoothLighting
                         && _useLightMapBlurring
-                        &&!_useHighQualityUpscaling
-                        &&!_simulateNormalMaps
-                        &&!_renderOnlyLight
+                        && _lightMapRenderMode == RenderMode.Bilinear
+                        && !_simulateNormalMaps
+                        && !_renderOnlyLight
 
                         && _useAmbientOcclusion
                         && _doNonSolidAmbientOcclusion
-                        &&!_doTileEntityAmbientOcclusion
+                        && !_doTileEntityAmbientOcclusion
                         && _ambientOcclusionRadius == 4
                         && _ambientOcclusionIntensity == 35
 
                         && _useFancyLightingEngine
                         && _fancyLightingEngineUseTemporal
-                        &&!_fancyLightingEngineMakeBrighter
+                        && !_fancyLightingEngineMakeBrighter
                         && _fancyLightingEngineLightLoss == 50
 
                         && _useCustomSkyColors
@@ -432,9 +478,9 @@ namespace FancyLighting.Config
                     else if (
                            _useSmoothLighting
                         && _useLightMapBlurring
-                        && _useHighQualityUpscaling
-                        &&!_simulateNormalMaps
-                        &&!_renderOnlyLight
+                        && _lightMapRenderMode == RenderMode.Bicubic
+                        && !_simulateNormalMaps
+                        && !_renderOnlyLight
 
                         && _useAmbientOcclusion
                         && _doNonSolidAmbientOcclusion
@@ -457,19 +503,19 @@ namespace FancyLighting.Config
                     else if (
                            _useSmoothLighting
                         && _useLightMapBlurring
-                        &&!_useHighQualityUpscaling
-                        &&!_simulateNormalMaps
-                        &&!_renderOnlyLight
+                        && _lightMapRenderMode == RenderMode.Bilinear
+                        && !_simulateNormalMaps
+                        && !_renderOnlyLight
 
-                        &&!_useAmbientOcclusion
-                        &&!_doNonSolidAmbientOcclusion
-                        &&!_doTileEntityAmbientOcclusion
+                        && !_useAmbientOcclusion
+                        && !_doNonSolidAmbientOcclusion
+                        && !_doTileEntityAmbientOcclusion
                         && _ambientOcclusionRadius == 4
                         && _ambientOcclusionIntensity == 35
 
-                        &&!_useFancyLightingEngine
+                        && !_useFancyLightingEngine
                         && _fancyLightingEngineUseTemporal
-                        &&!_fancyLightingEngineMakeBrighter
+                        && !_fancyLightingEngineMakeBrighter
                         && _fancyLightingEngineLightLoss == 50
 
                         && _useCustomSkyColors
@@ -478,6 +524,56 @@ namespace FancyLighting.Config
                     )
                     {
                         _preset = Preset.FastPreset;
+                    }
+                    else if (
+                           _useSmoothLighting
+                        && _useLightMapBlurring
+                        && _lightMapRenderMode == RenderMode.BicubicOverbright
+                        && _simulateNormalMaps
+                        && !_renderOnlyLight
+
+                        && _useAmbientOcclusion
+                        && _doNonSolidAmbientOcclusion
+                        && _doTileEntityAmbientOcclusion
+                        && _ambientOcclusionRadius == 4
+                        && _ambientOcclusionIntensity == 35
+
+                        && _useFancyLightingEngine
+                        && _fancyLightingEngineUseTemporal
+                        && _fancyLightingEngineMakeBrighter
+                        && _fancyLightingEngineLightLoss == 50
+
+                        && _useCustomSkyColors
+
+                        && _threadCount == Environment.ProcessorCount
+                    )
+                    {
+                        _preset = Preset.UltraPreset;
+                    }
+                    else if (
+                           !_useSmoothLighting
+                        && _useLightMapBlurring
+                        && _lightMapRenderMode == RenderMode.Bilinear
+                        && !_simulateNormalMaps
+                        && !_renderOnlyLight
+
+                        && !_useAmbientOcclusion
+                        && !_doNonSolidAmbientOcclusion
+                        && !_doTileEntityAmbientOcclusion
+                        && _ambientOcclusionRadius == 4
+                        && _ambientOcclusionIntensity == 35
+
+                        && !_useFancyLightingEngine
+                        && _fancyLightingEngineUseTemporal
+                        && !_fancyLightingEngineMakeBrighter
+                        && _fancyLightingEngineLightLoss == 50
+
+                        && !_useCustomSkyColors
+
+                        && _threadCount == Environment.ProcessorCount
+                    )
+                    {
+                        _preset = Preset.DisableAllPreset;
                     }
                 }
             }

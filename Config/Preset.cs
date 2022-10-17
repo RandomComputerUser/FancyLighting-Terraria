@@ -1,18 +1,20 @@
 ﻿using Terraria.ModLoader.Config;
 
-using System.ComponentModel;
-
 namespace FancyLighting.Config
 {
     public enum Preset : int
     {
         [Label("Default")]
-        DefaultPreset,
+        DefaultPreset = 0,
         [Label("Quality")]
-        QualityPreset,
+        QualityPreset = 1,
         [Label("Fast")]
-        FastPreset,
+        FastPreset = 2,
+        [Label("Ultra")]
+        UltraPreset = 3,
+        [Label("Disable All")]
+        DisableAllPreset = 4,
         [Label("Custom")]
-        CustomPreset
+        CustomPreset = 5
     }
 }

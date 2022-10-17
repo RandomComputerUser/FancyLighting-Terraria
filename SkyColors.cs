@@ -184,7 +184,9 @@ namespace FancyLighting
                 Main.dontStarveWorld = _dontStarveWorldTmp;
                 SetBaseSkyColor(ref backColor);
                 if (!Main.dayTime && Main.dontStarveWorld)
+                {
                     orig(ref backColor, ref moonColor);
+                }
             };
         }
     }
