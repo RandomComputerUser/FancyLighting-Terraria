@@ -7,11 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.5.0 (2022-10-16)**
-- Added two new presets: Ultra and Disable All
-- Added an overbright rendering option for smooth lighting
-- Made simulated normal maps more noticeable
-- Liquids are no longer rendered when in the render only lighting debug mode
-- Fixed potential camera mode bugs
+**v0.5.1 (2022-10-19)**
+- Replaced the normal maps toggle with a slider for strength
+- Decreased the strength of normal maps in the Ultra preset
+- Normal maps now affect lighting when both overbright and render only lighting are enabled
+- Fixed a liquid lighting bug with overbright enabled and the fancy lighting engine disabled
 - Updated the mod icon
-- Updated the mod description

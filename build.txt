@@ -1,6 +1,6 @@
 displayName = Fancy Lighting
 author = RandomComputerUser
-version = 0.5.0
+version = 0.5.1
 side = Client
 homepage = https://github.com/RandomComputerUser/FancyLighting-Terraria
 buildIgnore = Effects/DitheringMaskGenerator/*, Effects/fxcompiler.exe, Effects/Microsoft.Xna.Framework.Content.Pipeline.dll, Effects/Microsoft.Xna.Framework.Content.Pipeline.EffectImporter.dll, README.md, icon_workshop.png, packages/*

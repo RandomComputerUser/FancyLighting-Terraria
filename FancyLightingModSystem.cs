@@ -34,7 +34,7 @@ namespace FancyLighting
             FancyLightingMod._smoothLightingEnabled = _configInstance.UseSmoothLighting && Lighting.UsingNewLighting;
             FancyLightingMod._blurLightMap = _configInstance.UseLightMapBlurring;
             FancyLightingMod._lightMapRenderMode = _configInstance.LightMapRenderMode;
-            FancyLightingMod._simulateNormalMaps = _configInstance.SimulateNormalMaps;
+            FancyLightingMod._normalMapsStrength = _configInstance.NormalMapsStrength;
             FancyLightingMod._renderOnlyLight = _configInstance.RenderOnlyLight;
 
             FancyLightingMod._ambientOcclusionEnabled = _configInstance.UseAmbientOcclusion && Lighting.UsingNewLighting;

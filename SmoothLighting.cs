@@ -930,7 +930,8 @@ namespace FancyLighting
                     shader = "FancyLighting:Overbright";
                 }
 
-                float normalMapRadius = background ? 50f : 40f;
+                float normalMapRadius = background ? 60f : 40f;
+                normalMapRadius *= FancyLightingMod.NormalMapsStrength;
 
                 GameShaders.Misc[shader]
                     .UseShaderSpecificData(new Vector4(

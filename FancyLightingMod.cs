@@ -17,7 +17,7 @@ namespace FancyLighting
         internal static bool _smoothLightingEnabled;
         internal static bool _blurLightMap;
         internal static Config.RenderMode _lightMapRenderMode;
-        internal static bool _simulateNormalMaps;
+        internal static int _normalMapsStrength;
         internal static bool _renderOnlyLight;
 
         internal static bool _ambientOcclusionEnabled;
@@ -139,7 +139,15 @@ namespace FancyLighting
         {
             get
             {
-                return _simulateNormalMaps;
+                return _normalMapsStrength != 0;
+            }
+        }
+
+        public static float NormalMapsStrength
+        {
+            get
+            {
+                return _normalMapsStrength / 100f;
             }
         }
 
@@ -338,7 +346,11 @@ namespace FancyLighting
                 bool intoRenderTargets
             ) =>
             {
-                if (intoRenderTargets || !DrawOverbright || !SmoothLightingEnabled || _ambientOcclusionInstance._drawingTileEntities)
+                if (intoRenderTargets
+                    || !DrawOverbright
+                    || !SmoothLightingEnabled
+                    || RenderOnlyLight
+                    || _ambientOcclusionInstance._drawingTileEntities)
                 {
                     orig(self, solidLayer, forRenderTargets, intoRenderTargets);
                     return;
@@ -390,19 +402,19 @@ namespace FancyLighting
                     return;
                 }
 
-                if (!DrawOverbright || !SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (!DrawOverbright || !SmoothLightingEnabled)
                 {
                     orig(self);
                     return;
                 }
-                _smoothLightingInstance.CalculateSmoothLighting(true);
+                _smoothLightingInstance.CalculateSmoothLighting(false);
                 orig(self);
                 if (Main.drawToScreen)
                 {
                     return;
                 }
 
-                _smoothLightingInstance.DrawSmoothLighting(Main.waterTarget, true, true);
+                _smoothLightingInstance.DrawSmoothLighting(Main.waterTarget, false, true);
             };
 
             On.Terraria.Main.DrawWaters +=
@@ -412,12 +424,19 @@ namespace FancyLighting
                 bool isBackground
             ) =>
             {
-                if (_inCameraMode || !SmoothLightingEnabled || !DrawOverbright)
+                if (_inCameraMode || !DrawOverbright || !SmoothLightingEnabled)
                 {
                     orig(self, isBackground);
                     return;
                 }
-                OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                if (isBackground)
+                {
+                    OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+                }
+                else
+                {
+                    OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+                }
                 orig(self, isBackground);
                 OverrideLightingColor = false;
             };
@@ -429,7 +448,7 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled || !(FancyLightingEngineEnabled || DrawOverbright))
                 {
                     orig(self);
                     return;
@@ -454,7 +473,7 @@ namespace FancyLighting
                 Terraria.Main self
             ) =>
             {
-                if (!SmoothLightingEnabled || !FancyLightingEngineEnabled)
+                if (!SmoothLightingEnabled || !(FancyLightingEngineEnabled || DrawOverbright))
                 {
                     orig(self);
                     return;
