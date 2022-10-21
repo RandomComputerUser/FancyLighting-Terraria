@@ -65,7 +65,7 @@ namespace FancyLighting.Config
         }
         private RenderMode _lightMapRenderMode;
 
-        [Range(0, 150)]
+        [Range(0, 200)]
         [Increment(25)]
         [DefaultValue(0)]
         [Slider]
@@ -85,6 +85,23 @@ namespace FancyLighting.Config
             }
         }
         private int _normalMapsStrength;
+
+        [DefaultValue(false)]
+        [Label("Use Fine Normal Maps")]
+        [Tooltip("Toggles between coarse and fine normal maps\nCoarse normal maps have 2x2 resolution, fine 1x1\nRecommended to enable if using HD textures")]
+        public bool FineNormalMaps
+        {
+            get
+            {
+                return _useFineNormalMaps;
+            }
+            set
+            {
+                _useFineNormalMaps = value;
+                ConfigPreset = Preset.CustomPreset;
+            }
+        }
+        private bool _useFineNormalMaps;
 
         [DefaultValue(false)]
         [Label("(Debug) Render Only Lighting")]
@@ -343,6 +360,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
                     _useAmbientOcclusion = true;
@@ -366,6 +384,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bicubic;
                     _normalMapsStrength = 0;
+                    _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
                     _useAmbientOcclusion = true;
@@ -389,6 +408,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
                     _useAmbientOcclusion = false;
@@ -411,7 +431,8 @@ namespace FancyLighting.Config
                     _useSmoothLighting = true;
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.BicubicOverbright;
-                    _normalMapsStrength = 75;
+                    _normalMapsStrength = 100;
+                    _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
                     _useAmbientOcclusion = true;
@@ -435,6 +456,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
                     _useAmbientOcclusion = false;
@@ -459,6 +481,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useFineNormalMaps
                         && !_renderOnlyLight
 
                         && _useAmbientOcclusion
@@ -484,6 +507,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bicubic
                         && _normalMapsStrength == 0
+                        && !_useFineNormalMaps
                         && !_renderOnlyLight
 
                         && _useAmbientOcclusion
@@ -509,6 +533,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useFineNormalMaps
                         && !_renderOnlyLight
 
                         && !_useAmbientOcclusion
@@ -533,7 +558,8 @@ namespace FancyLighting.Config
                            _useSmoothLighting
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.BicubicOverbright
-                        && _normalMapsStrength == 75
+                        && _normalMapsStrength == 100
+                        && !_useFineNormalMaps
                         && !_renderOnlyLight
 
                         && _useAmbientOcclusion
@@ -559,6 +585,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useFineNormalMaps
                         && !_renderOnlyLight
 
                         && !_useAmbientOcclusion

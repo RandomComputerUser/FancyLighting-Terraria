@@ -7,9 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.5.1 (2022-10-19)**
-- Replaced the normal maps toggle with a slider for strength
-- Decreased the strength of normal maps in the Ultra preset
-- Normal maps now affect lighting when both overbright and render only lighting are enabled
-- Fixed a liquid lighting bug with overbright enabled and the fancy lighting engine disabled
-- Updated the mod icon
+**v0.5.2 (2022-10-19)**
+- Tweaked normal maps
+- Added a new option to toggle between coarse and fine normal maps
+- Normal map settings may need to be adjusted after this update to look the same

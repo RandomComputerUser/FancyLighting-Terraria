@@ -930,13 +930,19 @@ namespace FancyLighting
                     shader = "FancyLighting:Overbright";
                 }
 
-                float normalMapRadius = background ? 60f : 40f;
+                float normalMapRadius = background ? 40f : 25f;
                 normalMapRadius *= FancyLightingMod.NormalMapsStrength;
+
+                float normalMapResolution = FancyLightingMod.UseFineNormalMaps ? 1f : 2f;
+                if (FancyLightingMod.UseFineNormalMaps)
+                {
+                    normalMapRadius *= 1.25f;
+                }
 
                 GameShaders.Misc[shader]
                     .UseShaderSpecificData(new Vector4(
-                        1f / worldTarget.Width,
-                        1f / worldTarget.Height,
+                        normalMapResolution / worldTarget.Width,
+                        normalMapResolution / worldTarget.Height,
                         normalMapRadius / target2.Width,
                         normalMapRadius / target2.Height))
                     .UseColor((float)target2.Width / worldTarget.Width, (float)target2.Height / worldTarget.Height, 0f)
