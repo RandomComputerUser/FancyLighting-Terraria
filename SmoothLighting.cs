@@ -612,57 +612,29 @@ namespace FancyLighting
 
                                 Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
-                                // Crystal Shards, Gelatin Crystal, Glowing Moss, and Meteorite Brick
+                                // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
                                 if (_glowingTiles[Main.tile[x, y].TileType])
                                 {
                                     ref Color glow = ref _glowingTileColors[Main.tile[x, y].TileType];
-                                    if (lightColor.X < glow.R)
-                                    {
-                                        lightColor.X = glow.R / 255f;
-                                    }
 
-                                    if (lightColor.Y < glow.G)
-                                    {
-                                        lightColor.Y = glow.G / 255f;
-                                    }
-
-                                    if (lightColor.Z < glow.B)
-                                    {
-                                        lightColor.Z = glow.B / 255f;
-                                    }
+                                    lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
+                                    lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
+                                    lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
                                 }
 
                                 // Dangersense Potion
                                 else if (_isDangersenseActive && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer))
                                 {
-                                    if (lightColor.X < 255f / 255f)
-                                    {
-                                        lightColor.X = 255f / 255f;
-                                    }
-
-                                    if (lightColor.Y < 50f / 255f)
-                                    {
-                                        lightColor.Y = 50f / 255f;
-                                    }
-
-                                    if (lightColor.Z < 50f / 255f)
-                                    {
-                                        lightColor.Z = 50f / 255f;
-                                    }
+                                    lightColor.X = Math.Max(lightColor.X, 255f / 255f);
+                                    lightColor.Y = Math.Max(lightColor.Y, 50f / 255f);
+                                    lightColor.Z = Math.Max(lightColor.Z, 50f / 255f);
                                 }
 
                                 // Spelunker Potion
                                 else if (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
                                 {
-                                    if (lightColor.X < 200f / 255f)
-                                    {
-                                        lightColor.X = 200f / 255f;
-                                    }
-
-                                    if (lightColor.Y < 170f / 255f)
-                                    {
-                                        lightColor.Y = 170f / 255f;
-                                    }
+                                    lightColor.X = Math.Max(lightColor.X, 200f / 255f);
+                                    lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                                 }
 
                                 _finalLights[i] = new Color(multFromOverbright * lightColor);

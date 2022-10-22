@@ -7,7 +7,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.5.2 (2022-10-19)**
+**v0.5.2.1 (2022-10-21)**
+- Fixed a bug with glowing tiles
+
+**v0.5.2 (2022-10-21)**
 - Tweaked normal maps
 - Added a new option to toggle between coarse and fine normal maps
 - Normal map settings may need to be adjusted after this update to look the same
