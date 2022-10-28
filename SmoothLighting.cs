@@ -688,7 +688,7 @@ namespace FancyLighting
             Vector2 offset;
             if (tempTarget is null)
             {
-                Textures.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+                Textures.MakeSize(ref _drawTarget1, target.Width, target.Height);
                 tempTarget = _drawTarget1;
                 offset = new Vector2(Main.offScreenRange);
             }
@@ -701,7 +701,7 @@ namespace FancyLighting
 
             if (FancyLightingMod.SimulateNormalMaps || FancyLightingMod.DrawOverbright)
             {
-                Textures.MakeAtLeastSize(ref _drawTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+                Textures.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
             }
 
             ApplySmoothLighting(
@@ -828,7 +828,9 @@ namespace FancyLighting
             bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
             bool doOverbright = FancyLightingMod.DrawOverbright && !FancyLightingMod.RenderOnlyLight;
 
-            Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
+            RenderTarget2D initialTarget = simulateNormalMaps || doOverbright ? target2 : target1;
+
+            Main.instance.GraphicsDevice.SetRenderTarget(initialTarget);
             Main.instance.GraphicsDevice.Clear(Color.White);
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -863,7 +865,7 @@ namespace FancyLighting
 
             Main.spriteBatch.Draw(
                 lightMapTexture,
-                zoom * (lightMapPosition - target1.Size() / 2f) + target1.Size() / 2f,
+                zoom * (lightMapPosition - initialTarget.Size() / 2f) + initialTarget.Size() / 2f,
                 _lightMapRenderArea,
                 Color.White,
                 angle,

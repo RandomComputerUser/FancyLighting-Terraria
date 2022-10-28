@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.5.2.2 (2022-10-28)**
+- Fixed smooth lighting bugs that occurred when running the game at a high resolution
+
 **v0.5.2.1 (2022-10-21)**
 - Fixed a bug with glowing tiles
 

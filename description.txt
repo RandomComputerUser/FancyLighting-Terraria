@@ -1,15 +1,19 @@
 This mod makes lighting fancier by adding smooth lighting, ambient occlusion, dynamic shadows, overbright rendering, simulated normal maps, and new sky colors.
 
-This mod will only take effect if lighting is set to color, and features can be individually enabled and disabled. There are a number of presets included to make this process easier.
+This mod will only take effect if lighting is set to color, and features can be toggled individually. There are a number of presets included to make this process easier.
 
 Presets (from fastest/lowest quality to slowest/highest quality):
 - Disable All
 - Fast
 - Default
 - Quality
-- Ultra (good CPU and GPU recommended)
+- Ultra
 
-Because smooth lighting overrides built-in tile light rendering, glowmasks and tiles that glow independently of the light they emit must be re-implemented. The following effects and glowing tiles are supported:
+Some features may significantly lower frame rates at resolutions above 1920x1200 if you don't have a powerful GPU. If you experience this issue, try lowering the in-game resolution.
+
+Because smooth lighting overrides built-in tile light rendering, glowmasks and tiles that glow without being light sources must be re-implemented.
+
+Supported effects and glowing tiles:
 - Spelunker Potion
 - Dangersense Potion
 - Crystal Shard and Gelatin Crystal
@@ -17,6 +21,7 @@ Because smooth lighting overrides built-in tile light rendering, glowmasks and t
 - Meteorite Brick
 - Martian Conduit Plating (partial)
 - Lava Lamp
+
 Effects and glowing tiles from other mods may not work properly with smooth lighting.
 
 Requires OpenGL 2.1 or later
