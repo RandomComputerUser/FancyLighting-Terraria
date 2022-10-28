@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.5.2.3 (2022-10-28)**
+- Fixed a bug with the overbright rendering of tile entities introduced in v0.5.2.2
+
 **v0.5.2.2 (2022-10-28)**
 - Fixed smooth lighting bugs that occurred when running the game at a high resolution
 

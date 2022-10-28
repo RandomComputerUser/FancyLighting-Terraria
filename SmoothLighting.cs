@@ -828,9 +828,7 @@ namespace FancyLighting
             bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
             bool doOverbright = FancyLightingMod.DrawOverbright && !FancyLightingMod.RenderOnlyLight;
 
-            RenderTarget2D initialTarget = simulateNormalMaps || doOverbright ? target2 : target1;
-
-            Main.instance.GraphicsDevice.SetRenderTarget(initialTarget);
+            Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
             Main.instance.GraphicsDevice.Clear(Color.White);
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -865,7 +863,7 @@ namespace FancyLighting
 
             Main.spriteBatch.Draw(
                 lightMapTexture,
-                zoom * (lightMapPosition - initialTarget.Size() / 2f) + initialTarget.Size() / 2f,
+                zoom * (lightMapPosition - target1.Size() / 2f) + target1.Size() / 2f,
                 _lightMapRenderArea,
                 Color.White,
                 angle,
