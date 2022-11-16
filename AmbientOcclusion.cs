@@ -58,20 +58,16 @@ namespace FancyLighting
             _cameraModeTarget2?.Dispose();
             _cameraModeTarget3?.Dispose();
             _tileEntityTarget?.Dispose();
-            GameShaders.Misc["FancyLighting:AOPrePass"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:AOPrePass");
-            GameShaders.Misc["FancyLighting:AOPrePassLight"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:AOPrePassLight");
-            GameShaders.Misc["FancyLighting:AOBlur"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:AOBlur");
-            GameShaders.Misc["FancyLighting:AOFinalBlur"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:AOFinalBlur");
+            EffectLoader.UnloadEffect("FancyLighting:AOPrePass");
+            EffectLoader.UnloadEffect("FancyLighting:AOPrePassLight");
+            EffectLoader.UnloadEffect("FancyLighting:AOBlur");
+            EffectLoader.UnloadEffect("FancyLighting:AOFinalBlur");
         }
 
         internal void initSurfaces()
         {
-            Textures.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
-            Textures.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+            TextureSize.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+            TextureSize.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
         }
 
         internal void ApplyAmbientOcclusion()
@@ -109,9 +105,9 @@ namespace FancyLighting
 
         internal void ApplyAmbientOcclusionCameraMode(RenderTarget2D screenTarget, RenderTarget2D wallTarget, CaptureBiome biome)
         {
-            Textures.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
-            Textures.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
-            Textures.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
+            TextureSize.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+            TextureSize.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
+            TextureSize.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
 
             Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);

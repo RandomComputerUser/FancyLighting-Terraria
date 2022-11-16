@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.5.2.4 (2022-11-15)**
+- Made unloading effects safer
+
 **v0.5.2.3 (2022-10-28)**
 - Fixed a bug with the overbright rendering of tile entities introduced in v0.5.2.2
 

@@ -4,7 +4,7 @@ using Terraria;
 
 namespace FancyLighting.Util
 {
-    public static class Textures
+    public static class TextureSize
     {
         public static void MakeSize(ref RenderTarget2D target, int width, int height)
         {

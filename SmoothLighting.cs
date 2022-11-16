@@ -168,18 +168,12 @@ namespace FancyLighting
             _cameraModeTarget2?.Dispose();
             _cameraModeTarget3?.Dispose();
             _ditherMask?.Dispose();
-            GameShaders.Misc["FancyLighting:UpscaleBicubic"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:UpscaleBicubic");
-            GameShaders.Misc["FancyLighting:UpscaleNoFilter"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:UpscaleNoFilter");
-            GameShaders.Misc["FancyLighting:SimulateNormals"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:SimulateNormals");
-            GameShaders.Misc["FancyLighting:SimulateNormalsOverbright"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:SimulateNormalsOverbright");
-            GameShaders.Misc["FancyLighting:Overbright"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:Overbright");
-            GameShaders.Misc["FancyLighting:OverbrightMax"]?.Shader?.Dispose();
-            GameShaders.Misc.Remove("FancyLighting:OverbrightMax");
+            EffectLoader.UnloadEffect("FancyLighting:UpscaleBicubic");
+            EffectLoader.UnloadEffect("FancyLighting:UpscaleNoFilter");
+            EffectLoader.UnloadEffect("FancyLighting:SimulateNormals");
+            EffectLoader.UnloadEffect("FancyLighting:SimulateNormalsOverbright");
+            EffectLoader.UnloadEffect("FancyLighting:Overbright");
+            EffectLoader.UnloadEffect("FancyLighting:OverbrightMax");
         }
 
         private void PrintException()
@@ -579,7 +573,7 @@ namespace FancyLighting
                     return;
                 }
 
-                Textures.MakeAtLeastSize(ref _colorsBackground, height, width);
+                TextureSize.MakeAtLeastSize(ref _colorsBackground, height, width);
 
                 _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
@@ -655,7 +649,7 @@ namespace FancyLighting
                     return;
                 }
 
-                Textures.MakeAtLeastSize(ref _colors, height, width);
+                TextureSize.MakeAtLeastSize(ref _colors, height, width);
 
                 _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
@@ -688,7 +682,7 @@ namespace FancyLighting
             Vector2 offset;
             if (tempTarget is null)
             {
-                Textures.MakeSize(ref _drawTarget1, target.Width, target.Height);
+                TextureSize.MakeSize(ref _drawTarget1, target.Width, target.Height);
                 tempTarget = _drawTarget1;
                 offset = new Vector2(Main.offScreenRange);
             }
@@ -701,7 +695,7 @@ namespace FancyLighting
 
             if (FancyLightingMod.SimulateNormalMaps || FancyLightingMod.DrawOverbright)
             {
-                Textures.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
+                TextureSize.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
             }
 
             ApplySmoothLighting(
@@ -731,7 +725,7 @@ namespace FancyLighting
 
         internal RenderTarget2D GetCameraModeRenderTarget(RenderTarget2D screenTarget)
         {
-            Textures.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+            TextureSize.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
             return _cameraModeTarget1;
         }
 
@@ -744,8 +738,8 @@ namespace FancyLighting
         {
             Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-            Textures.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
-            Textures.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+            TextureSize.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+            TextureSize.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
 
             if (FancyLightingMod.SmoothLightingEnabled)
             {
