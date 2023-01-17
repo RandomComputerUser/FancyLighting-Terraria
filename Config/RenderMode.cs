@@ -1,7 +1,5 @@
 ﻿using Terraria.ModLoader.Config;
 
-using System.ComponentModel;
-
 namespace FancyLighting.Config
 {
     public enum RenderMode : int

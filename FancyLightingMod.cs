@@ -18,6 +18,7 @@ namespace FancyLighting
         internal static bool _blurLightMap;
         internal static Config.RenderMode _lightMapRenderMode;
         internal static int _normalMapsStrength;
+        internal static bool _useQualityNormalMaps;
         internal static bool _useFineNormalMaps;
         internal static bool _renderOnlyLight;
 
@@ -140,7 +141,15 @@ namespace FancyLighting
         {
             get
             {
-                return _normalMapsStrength != 0;
+                return _normalMapsStrength > 0;
+            }
+        }
+
+        public static bool UseQualityNormalMaps
+        {
+            get
+            {
+                return _useQualityNormalMaps;
             }
         }
 

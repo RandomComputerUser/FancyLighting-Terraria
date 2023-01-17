@@ -16,63 +16,140 @@ float2 uImageSize1;
 float2 uImageSize2;
 float4 uShaderSpecificData;
 
+float4 QualityNormalMap(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 worldTexCoords = uColor.xy * coords;
+
+    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
+    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
+    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
+    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
+    float3 upLeft = tex2D(uImage1, worldTexCoords - uShaderSpecificData.xy).rgb;
+    float3 downRight = tex2D(uImage1, worldTexCoords + uShaderSpecificData.xy).rgb;
+    float3 upRight = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, -uShaderSpecificData.y)).rgb;
+    float3 downLeft = tex2D(uImage1, worldTexCoords + float2(-uShaderSpecificData.x, uShaderSpecificData.y)).rgb;
+
+    float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
+    float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
+
+    float horizontal = dot(horizontalColorDiff, float3(1, 1, 1));
+    float vertical = dot(verticalColorDiff, float3(1, 1, 1));
+    float2 gradient = float2(horizontal, vertical);
+
+    gradient *= float2(
+        left.a * right.a < 1 ? 0 : 1.0 / (2 * 3),
+        up.a * down.a < 1 ? 0 : 1.0 / (2 * 3)
+    );
+
+    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float multiplier = 1 - dot(color, float3(1, 1, 1) / 4);
+
+    gradient = sign(gradient) * min(multiplier * sqrt(abs(gradient)), float2(0.4, 0.4));
+
+    return float4(tex2D(uImage0, coords + gradient * uShaderSpecificData.zw).rgb, 1);
+}
+
+float4 QualityNormalMapOverbright(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 worldTexCoords = uColor.xy * coords;
+
+    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
+    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
+    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
+    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
+    float3 upLeft = tex2D(uImage1, worldTexCoords - uShaderSpecificData.xy).rgb;
+    float3 downRight = tex2D(uImage1, worldTexCoords + uShaderSpecificData.xy).rgb;
+    float3 upRight = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, -uShaderSpecificData.y)).rgb;
+    float3 downLeft = tex2D(uImage1, worldTexCoords + float2(-uShaderSpecificData.x, uShaderSpecificData.y)).rgb;
+
+    float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
+    float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
+
+    float horizontal = dot(horizontalColorDiff, float3(1, 1, 1));
+    float vertical = dot(verticalColorDiff, float3(1, 1, 1));
+    float2 gradient = float2(horizontal, vertical);
+
+    gradient *= float2(
+        (left.a * right.a >= 1) / (2.0 * 3),
+        (up.a * down.a >= 1) / (2.0 * 3)
+    );
+
+    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float multiplier = 1 - dot(color, float3(1, 1, 1) / 4);
+
+    gradient = sign(gradient) * min(multiplier * sqrt(abs(gradient)), float2(0.4, 0.4));
+
+    return float4(255.0 / 128 * tex2D(uImage0, coords + gradient * uShaderSpecificData.zw).rgb, 1)
+        * tex2D(uImage1, worldTexCoords);
+}
+
 float4 GenerateNormalMap(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 otherCoords = uColor.xy * coords;
-    float4 leftColor = tex2D(uImage1, otherCoords - float2(uShaderSpecificData.x, 0));
-    float4 rightColor = tex2D(uImage1, otherCoords + float2(uShaderSpecificData.x, 0));
-    float4 upColor = tex2D(uImage1, otherCoords - float2(0, uShaderSpecificData.y));
-    float4 downColor = tex2D(uImage1, otherCoords + float2(0, uShaderSpecificData.y));
+    float2 worldTexCoords = uColor.xy * coords;
+    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
+    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
+    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
+    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
 
-    float horizontal = (leftColor.r + leftColor.g + leftColor.b) - (rightColor.r + rightColor.g + rightColor.b);
-    float vertical = (upColor.r + upColor.g + upColor.b) - (downColor.r + downColor.g + downColor.b);
+    float3 horizontalColorDiff = left.rgb - right.rgb;
+    float3 verticalColorDiff = up.rgb - down.rgb;
 
-    horizontal *= leftColor.a * rightColor.a < 1 ? 0 : 1.0 / 3.0;
-    vertical *= upColor.a * downColor.a < 1 ? 0 : 1.0 / 3.0;
+    float horizontal = dot(horizontalColorDiff, float3(1, 1, 1));
+    float vertical = dot(verticalColorDiff, float3(1, 1, 1));
+    float2 gradient = float2(horizontal, vertical);
 
-    float3 color = tex2D(uImage1, otherCoords).rgb;
-    float multiplier = 1 - 0.75 * (color.r + color.g + color.b) / 3.0;
+    gradient *= float2(
+        (left.a * right.a >= 1) / (1.0 * 3),
+        (up.a * down.a >= 1) / (1.0 * 3)
+    );
 
-    horizontal = sign(horizontal) * min(multiplier * sqrt(abs(horizontal)), 0.4);
-    vertical = sign(vertical) * min(multiplier * sqrt(abs(vertical)), 0.4);
+    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float multiplier = 1 - dot(color, float3(1, 1, 1) / 4);
 
-    return float4(tex2D(uImage0, coords + float2(horizontal, vertical) * uShaderSpecificData.zw).rgb, 1);
+    gradient = sign(gradient) * min(multiplier * sqrt(abs(gradient)), float2(0.4, 0.4));
+
+    return float4(tex2D(uImage0, coords + gradient * uShaderSpecificData.zw).rgb, 1);
 }
 
 float4 NormalMapOverbright(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 otherCoords = uColor.xy * coords;
-    float4 leftColor = tex2D(uImage1, otherCoords - float2(uShaderSpecificData.x, 0));
-    float4 rightColor = tex2D(uImage1, otherCoords + float2(uShaderSpecificData.x, 0));
-    float4 upColor = tex2D(uImage1, otherCoords - float2(0, uShaderSpecificData.y));
-    float4 downColor = tex2D(uImage1, otherCoords + float2(0, uShaderSpecificData.y));
+    float2 worldTexCoords = uColor.xy * coords;
+    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
+    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
+    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
+    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
 
-    float horizontal = (leftColor.r + leftColor.g + leftColor.b) - (rightColor.r + rightColor.g + rightColor.b);
-    float vertical = (upColor.r + upColor.g + upColor.b) - (downColor.r + downColor.g + downColor.b);
+    float3 horizontalColorDiff = left.rgb - right.rgb;
+    float3 verticalColorDiff = up.rgb - down.rgb;
 
-    horizontal *= leftColor.a * rightColor.a < 1 ? 0 : 1.0 / 3.0;
-    vertical *= upColor.a * downColor.a < 1 ? 0 : 1.0 / 3.0;
+    float horizontal = dot(horizontalColorDiff, float3(1, 1, 1));
+    float vertical = dot(verticalColorDiff, float3(1, 1, 1));
+    float2 gradient = float2(horizontal, vertical);
 
-    float3 color = tex2D(uImage1, otherCoords).rgb;
-    float multiplier = 1 - 0.75 * (color.r + color.g + color.b) / 3.0;
+    gradient *= float2(
+        (left.a * right.a >= 1) / (1.0 * 3),
+        (up.a * down.a >= 1) / (1.0 * 3)
+    );
 
-    horizontal = sign(horizontal) * min(multiplier * sqrt(abs(horizontal)), 0.4);
-    vertical = sign(vertical) * min(multiplier * sqrt(abs(vertical)), 0.4);
+    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float multiplier = 1 - dot(color, float3(1, 1, 1) / 4);
 
-    return float4(255.0 / 128.0 * tex2D(uImage0, coords + float2(horizontal, vertical) * uShaderSpecificData.zw).rgb, 1)
-           * tex2D(uImage1, otherCoords);
+    gradient = sign(gradient) * min(multiplier * sqrt(abs(gradient)), float2(0.4, 0.4));
+
+    return float4(255.0 / 128 * tex2D(uImage0, coords + gradient * uShaderSpecificData.zw).rgb, 1)
+           * tex2D(uImage1, worldTexCoords);
 }
 
 float4 DirectOverbright(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 otherCoords = uColor.xy * coords;
-    return float4(255.0 / 128.0 * tex2D(uImage0, coords).rgb, 1) * tex2D(uImage1, otherCoords);
+    float2 worldTexCoords = uColor.xy * coords;
+    return float4(255.0 / 128 * tex2D(uImage0, coords).rgb, 1) * tex2D(uImage1, worldTexCoords);
 }
 
 float4 DirectOverbrightMax(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 otherCoords = uColor.xy * coords;
-    return float4(max(255.0 / 128.0 * tex2D(uImage0, coords).rgb, float3(1, 1, 1)), 1) * tex2D(uImage1, otherCoords);
+    float2 worldTexCoords = uColor.xy * coords;
+    return float4(max(255.0 / 128 * tex2D(uImage0, coords).rgb, float3(1, 1, 1)), 1) * tex2D(uImage1, worldTexCoords);
 }
 
 technique Technique1
@@ -85,6 +162,16 @@ technique Technique1
     pass SimulateNormalsOverbright
     {
         PixelShader = compile ps_2_0 NormalMapOverbright();
+    }
+
+    pass QualityNormals
+    {
+        PixelShader = compile ps_2_0 QualityNormalMap();
+    }
+
+    pass QualityNormalsOverbright
+    {
+        PixelShader = compile ps_2_0 QualityNormalMapOverbright();
     }
 
     pass Overbright

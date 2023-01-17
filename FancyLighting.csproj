@@ -6,6 +6,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <LangVersion>latest</LangVersion>
+    <Title>Fancy Lighting</Title>
+    <Authors>RandomComputerUser</Authors>
+    <AssemblyVersion>0.5.3</AssemblyVersion>
+    <Version>0.5.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="tModLoader.CodeAssist" Version="0.1.*" />

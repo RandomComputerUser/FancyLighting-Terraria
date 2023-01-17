@@ -42,7 +42,7 @@ float4 Blur(float2 coords : TEXCOORD0) : COLOR0
         + 8008 * (tex2D(uImage0, coords - 2 * pix).r + tex2D(uImage0, coords + 2 * pix).r)
         + 11440 * (tex2D(uImage0, coords - 1 * pix).r + tex2D(uImage0, coords + 1 * pix).r)
         + 12870 * tex2D(uImage0, coords).r
-    ) / 65536.0;
+    ) / 65536;
 
     return float4(brightness, brightness, brightness, 1);
 }
@@ -61,7 +61,7 @@ float4 BlurFinal(float2 coords : TEXCOORD0) : COLOR0
         + 8008 * (tex2D(uImage0, coords - 2 * pix).r + tex2D(uImage0, coords + 2 * pix).r)
         + 11440 * (tex2D(uImage0, coords - 1 * pix).r + tex2D(uImage0, coords + 1 * pix).r)
         + 12870 * tex2D(uImage0, coords).r
-    ) / 65536.0;
+    ) / 65536;
 
     brightness *= brightness * brightness;
     brightness = uShaderSpecificData.z + (1 - uShaderSpecificData.z) * brightness;

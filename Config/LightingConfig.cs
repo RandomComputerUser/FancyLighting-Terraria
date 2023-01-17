@@ -15,7 +15,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Enable Smooth Lighting")]
-        [Tooltip("Toggles whether or not to use smooth lighting\nIf disabled, vanilla lighting visuals are used\nRequires lighting to be set to color")]
+        [Tooltip("Toggles whether to use smooth lighting\nIf disabled, vanilla lighting visuals are used\nRequires lighting to be set to color")]
         public bool UseSmoothLighting
         {
             get
@@ -32,7 +32,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Blur Light Map")]
-        [Tooltip("Toggles whether or not to blur the light map\nApplies a per-tile blur to the light map before rendering\nSmooths jagged corners in the light map\nDisabling this setting may slightly increase performance")]
+        [Tooltip("Toggles whether to blur the light map\nApplies a per-tile blur to the light map before rendering\nSmooths sharp light transitions\nDisabling this setting may slightly increase performance")]
         public bool UseLightMapBlurring
         {
             get
@@ -70,8 +70,8 @@ namespace FancyLighting.Config
         [DefaultValue(0)]
         [Slider]
         [DrawTicks]
-        [Label("Normal Maps Strength")]
-        [Tooltip("Controls the strength of a simulated normal maps effect\nWhen not 0, tiles have simulated normal maps and appear bumpy\nSet to 0 to disable")]
+        [Label("Simulated Normal Maps Strength")]
+        [Tooltip("Controls the strength of simulated normal maps\nWhen not 0, tiles have simulated normal maps and appear bumpy\nSet to 0 to disable")]
         public int NormalMapsStrength
         {
             get
@@ -87,8 +87,25 @@ namespace FancyLighting.Config
         private int _normalMapsStrength;
 
         [DefaultValue(false)]
+        [Label("Use Higher-Quality Normal Maps")]
+        [Tooltip("Toggles between regular and higher-quality simulated normal map shaders\nWhen enabled, uses a higher-quality normal map simulation\nMay reduce performance when enabled")]
+        public bool QualityNormalMaps
+        {
+            get
+            {
+                return _useQualityNormalMaps;
+            }
+            set
+            {
+                _useQualityNormalMaps = value;
+                ConfigPreset = Preset.CustomPreset;
+            }
+        }
+        private bool _useQualityNormalMaps;
+
+        [DefaultValue(false)]
         [Label("Use Fine Normal Maps")]
-        [Tooltip("Toggles between coarse and fine normal maps\nCoarse normal maps have 2x2 resolution, fine 1x1\nRecommended to enable if using HD textures")]
+        [Tooltip("Toggles between coarse and fine simulated normal maps\nCoarse normal maps have 2x2 resolution, and fine 1x1\nRecommended to enable when using HD textures")]
         public bool FineNormalMaps
         {
             get
@@ -125,7 +142,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Enable Ambient Occlusion")]
-        [Tooltip("Toggles whether or not to use ambient occlusion\nIf enabled, shadows are added around the edges of foreground tiles in front of background walls\nRequires lighting to be set to color")]
+        [Tooltip("Toggles whether to use ambient occlusion\nIf enabled, tiles produce shadows in front of walls\nRequires lighting to be set to color")]
         public bool UseAmbientOcclusion
         {
             get
@@ -180,7 +197,7 @@ namespace FancyLighting.Config
         [Slider]
         [DrawTicks]
         [Label("Ambient Occlusion Radius")]
-        [Tooltip("Controls the radius of blur used in ambient occlusion\nHigher values correspond to a larger blur radius\nHigher values may degrade performance")]
+        [Tooltip("Controls the radius of blur used in ambient occlusion\nHigher values correspond to a larger blur radius\nHigher values may reduce performance")]
         public int AmbientOcclusionRadius
         {
             get
@@ -221,7 +238,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Enable Fancy Lighting Engine")]
-        [Tooltip("Toggles whether or not to use a modified lighting engine\nWhen enabled, light is spread more accurately\nShadows should face away from light sources and be more noticeable\nPerformance is significantly reduced in areas with more light sources\nRequires lighting to be set to color")]
+        [Tooltip("Toggles whether to use a modified lighting engine\nWhen enabled, light is spread more accurately\nShadows should face away from light sources and be more noticeable\nPerformance is significantly reduced in areas with more light sources\nRequires lighting to be set to color")]
         public bool UseFancyLightingEngine
         {
             get
@@ -238,7 +255,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Temporal Optimization")]
-        [Tooltip("Toggles whether or not to use temporal optimization with the fancy lighting engine\nWhen enabled, data from the previous update is used to optimize lighting during the current update\nMakes lighting quicker in more intensly lit areas\nMay sometimes result in a slightly lowered lighting quality")]
+        [Tooltip("Toggles whether to use temporal optimization with the fancy lighting engine\nWhen enabled, uses data from the previous update to optimize lighting calculations\nMakes lighting quicker in more intensly lit areas\nMay sometimes cause lighting quality to be slightly reduced")]
         public bool FancyLightingEngineUseTemporal
         {
             get
@@ -255,7 +272,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(false)]
         [Label("Brighter Lighting")]
-        [Tooltip("Toggles whether or not to make lighting slightly brighter\nWhen disabled, lighting is slightly darker than when using the vanilla lighting engine\nSlightly degrades performance when enabled")]
+        [Tooltip("Toggles whether to make lighting slightly brighter\nWhen disabled, lighting is slightly darker than with vanilla lighting\nMay reduce performance when enabled")]
         public bool FancyLightingEngineMakeBrighter
         {
             get
@@ -296,7 +313,7 @@ namespace FancyLighting.Config
 
         [DefaultValue(true)]
         [Label("Enable Fancy Sky Colors")]
-        [Tooltip("Toggles whether or not to use modified sky colors\nIf disabled, vanilla sky colors are used instead")]
+        [Tooltip("Toggles whether to use modified sky colors\nIf disabled, vanilla sky colors are used instead")]
         public bool UseCustomSkyColors
         {
             get
@@ -336,12 +353,10 @@ namespace FancyLighting.Config
         // Presets
 
         [Header("Presets")]
-        // I really wish enums would use a dropdown menu UI, but sliders are used instead
-        // I couldn't find a dropdown menu config UI built into tModLoader
         [DrawTicks]
         [DefaultValue(Preset.DefaultPreset)]
         [Label("Settings Preset")]
-        [Tooltip("A preset for this settings page can be set here")]
+        [Tooltip("A preset for the above settings may be chosen")]
         public Preset ConfigPreset
         {
             get
@@ -360,6 +375,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useQualityNormalMaps = false;
                     _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -384,6 +400,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bicubic;
                     _normalMapsStrength = 0;
+                    _useQualityNormalMaps = false;
                     _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -408,6 +425,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useQualityNormalMaps = false;
                     _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -432,6 +450,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.BicubicOverbright;
                     _normalMapsStrength = 100;
+                    _useQualityNormalMaps = true;
                     _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -456,6 +475,7 @@ namespace FancyLighting.Config
                     _useLightMapBlurring = true;
                     _lightMapRenderMode = RenderMode.Bilinear;
                     _normalMapsStrength = 0;
+                    _useQualityNormalMaps = false;
                     _useFineNormalMaps = false;
                     _renderOnlyLight = false;
 
@@ -481,6 +501,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useQualityNormalMaps
                         && !_useFineNormalMaps
                         && !_renderOnlyLight
 
@@ -507,6 +528,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bicubic
                         && _normalMapsStrength == 0
+                        && !_useQualityNormalMaps
                         && !_useFineNormalMaps
                         && !_renderOnlyLight
 
@@ -533,6 +555,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useQualityNormalMaps
                         && !_useFineNormalMaps
                         && !_renderOnlyLight
 
@@ -559,6 +582,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.BicubicOverbright
                         && _normalMapsStrength == 100
+                        && _useQualityNormalMaps
                         && !_useFineNormalMaps
                         && !_renderOnlyLight
 
@@ -585,6 +609,7 @@ namespace FancyLighting.Config
                         && _useLightMapBlurring
                         && _lightMapRenderMode == RenderMode.Bilinear
                         && _normalMapsStrength == 0
+                        && !_useQualityNormalMaps
                         && !_useFineNormalMaps
                         && !_renderOnlyLight
 

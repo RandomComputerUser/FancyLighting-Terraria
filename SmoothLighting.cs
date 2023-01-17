@@ -129,6 +129,18 @@ namespace FancyLighting
                     "UpscaleNoFilter"
                 );
 
+            GameShaders.Misc["FancyLighting:QualityNormals"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "QualityNormals"
+                );
+
+            GameShaders.Misc["FancyLighting:QualityNormalsOverbright"] =
+                new MiscShaderData(
+                    new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
+                    "QualityNormalsOverbright"
+                );
+
             GameShaders.Misc["FancyLighting:SimulateNormals"] =
                 new MiscShaderData(
                     new Ref<Effect>(ModContent.Request<Effect>("FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad).Value),
@@ -170,6 +182,8 @@ namespace FancyLighting
             _ditherMask?.Dispose();
             EffectLoader.UnloadEffect("FancyLighting:UpscaleBicubic");
             EffectLoader.UnloadEffect("FancyLighting:UpscaleNoFilter");
+            EffectLoader.UnloadEffect("FancyLighting:QualityNormals");
+            EffectLoader.UnloadEffect("FancyLighting:QualityNormalsOverbright");
             EffectLoader.UnloadEffect("FancyLighting:SimulateNormals");
             EffectLoader.UnloadEffect("FancyLighting:SimulateNormalsOverbright");
             EffectLoader.UnloadEffect("FancyLighting:Overbright");
@@ -819,6 +833,8 @@ namespace FancyLighting
             bool doScaling)
         {
             bool simulateNormalMaps = !disableNormalMaps && FancyLightingMod.SimulateNormalMaps;
+            bool qualityNormalMaps = FancyLightingMod.UseQualityNormalMaps;
+            bool fineNormalMaps = FancyLightingMod.UseFineNormalMaps;
             bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
             bool doOverbright = FancyLightingMod.DrawOverbright && !FancyLightingMod.RenderOnlyLight;
 
@@ -881,11 +897,25 @@ namespace FancyLighting
                 string shader;
                 if (simulateNormalMaps && doOverbright)
                 {
-                    shader = "FancyLighting:SimulateNormalsOverbright";
+                    if (qualityNormalMaps)
+                    {
+                        shader = "FancyLighting:QualityNormalsOverbright";
+                    }
+                    else
+                    {
+                        shader = "FancyLighting:SimulateNormalsOverbright";
+                    }
                 }
                 else if (simulateNormalMaps)
                 {
-                    shader = "FancyLighting:SimulateNormals";
+                    if (qualityNormalMaps)
+                    {
+                        shader = "FancyLighting:QualityNormals";
+                    }
+                    else
+                    {
+                        shader = "FancyLighting:SimulateNormals";
+                    }
                 }
                 else if (doOverbright && doScaling)
                 {
@@ -896,14 +926,14 @@ namespace FancyLighting
                     shader = "FancyLighting:Overbright";
                 }
 
-                float normalMapRadius = background ? 40f : 25f;
+                float normalMapRadius = background ? 35f : qualityNormalMaps ? 30f : 25f;
                 normalMapRadius *= FancyLightingMod.NormalMapsStrength;
-
-                float normalMapResolution = FancyLightingMod.UseFineNormalMaps ? 1f : 2f;
-                if (FancyLightingMod.UseFineNormalMaps)
+                if (fineNormalMaps)
                 {
                     normalMapRadius *= 1.25f;
                 }
+
+                float normalMapResolution = fineNormalMaps ? 1f : 2f;
 
                 GameShaders.Misc[shader]
                     .UseShaderSpecificData(new Vector4(
@@ -911,7 +941,10 @@ namespace FancyLighting
                         normalMapResolution / worldTarget.Height,
                         normalMapRadius / target2.Width,
                         normalMapRadius / target2.Height))
-                    .UseColor((float)target2.Width / worldTarget.Width, (float)target2.Height / worldTarget.Height, 0f)
+                    .UseColor(
+                        (float)target2.Width / worldTarget.Width,
+                        (float)target2.Height / worldTarget.Height,
+                        0f)
                     .Apply(null);
                 Main.instance.GraphicsDevice.Textures[1] = worldTarget;
                 Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
