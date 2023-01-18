@@ -58,7 +58,7 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float3 color = lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
 
     // Dithering
-    color += (tex2D(uImage1, coords * uColor.xy).rgb - 0.25) / 128;
+    color += (tex2D(uImage1, coords * uColor.xy).rgb - float3(0.25, 0.25, 0.25)) / 128;
 
     return float4(color, 1);
 }

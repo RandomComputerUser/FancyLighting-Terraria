@@ -7,8 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.5.3 (2023-01-17)**
-- Added a higher-quality normal map simulation option
-- Tweaked simulated normal maps slightly
-- Updated some config tooltips
-- Updated the mod icon
+**v0.5.4 (2023-01-17)**
+- Fixed camera mode
+- Re-added dithering to bicubic upscaling after it was unintentionally removed in 0.5.0
+- Lots of code cleanup
