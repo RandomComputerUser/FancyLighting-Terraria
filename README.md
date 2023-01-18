@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.5.4.1 (2023-01-17)**
+- Decreased simulation normal map strength on background walls
+
 **v0.5.4 (2023-01-17)**
 - Fixed camera mode
 - Re-added dithering to bicubic upscaling after it was unintentionally removed in 0.5.0

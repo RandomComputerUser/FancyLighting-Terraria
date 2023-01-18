@@ -40,7 +40,7 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float4 xcubic = Cubic(fxy.x);
     float4 ycubic = Cubic(fxy.y);
 
-    float4 c = texCoords.xxyy + float4(-0.5, 1.5, -0.5, 1.5);
+    float4 c = texCoords.xxyy + float2(-0.5, 1.5).xyxy;
 
     float4 s = float4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
     float4 offset = c + float4(xcubic.yw, ycubic.yw) / s;
@@ -58,7 +58,7 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float3 color = lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
 
     // Dithering
-    color += (tex2D(uImage1, coords * uColor.xy).rgb - float3(0.25, 0.25, 0.25)) / 128;
+    color += (tex2D(uImage1, coords * uColor.xy).rgb - (0.25).xxx) / 128;
 
     return float4(color, 1);
 }

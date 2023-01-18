@@ -930,11 +930,16 @@ internal sealed class SmoothLighting
                     ? "FancyLighting:OverbrightMax" // if doScaling is true we're rendering tile entities
                     : "FancyLighting:Overbright";
 
-            float normalMapRadius = background ? 35f : qualityNormalMaps ? 30f : 25f;
+            float normalMapRadius = qualityNormalMaps ? 30f : 25f;
             normalMapRadius *= FancyLightingMod.NormalMapsStrength;
+
             if (fineNormalMaps)
             {
                 normalMapRadius *= 1.25f;
+            }
+            if (background)
+            {
+                normalMapRadius *= 0.75f;
             }
 
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
