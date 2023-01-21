@@ -10,6 +10,291 @@ public sealed class LightingConfig : ModConfig
 {
     public override ConfigScope Mode => ConfigScope.ClientSide;
 
+
+
+    // Presets
+    [Header("Presets")]
+
+    [DrawTicks]
+    [DefaultValue(Preset.DefaultPreset)]
+    [Label("Settings Preset")]
+    [Tooltip("A preset for the above settings may be chosen")]
+    public Preset ConfigPreset
+    {
+        get => _preset;
+        set
+        {
+            _preset = value;
+
+            // Bad code ahead
+
+            if (_preset == Preset.DefaultPreset)
+            {
+                _useSmoothLighting = true;
+                _useLightMapBlurring = true;
+                _lightMapRenderMode = RenderMode.Bilinear;
+                _normalMapsStrength = 0;
+                _useQualityNormalMaps = false;
+                _useFineNormalMaps = false;
+                _renderOnlyLight = false;
+
+                _useAmbientOcclusion = true;
+                _doNonSolidAmbientOcclusion = true;
+                _doTileEntityAmbientOcclusion = false;
+                _ambientOcclusionRadius = 4;
+                _ambientOcclusionIntensity = 35;
+
+                _useFancyLightingEngine = true;
+                _fancyLightingEngineUseTemporal = true;
+                _fancyLightingEngineMakeBrighter = false;
+                _fancyLightingEngineLightLoss = 50;
+
+                _useCustomSkyColors = true;
+
+                _threadCount = Environment.ProcessorCount;
+            }
+            else if (_preset == Preset.QualityPreset)
+            {
+                _useSmoothLighting = true;
+                _useLightMapBlurring = true;
+                _lightMapRenderMode = RenderMode.Bicubic;
+                _normalMapsStrength = 0;
+                _useQualityNormalMaps = false;
+                _useFineNormalMaps = false;
+                _renderOnlyLight = false;
+
+                _useAmbientOcclusion = true;
+                _doNonSolidAmbientOcclusion = true;
+                _doTileEntityAmbientOcclusion = true;
+                _ambientOcclusionRadius = 4;
+                _ambientOcclusionIntensity = 35;
+
+                _useFancyLightingEngine = true;
+                _fancyLightingEngineUseTemporal = true;
+                _fancyLightingEngineMakeBrighter = true;
+                _fancyLightingEngineLightLoss = 50;
+
+                _useCustomSkyColors = true;
+
+                _threadCount = Environment.ProcessorCount;
+            }
+            else if (_preset == Preset.FastPreset)
+            {
+                _useSmoothLighting = true;
+                _useLightMapBlurring = true;
+                _lightMapRenderMode = RenderMode.Bilinear;
+                _normalMapsStrength = 0;
+                _useQualityNormalMaps = false;
+                _useFineNormalMaps = false;
+                _renderOnlyLight = false;
+
+                _useAmbientOcclusion = false;
+                _doNonSolidAmbientOcclusion = false;
+                _doTileEntityAmbientOcclusion = false;
+                _ambientOcclusionRadius = 4;
+                _ambientOcclusionIntensity = 35;
+
+                _useFancyLightingEngine = false;
+                _fancyLightingEngineUseTemporal = true;
+                _fancyLightingEngineMakeBrighter = false;
+                _fancyLightingEngineLightLoss = 50;
+
+                _useCustomSkyColors = true;
+
+                _threadCount = Environment.ProcessorCount;
+            }
+            else if (_preset == Preset.UltraPreset)
+            {
+                _useSmoothLighting = true;
+                _useLightMapBlurring = true;
+                _lightMapRenderMode = RenderMode.BicubicOverbright;
+                _normalMapsStrength = 100;
+                _useQualityNormalMaps = true;
+                _useFineNormalMaps = false;
+                _renderOnlyLight = false;
+
+                _useAmbientOcclusion = true;
+                _doNonSolidAmbientOcclusion = true;
+                _doTileEntityAmbientOcclusion = true;
+                _ambientOcclusionRadius = 4;
+                _ambientOcclusionIntensity = 35;
+
+                _useFancyLightingEngine = true;
+                _fancyLightingEngineUseTemporal = true;
+                _fancyLightingEngineMakeBrighter = true;
+                _fancyLightingEngineLightLoss = 50;
+
+                _useCustomSkyColors = true;
+
+                _threadCount = Environment.ProcessorCount;
+            }
+            else if (_preset == Preset.DisableAllPreset)
+            {
+                _useSmoothLighting = false;
+                _useLightMapBlurring = true;
+                _lightMapRenderMode = RenderMode.Bilinear;
+                _normalMapsStrength = 0;
+                _useQualityNormalMaps = false;
+                _useFineNormalMaps = false;
+                _renderOnlyLight = false;
+
+                _useAmbientOcclusion = false;
+                _doNonSolidAmbientOcclusion = false;
+                _doTileEntityAmbientOcclusion = false;
+                _ambientOcclusionRadius = 4;
+                _ambientOcclusionIntensity = 35;
+
+                _useFancyLightingEngine = false;
+                _fancyLightingEngineUseTemporal = true;
+                _fancyLightingEngineMakeBrighter = false;
+                _fancyLightingEngineLightLoss = 50;
+
+                _useCustomSkyColors = false;
+
+                _threadCount = Environment.ProcessorCount;
+            }
+            else
+            {
+                if (
+                       _useSmoothLighting
+                    && _useLightMapBlurring
+                    && _lightMapRenderMode == RenderMode.Bilinear
+                    && _normalMapsStrength == 0
+                    && !_useQualityNormalMaps
+                    && !_useFineNormalMaps
+                    && !_renderOnlyLight
+
+                    && _useAmbientOcclusion
+                    && _doNonSolidAmbientOcclusion
+                    && !_doTileEntityAmbientOcclusion
+                    && _ambientOcclusionRadius == 4
+                    && _ambientOcclusionIntensity == 35
+
+                    && _useFancyLightingEngine
+                    && _fancyLightingEngineUseTemporal
+                    && !_fancyLightingEngineMakeBrighter
+                    && _fancyLightingEngineLightLoss == 50
+
+                    && _useCustomSkyColors
+
+                    && _threadCount == Environment.ProcessorCount
+                )
+                {
+                    _preset = Preset.DefaultPreset;
+                }
+                else if (
+                       _useSmoothLighting
+                    && _useLightMapBlurring
+                    && _lightMapRenderMode == RenderMode.Bicubic
+                    && _normalMapsStrength == 0
+                    && !_useQualityNormalMaps
+                    && !_useFineNormalMaps
+                    && !_renderOnlyLight
+
+                    && _useAmbientOcclusion
+                    && _doNonSolidAmbientOcclusion
+                    && _doTileEntityAmbientOcclusion
+                    && _ambientOcclusionRadius == 4
+                    && _ambientOcclusionIntensity == 35
+
+                    && _useFancyLightingEngine
+                    && _fancyLightingEngineUseTemporal
+                    && _fancyLightingEngineMakeBrighter
+                    && _fancyLightingEngineLightLoss == 50
+
+                    && _useCustomSkyColors
+
+                    && _threadCount == Environment.ProcessorCount
+                )
+                {
+                    _preset = Preset.QualityPreset;
+                }
+                else if (
+                       _useSmoothLighting
+                    && _useLightMapBlurring
+                    && _lightMapRenderMode == RenderMode.Bilinear
+                    && _normalMapsStrength == 0
+                    && !_useQualityNormalMaps
+                    && !_useFineNormalMaps
+                    && !_renderOnlyLight
+
+                    && !_useAmbientOcclusion
+                    && !_doNonSolidAmbientOcclusion
+                    && !_doTileEntityAmbientOcclusion
+                    && _ambientOcclusionRadius == 4
+                    && _ambientOcclusionIntensity == 35
+
+                    && !_useFancyLightingEngine
+                    && _fancyLightingEngineUseTemporal
+                    && !_fancyLightingEngineMakeBrighter
+                    && _fancyLightingEngineLightLoss == 50
+
+                    && _useCustomSkyColors
+
+                    && _threadCount == Environment.ProcessorCount
+                )
+                {
+                    _preset = Preset.FastPreset;
+                }
+                else if (
+                       _useSmoothLighting
+                    && _useLightMapBlurring
+                    && _lightMapRenderMode == RenderMode.BicubicOverbright
+                    && _normalMapsStrength == 100
+                    && _useQualityNormalMaps
+                    && !_useFineNormalMaps
+                    && !_renderOnlyLight
+
+                    && _useAmbientOcclusion
+                    && _doNonSolidAmbientOcclusion
+                    && _doTileEntityAmbientOcclusion
+                    && _ambientOcclusionRadius == 4
+                    && _ambientOcclusionIntensity == 35
+
+                    && _useFancyLightingEngine
+                    && _fancyLightingEngineUseTemporal
+                    && _fancyLightingEngineMakeBrighter
+                    && _fancyLightingEngineLightLoss == 50
+
+                    && _useCustomSkyColors
+
+                    && _threadCount == Environment.ProcessorCount
+                )
+                {
+                    _preset = Preset.UltraPreset;
+                }
+                else if (
+                       !_useSmoothLighting
+                    && _useLightMapBlurring
+                    && _lightMapRenderMode == RenderMode.Bilinear
+                    && _normalMapsStrength == 0
+                    && !_useQualityNormalMaps
+                    && !_useFineNormalMaps
+                    && !_renderOnlyLight
+
+                    && !_useAmbientOcclusion
+                    && !_doNonSolidAmbientOcclusion
+                    && !_doTileEntityAmbientOcclusion
+                    && _ambientOcclusionRadius == 4
+                    && _ambientOcclusionIntensity == 35
+
+                    && !_useFancyLightingEngine
+                    && _fancyLightingEngineUseTemporal
+                    && !_fancyLightingEngineMakeBrighter
+                    && _fancyLightingEngineLightLoss == 50
+
+                    && !_useCustomSkyColors
+
+                    && _threadCount == Environment.ProcessorCount
+                )
+                {
+                    _preset = Preset.DisableAllPreset;
+                }
+            }
+        }
+    }
+    private Preset _preset;
+
     // Smooth Lighting, Normal Maps, Overbright
     [Header("Smooth Lighting")]
 
@@ -295,289 +580,6 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _threadCount;
-
-    // Presets
-
-    [Header("Presets")]
-    [DrawTicks]
-    [DefaultValue(Preset.DefaultPreset)]
-    [Label("Settings Preset")]
-    [Tooltip("A preset for the above settings may be chosen")]
-    public Preset ConfigPreset
-    {
-        get => _preset;
-        set
-        {
-            _preset = value;
-
-            // Bad code ahead
-
-            if (_preset == Preset.DefaultPreset)
-            {
-                _useSmoothLighting = true;
-                _useLightMapBlurring = true;
-                _lightMapRenderMode = RenderMode.Bilinear;
-                _normalMapsStrength = 0;
-                _useQualityNormalMaps = false;
-                _useFineNormalMaps = false;
-                _renderOnlyLight = false;
-
-                _useAmbientOcclusion = true;
-                _doNonSolidAmbientOcclusion = true;
-                _doTileEntityAmbientOcclusion = false;
-                _ambientOcclusionRadius = 4;
-                _ambientOcclusionIntensity = 35;
-
-                _useFancyLightingEngine = true;
-                _fancyLightingEngineUseTemporal = true;
-                _fancyLightingEngineMakeBrighter = false;
-                _fancyLightingEngineLightLoss = 50;
-
-                _useCustomSkyColors = true;
-
-                _threadCount = Environment.ProcessorCount;
-            }
-            else if (_preset == Preset.QualityPreset)
-            {
-                _useSmoothLighting = true;
-                _useLightMapBlurring = true;
-                _lightMapRenderMode = RenderMode.Bicubic;
-                _normalMapsStrength = 0;
-                _useQualityNormalMaps = false;
-                _useFineNormalMaps = false;
-                _renderOnlyLight = false;
-
-                _useAmbientOcclusion = true;
-                _doNonSolidAmbientOcclusion = true;
-                _doTileEntityAmbientOcclusion = true;
-                _ambientOcclusionRadius = 4;
-                _ambientOcclusionIntensity = 35;
-
-                _useFancyLightingEngine = true;
-                _fancyLightingEngineUseTemporal = true;
-                _fancyLightingEngineMakeBrighter = true;
-                _fancyLightingEngineLightLoss = 50;
-
-                _useCustomSkyColors = true;
-
-                _threadCount = Environment.ProcessorCount;
-            }
-            else if (_preset == Preset.FastPreset)
-            {
-                _useSmoothLighting = true;
-                _useLightMapBlurring = true;
-                _lightMapRenderMode = RenderMode.Bilinear;
-                _normalMapsStrength = 0;
-                _useQualityNormalMaps = false;
-                _useFineNormalMaps = false;
-                _renderOnlyLight = false;
-
-                _useAmbientOcclusion = false;
-                _doNonSolidAmbientOcclusion = false;
-                _doTileEntityAmbientOcclusion = false;
-                _ambientOcclusionRadius = 4;
-                _ambientOcclusionIntensity = 35;
-
-                _useFancyLightingEngine = false;
-                _fancyLightingEngineUseTemporal = true;
-                _fancyLightingEngineMakeBrighter = false;
-                _fancyLightingEngineLightLoss = 50;
-
-                _useCustomSkyColors = true;
-
-                _threadCount = Environment.ProcessorCount;
-            }
-            else if (_preset == Preset.UltraPreset)
-            {
-                _useSmoothLighting = true;
-                _useLightMapBlurring = true;
-                _lightMapRenderMode = RenderMode.BicubicOverbright;
-                _normalMapsStrength = 100;
-                _useQualityNormalMaps = true;
-                _useFineNormalMaps = false;
-                _renderOnlyLight = false;
-
-                _useAmbientOcclusion = true;
-                _doNonSolidAmbientOcclusion = true;
-                _doTileEntityAmbientOcclusion = true;
-                _ambientOcclusionRadius = 4;
-                _ambientOcclusionIntensity = 35;
-
-                _useFancyLightingEngine = true;
-                _fancyLightingEngineUseTemporal = true;
-                _fancyLightingEngineMakeBrighter = true;
-                _fancyLightingEngineLightLoss = 50;
-
-                _useCustomSkyColors = true;
-
-                _threadCount = Environment.ProcessorCount;
-            }
-            else if (_preset == Preset.DisableAllPreset)
-            {
-                _useSmoothLighting = false;
-                _useLightMapBlurring = true;
-                _lightMapRenderMode = RenderMode.Bilinear;
-                _normalMapsStrength = 0;
-                _useQualityNormalMaps = false;
-                _useFineNormalMaps = false;
-                _renderOnlyLight = false;
-
-                _useAmbientOcclusion = false;
-                _doNonSolidAmbientOcclusion = false;
-                _doTileEntityAmbientOcclusion = false;
-                _ambientOcclusionRadius = 4;
-                _ambientOcclusionIntensity = 35;
-
-                _useFancyLightingEngine = false;
-                _fancyLightingEngineUseTemporal = true;
-                _fancyLightingEngineMakeBrighter = false;
-                _fancyLightingEngineLightLoss = 50;
-
-                _useCustomSkyColors = false;
-
-                _threadCount = Environment.ProcessorCount;
-            }
-            else
-            {
-                if (
-                       _useSmoothLighting
-                    && _useLightMapBlurring
-                    && _lightMapRenderMode == RenderMode.Bilinear
-                    && _normalMapsStrength == 0
-                    && !_useQualityNormalMaps
-                    && !_useFineNormalMaps
-                    && !_renderOnlyLight
-
-                    && _useAmbientOcclusion
-                    && _doNonSolidAmbientOcclusion
-                    && !_doTileEntityAmbientOcclusion
-                    && _ambientOcclusionRadius == 4
-                    && _ambientOcclusionIntensity == 35
-
-                    && _useFancyLightingEngine
-                    && _fancyLightingEngineUseTemporal
-                    && !_fancyLightingEngineMakeBrighter
-                    && _fancyLightingEngineLightLoss == 50
-
-                    && _useCustomSkyColors
-
-                    && _threadCount == Environment.ProcessorCount
-                )
-                {
-                    _preset = Preset.DefaultPreset;
-                }
-                else if (
-                       _useSmoothLighting
-                    && _useLightMapBlurring
-                    && _lightMapRenderMode == RenderMode.Bicubic
-                    && _normalMapsStrength == 0
-                    && !_useQualityNormalMaps
-                    && !_useFineNormalMaps
-                    && !_renderOnlyLight
-
-                    && _useAmbientOcclusion
-                    && _doNonSolidAmbientOcclusion
-                    && _doTileEntityAmbientOcclusion
-                    && _ambientOcclusionRadius == 4
-                    && _ambientOcclusionIntensity == 35
-
-                    && _useFancyLightingEngine
-                    && _fancyLightingEngineUseTemporal
-                    && _fancyLightingEngineMakeBrighter
-                    && _fancyLightingEngineLightLoss == 50
-
-                    && _useCustomSkyColors
-
-                    && _threadCount == Environment.ProcessorCount
-                )
-                {
-                    _preset = Preset.QualityPreset;
-                }
-                else if (
-                       _useSmoothLighting
-                    && _useLightMapBlurring
-                    && _lightMapRenderMode == RenderMode.Bilinear
-                    && _normalMapsStrength == 0
-                    && !_useQualityNormalMaps
-                    && !_useFineNormalMaps
-                    && !_renderOnlyLight
-
-                    && !_useAmbientOcclusion
-                    && !_doNonSolidAmbientOcclusion
-                    && !_doTileEntityAmbientOcclusion
-                    && _ambientOcclusionRadius == 4
-                    && _ambientOcclusionIntensity == 35
-
-                    && !_useFancyLightingEngine
-                    && _fancyLightingEngineUseTemporal
-                    && !_fancyLightingEngineMakeBrighter
-                    && _fancyLightingEngineLightLoss == 50
-
-                    && _useCustomSkyColors
-
-                    && _threadCount == Environment.ProcessorCount
-                )
-                {
-                    _preset = Preset.FastPreset;
-                }
-                else if (
-                       _useSmoothLighting
-                    && _useLightMapBlurring
-                    && _lightMapRenderMode == RenderMode.BicubicOverbright
-                    && _normalMapsStrength == 100
-                    && _useQualityNormalMaps
-                    && !_useFineNormalMaps
-                    && !_renderOnlyLight
-
-                    && _useAmbientOcclusion
-                    && _doNonSolidAmbientOcclusion
-                    && _doTileEntityAmbientOcclusion
-                    && _ambientOcclusionRadius == 4
-                    && _ambientOcclusionIntensity == 35
-
-                    && _useFancyLightingEngine
-                    && _fancyLightingEngineUseTemporal
-                    && _fancyLightingEngineMakeBrighter
-                    && _fancyLightingEngineLightLoss == 50
-
-                    && _useCustomSkyColors
-
-                    && _threadCount == Environment.ProcessorCount
-                )
-                {
-                    _preset = Preset.UltraPreset;
-                }
-                else if (
-                       !_useSmoothLighting
-                    && _useLightMapBlurring
-                    && _lightMapRenderMode == RenderMode.Bilinear
-                    && _normalMapsStrength == 0
-                    && !_useQualityNormalMaps
-                    && !_useFineNormalMaps
-                    && !_renderOnlyLight
-
-                    && !_useAmbientOcclusion
-                    && !_doNonSolidAmbientOcclusion
-                    && !_doTileEntityAmbientOcclusion
-                    && _ambientOcclusionRadius == 4
-                    && _ambientOcclusionIntensity == 35
-
-                    && !_useFancyLightingEngine
-                    && _fancyLightingEngineUseTemporal
-                    && !_fancyLightingEngineMakeBrighter
-                    && _fancyLightingEngineLightLoss == 50
-
-                    && !_useCustomSkyColors
-
-                    && _threadCount == Environment.ProcessorCount
-                )
-                {
-                    _preset = Preset.DisableAllPreset;
-                }
-            }
-        }
-    }
-    private Preset _preset;
 
     public override void OnChanged()
     {

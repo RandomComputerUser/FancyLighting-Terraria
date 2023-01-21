@@ -164,9 +164,15 @@ internal sealed class AmbientOcclusion
         if (FancyLightingMod.DoTileEntityAmbientOcclusion)
         {
             _drawingTileEntities = true;
-            Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
-            Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
-            _drawingTileEntities = false;
+            try
+            {
+                Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
+                Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
+            }
+            finally
+            {
+                _drawingTileEntities = false;
+            }
         }
 
         ApplyAmbientOcclusionInner(
@@ -305,10 +311,18 @@ internal sealed class AmbientOcclusion
                     Main.instance.GraphicsDevice.Clear(Color.Transparent);
                     Vector2 currentZoom = Main.GameViewMatrix.Zoom;
                     Main.GameViewMatrix.Zoom = Vector2.One;
+
                     _drawingTileEntities = true;
-                    Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
-                    Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
-                    _drawingTileEntities = false;
+                    try
+                    {
+                        Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
+                        Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
+                    }
+                    finally
+                    {
+                        _drawingTileEntities = false;
+                    }
+
                     Main.GameViewMatrix.Zoom = currentZoom;
                 }
             }

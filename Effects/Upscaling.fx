@@ -16,16 +16,18 @@ float2 uImageSize1;
 float2 uImageSize2;
 float4 uShaderSpecificData;
 
+// 0.5503212081491045 == 1 / cbrt(6)
+
 // https://stackoverflow.com/a/42179924
 // https://web.archive.org/web/20180927181721/http://www.java-gaming.org/index.php?topic=35123.0
 float4 Cubic(float v)
 {
-    float3 n = float3(1 * 0.5503212081491045, 2 * 0.5503212081491045, 3 * 0.5503212081491045) - v;
+    float3 n = float3(1.0 * 0.5503212081491045, 2.0 * 0.5503212081491045, 3.0 * 0.5503212081491045) - v;
     n *= n * n;
     float x = n.x;
-    float y = n.y - 4 * n.x;
-    float z = n.z - 4 * n.y + 6 * n.x;
-    float w = 1 - x - y - z;
+    float y = n.y - 4.0 * n.x;
+    float z = n.z - 4.0 * n.y + 6.0 * n.x;
+    float w = 1.0 - x - y - z;
     return float4(x, y, z, w);
 }
 
@@ -58,7 +60,7 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float3 color = lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
 
     // Dithering
-    color += (tex2D(uImage1, coords * uColor.xy).rgb - (0.25).xxx) / 128;
+    color += (tex2D(uImage1, coords * uColor.xy).rgb - 0.25) / 128;
 
     return float4(color, 1);
 }

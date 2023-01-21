@@ -576,7 +576,7 @@ internal sealed class SmoothLighting
                                 continue;
                             }
 
-                            _finalLights[i] = new Color(fullBrightness * _lights[i]);
+                            ColorConversion.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -660,7 +660,7 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
 
-                            _finalLights[i] = new Color(multFromOverbright * lightColor);
+                            ColorConversion.Assign(ref _finalLights[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {

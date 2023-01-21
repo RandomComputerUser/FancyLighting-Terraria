@@ -94,7 +94,7 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
-    public static bool ModifyCameraModeRendering => Lighting.UsingNewLighting && (SmoothLightingEnabled || AmbientOcclusionEnabled);
+    public static bool ModifyCameraModeRendering => SmoothLightingEnabled || AmbientOcclusionEnabled;
 
     public static bool SmoothLightingEnabled => _smoothLightingEnabled && Lighting.UsingNewLighting;
 
@@ -114,7 +114,7 @@ public sealed class FancyLightingMod : Mod
 
     public static bool RenderOnlyLight => _renderOnlyLight;
 
-    public static bool AmbientOcclusionEnabled => _ambientOcclusionEnabled;
+    public static bool AmbientOcclusionEnabled => _ambientOcclusionEnabled && Lighting.UsingNewLighting;
 
     public static bool DoNonSolidAmbientOcclusion => _ambientOcclusionNonSolid;
 
@@ -627,12 +627,14 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.End();
 
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
-            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, AmbientOcclusionEnabled);
+            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, AmbientOcclusionEnabled
+        );
 
         if (AmbientOcclusionEnabled)
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
-                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome);
+                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome
+            );
         }
 
         Main.tileBatch.Begin();
@@ -691,11 +693,19 @@ public sealed class FancyLightingMod : Mod
         CaptureSettings settings
     )
     {
-        RenderTargetBinding[] renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
-        _cameraModeTarget = renderTargets is null || renderTargets.Length < 1
-            ? null
-            : (RenderTarget2D)renderTargets[0].RenderTarget;
-        _inCameraMode = ModifyCameraModeRendering && (_cameraModeTarget is not null);
+        if (ModifyCameraModeRendering)
+        {
+            RenderTargetBinding[] renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
+            _cameraModeTarget = renderTargets is null || renderTargets.Length < 1
+                ? null
+                : (RenderTarget2D)renderTargets[0].RenderTarget;
+            _inCameraMode = _cameraModeTarget is not null;
+        }
+        else
+        {
+            _inCameraMode = false;
+        }
+
         if (_inCameraMode)
         {
             _cameraModeArea = area;
