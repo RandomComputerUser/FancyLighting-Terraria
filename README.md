@@ -11,3 +11,4 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Rendering now takes advantage of the HiDef graphics profiles, when possible
 - Higher-quality normal map simulation now uses a better formula with the HiDef profile
 - Normal maps no longer affect walls without higher-quality normal maps enabled
+- When using the HiDef profile, lighting is no longer darker with overbright and render only lighting enabled
