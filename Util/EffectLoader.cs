@@ -1,21 +1,45 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework.Graphics;
+using System;
+using Terraria;
 using Terraria.Graphics.Shaders;
+using Terraria.ModLoader;
 
 namespace FancyLighting.Util;
 
 public static class EffectLoader
 {
-    public static void UnloadEffect(string effectKey)
+    public static MiscShaderData LoadEffect(
+        string filePath,
+        string passName,
+        bool hiDef = false
+    )
+    {
+        if (hiDef && TextureMaker.HiDef)
+        {
+            passName += "HiDef";
+        }
+
+        return new MiscShaderData(
+            new Ref<Effect>(ModContent.Request<Effect>(
+                filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
+            ).Value),
+            passName
+        );
+    }
+
+    public static void UnloadEffect(ref MiscShaderData effect)
     {
         try
         {
-            GameShaders.Misc.TryGetValue(effectKey, out MiscShaderData shader);
-            shader?.Shader?.Dispose();
-            GameShaders.Misc.Remove(effectKey);
+            effect?.Shader?.Dispose();
         }
-        catch (Exception) // Shouldn't happen and I don't know how this should be handled
+        catch (Exception) // Shouldn't normally happen
         {
 
+        }
+        finally
+        {
+            effect = null;
         }
     }
 }

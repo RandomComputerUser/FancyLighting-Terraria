@@ -3,9 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-Effects/fxcompiler.exe
-Effects/Microsoft.Xna.Framework.Content.Pipeline.dll
-Effects/Microsoft.Xna.Framework.Content.Pipeline.EffectImporter.dll
+Effects/*.exe
+Effects/*.dll
+Effects/*.pdb
 
 # User-specific files
 *.rsuser

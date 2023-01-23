@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Shaders;
-using Terraria.ModLoader;
 
 namespace FancyLighting;
 
@@ -21,39 +20,29 @@ internal sealed class AmbientOcclusion
 
     internal bool _drawingTileEntities;
 
+    private MiscShaderData _alphaToGrayscaleShader;
+    private MiscShaderData _alphaToLightGrayscaleShader;
+    private MiscShaderData _blurShader;
+    private MiscShaderData _finalBlurShader;
+
     public AmbientOcclusion()
     {
-        GameShaders.Misc["FancyLighting:AOPrePass"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "AlphaToGrayscale"
-            );
-
-        GameShaders.Misc["FancyLighting:AOPrePassLight"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "AlphaToGrayscaleLighter"
-            );
-
-        GameShaders.Misc["FancyLighting:AOBlur"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "Blur"
-            );
-
-        GameShaders.Misc["FancyLighting:AOFinalBlur"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/AmbientOcclusion", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "BlurFinal"
-            );
+        _alphaToGrayscaleShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/AmbientOcclusion",
+            "AlphaToGrayscale"
+        );
+        _alphaToLightGrayscaleShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/AmbientOcclusion",
+            "AlphaToLighterGrayscale"
+        );
+        _blurShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/AmbientOcclusion",
+            "Blur"
+        );
+        _finalBlurShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/AmbientOcclusion",
+            "FinalBlur"
+        );
 
         _drawingTileEntities = false;
     }
@@ -66,16 +55,16 @@ internal sealed class AmbientOcclusion
         _cameraModeTarget2?.Dispose();
         _cameraModeTarget3?.Dispose();
         _tileEntityTarget?.Dispose();
-        EffectLoader.UnloadEffect("FancyLighting:AOPrePass");
-        EffectLoader.UnloadEffect("FancyLighting:AOPrePassLight");
-        EffectLoader.UnloadEffect("FancyLighting:AOBlur");
-        EffectLoader.UnloadEffect("FancyLighting:AOFinalBlur");
+        EffectLoader.UnloadEffect(ref _alphaToGrayscaleShader);
+        EffectLoader.UnloadEffect(ref _alphaToLightGrayscaleShader);
+        EffectLoader.UnloadEffect(ref _blurShader);
+        EffectLoader.UnloadEffect(ref _finalBlurShader);
     }
 
     internal void initSurfaces()
     {
-        TextureSize.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
-        TextureSize.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+        TextureMaker.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+        TextureMaker.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
     }
 
     internal void ApplyAmbientOcclusion()
@@ -90,13 +79,13 @@ internal sealed class AmbientOcclusion
         ApplyAmbientOcclusionInner(
             Main.instance.wallTarget,
             Main.instance.tileTarget,
-            FancyLightingMod.DoNonSolidAmbientOcclusion ? Main.instance.tile2Target : null,
+            Main.instance.tile2Target,
             Main.sceneTilePos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
             Main.sceneTile2Pos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
             _drawTarget1,
             _drawTarget2,
             out bool useSurface2
-        ); ;
+        );
 
         Main.instance.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -117,9 +106,9 @@ internal sealed class AmbientOcclusion
         CaptureBiome biome
     )
     {
-        TextureSize.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
-        TextureSize.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
-        TextureSize.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
+        TextureMaker.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+        TextureMaker.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
+        TextureMaker.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
 
         Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -138,7 +127,10 @@ internal sealed class AmbientOcclusion
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
-        bool extraLayer = FancyLightingMod.DoNonSolidAmbientOcclusion || FancyLightingMod.DoTileEntityAmbientOcclusion;
+        bool extraLayer =
+            FancyLightingMod.DoNonSolidAmbientOcclusion
+            || FancyLightingMod.DoTileEntityAmbientOcclusion;
+
         if (extraLayer)
         {
             Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
@@ -178,7 +170,7 @@ internal sealed class AmbientOcclusion
         ApplyAmbientOcclusionInner(
             wallTarget,
             _cameraModeTarget1,
-            extraLayer ? _cameraModeTarget2 : null,
+            _cameraModeTarget2,
             Vector2.Zero,
             Vector2.Zero,
             _cameraModeTarget3,
@@ -237,26 +229,16 @@ internal sealed class AmbientOcclusion
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
-            if (finalPass)
-            {
-                GameShaders.Misc["FancyLighting:AOFinalBlur"]
-                    .UseShaderSpecificData(new Vector4(
-                        (float)dx / surfaceSource.Width,
-                        (float)dy / surfaceSource.Height,
-                        raiseBrightness,
-                        0f))
-                    .Apply(null);
-            }
-            else
-            {
-                GameShaders.Misc["FancyLighting:AOBlur"]
-                    .UseShaderSpecificData(new Vector4(
-                        (float)dx / surfaceSource.Width,
-                        (float)dy / surfaceSource.Height,
-                        0f,
-                        0f))
-                    .Apply(null);
-            }
+
+            MiscShaderData shader = finalPass ? _finalBlurShader : _blurShader;
+            shader
+                .UseShaderSpecificData(new Vector4(
+                    (float)dx / surfaceSource.Width,
+                    (float)dy / surfaceSource.Height,
+                    raiseBrightness,
+                    0f))
+                .Apply();
+
             Main.spriteBatch.Draw(
                 surfaceSource,
                 Vector2.Zero,
@@ -267,8 +249,10 @@ internal sealed class AmbientOcclusion
             useTarget2 = !useTarget2;
         }
 
+        bool drawNonSolidTiles = FancyLightingMod.DoNonSolidAmbientOcclusion;
         bool drawTileEntities = FancyLightingMod.DoTileEntityAmbientOcclusion;
-        if (tile2Target is null && !drawTileEntities)
+
+        if (!(drawNonSolidTiles || drawTileEntities))
         {
             Main.instance.GraphicsDevice.SetRenderTarget(target1);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -280,7 +264,7 @@ internal sealed class AmbientOcclusion
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
-            GameShaders.Misc["FancyLighting:AOPrePass"].Apply(null);
+            _alphaToGrayscaleShader.Apply();
             Main.spriteBatch.Draw(
                 tileTarget,
                 tileTargetPosition,
@@ -292,39 +276,29 @@ internal sealed class AmbientOcclusion
         {
             if (drawTileEntities)
             {
-                if (FancyLightingMod.DoTileEntityAmbientOcclusion)
+                TextureMaker.MakeSize(
+                    ref _tileEntityTarget,
+                    Main.instance.tileTarget.Width,
+                    Main.instance.tileTarget.Height
+                );
+
+                Main.instance.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
+                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Vector2 currentZoom = Main.GameViewMatrix.Zoom;
+                Main.GameViewMatrix.Zoom = Vector2.One;
+
+                _drawingTileEntities = true;
+                try
                 {
-                    if (_tileEntityTarget is null
-                    || _tileEntityTarget.GraphicsDevice != Main.graphics.GraphicsDevice
-                    || _tileEntityTarget.Width != Main.instance.tileTarget.Width
-                    || _tileEntityTarget.Height != Main.instance.tileTarget.Height)
-                    {
-                        _tileEntityTarget?.Dispose();
-                        _tileEntityTarget = new RenderTarget2D(
-                            Main.graphics.GraphicsDevice,
-                            Main.instance.tileTarget.Width,
-                            Main.instance.tileTarget.Height
-                        );
-                    }
-
-                    Main.instance.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
-                    Main.instance.GraphicsDevice.Clear(Color.Transparent);
-                    Vector2 currentZoom = Main.GameViewMatrix.Zoom;
-                    Main.GameViewMatrix.Zoom = Vector2.One;
-
-                    _drawingTileEntities = true;
-                    try
-                    {
-                        Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
-                        Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
-                    }
-                    finally
-                    {
-                        _drawingTileEntities = false;
-                    }
-
-                    Main.GameViewMatrix.Zoom = currentZoom;
+                    Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
+                    Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
                 }
+                finally
+                {
+                    _drawingTileEntities = false;
+                }
+
+                Main.GameViewMatrix.Zoom = currentZoom;
             }
 
             Main.instance.GraphicsDevice.SetRenderTarget(target1);
@@ -337,13 +311,16 @@ internal sealed class AmbientOcclusion
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
-            GameShaders.Misc["FancyLighting:AOPrePass"].Apply(null);
+
+            _alphaToGrayscaleShader.Apply();
             Main.spriteBatch.Draw(
                 tileTarget,
                 tileTargetPosition,
                 Color.White
             );
-            GameShaders.Misc["FancyLighting:AOPrePassLight"].Apply(null);
+
+            _alphaToLightGrayscaleShader.Apply();
+
             if (tile2Target is not null)
             {
                 Main.spriteBatch.Draw(
@@ -352,6 +329,7 @@ internal sealed class AmbientOcclusion
                     Color.White
                 );
             }
+
             if (drawTileEntities)
             {
                 Main.spriteBatch.Draw(

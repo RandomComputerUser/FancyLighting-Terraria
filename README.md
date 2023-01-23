@@ -7,6 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.5.5 (2023-01-20)**
-- Made minor improvements to color rendering
-- Moved the settings preset option to the top of the settings page
+**v0.6.0 (2023-??-??)**
+- Rendering now takes advantage of the HiDef graphics profiles, when possible
+- Higher-quality normal map simulation now uses a better formula with the HiDef profile
+- Normal maps no longer affect walls without higher-quality normal maps enabled

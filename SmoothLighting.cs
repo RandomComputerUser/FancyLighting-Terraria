@@ -1,6 +1,7 @@
 ﻿using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,7 @@ internal sealed class SmoothLighting
     internal Vector3[] _whiteLights;
     internal Vector3[] _tmpLights;
     internal Color[] _finalLights;
+    internal Rgba64[] _finalLightsHiDef;
 
     private readonly bool[] _glowingTiles;
     private readonly Color[] _glowingTileColors;
@@ -56,6 +58,19 @@ internal sealed class SmoothLighting
     private readonly FancyLightingMod _modInstance;
 
     internal uint _printExceptionTime;
+
+    private MiscShaderData _bicubicShader;
+    private MiscShaderData _bicubicNoDitherHiDefShader;
+    private MiscShaderData _noFilterShader;
+    private MiscShaderData _qualityNormalsShader;
+    private MiscShaderData _qualityNormalsOverbrightShader;
+    private MiscShaderData _qualityNormalsOverbrightLightOnlyHiDefShader;
+    private MiscShaderData _normalsShader;
+    private MiscShaderData _normalsOverbrightShader;
+    private MiscShaderData _normalsOverbrightLightOnlyHiDefShader;
+    private MiscShaderData _overbrightShader;
+    private MiscShaderData _overbrightLightOnlyHiDefShader;
+    private MiscShaderData _overbrightMaxShader;
 
     public SmoothLighting(FancyLightingMod mod)
     {
@@ -105,69 +120,60 @@ internal sealed class SmoothLighting
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
 
-        GameShaders.Misc["FancyLighting:UpscaleBicubic"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "UpscaleBicubic"
-            );
+        _bicubicShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/Upscaling",
+            "Bicubic"
+        );
+        _bicubicNoDitherHiDefShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/Upscaling",
+            "BicubicNoDitherHiDef"
+        );
+        _noFilterShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/Upscaling",
+            "NoFilter"
+        );
 
-        GameShaders.Misc["FancyLighting:UpscaleNoFilter"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/Upscaling", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "UpscaleNoFilter"
-            );
-
-        GameShaders.Misc["FancyLighting:QualityNormals"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "QualityNormals"
-            );
-
-        GameShaders.Misc["FancyLighting:QualityNormalsOverbright"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "QualityNormalsOverbright"
-            );
-
-        GameShaders.Misc["FancyLighting:SimulateNormals"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "SimulateNormals"
-            );
-
-        GameShaders.Misc["FancyLighting:SimulateNormalsOverbright"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "SimulateNormalsOverbright"
-            );
-
-        GameShaders.Misc["FancyLighting:Overbright"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "Overbright"
-            );
-
-        GameShaders.Misc["FancyLighting:OverbrightMax"] =
-            new MiscShaderData(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    "FancyLighting/Effects/NormalMap", ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                "OverbrightMax"
-            );
+        _qualityNormalsShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "QualityNormals",
+            true
+        );
+        _qualityNormalsOverbrightShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "QualityNormalsOverbright",
+            true
+        );
+        _qualityNormalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "QualityNormalsOverbrightLightOnlyHiDef"
+        );
+        _normalsShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "Normals"
+        );
+        _normalsOverbrightShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "NormalsOverbright",
+            true
+        );
+        _normalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "NormalsOverbrightLightOnlyHiDef"
+        );
+        _overbrightShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "Overbright",
+            true
+        );
+        _overbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "OverbrightLightOnlyHiDef"
+        );
+        _overbrightMaxShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/NormalMap",
+            "OverbrightMax",
+            true
+        );
 
         _ditherMask = ModContent.Request<Texture2D>(
             "FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad
@@ -186,14 +192,15 @@ internal sealed class SmoothLighting
         _cameraModeTarget2?.Dispose();
         _cameraModeTarget3?.Dispose();
         _ditherMask?.Dispose();
-        EffectLoader.UnloadEffect("FancyLighting:UpscaleBicubic");
-        EffectLoader.UnloadEffect("FancyLighting:UpscaleNoFilter");
-        EffectLoader.UnloadEffect("FancyLighting:QualityNormals");
-        EffectLoader.UnloadEffect("FancyLighting:QualityNormalsOverbright");
-        EffectLoader.UnloadEffect("FancyLighting:SimulateNormals");
-        EffectLoader.UnloadEffect("FancyLighting:SimulateNormalsOverbright");
-        EffectLoader.UnloadEffect("FancyLighting:Overbright");
-        EffectLoader.UnloadEffect("FancyLighting:OverbrightMax");
+        EffectLoader.UnloadEffect(ref _bicubicShader);
+        EffectLoader.UnloadEffect(ref _bicubicNoDitherHiDefShader);
+        EffectLoader.UnloadEffect(ref _noFilterShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
+        EffectLoader.UnloadEffect(ref _normalsShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightShader);
+        EffectLoader.UnloadEffect(ref _overbrightShader);
+        EffectLoader.UnloadEffect(ref _overbrightMaxShader);
     }
 
     private void PrintException()
@@ -502,11 +509,6 @@ internal sealed class SmoothLighting
         int height = _lightMapTileArea.Height;
         int ymax = ymin + height;
 
-        if (_finalLights is null || _finalLights.Length < height * width)
-        {
-            _finalLights = new Color[height * width];
-        }
-
         int clampedXmin = Math.Clamp(xmin, 0, Main.tile.Width);
         int clampedXmax = Math.Clamp(xmin + width, 0, Main.tile.Width);
         if (clampedXmax - clampedXmin < 1)
@@ -532,6 +534,225 @@ internal sealed class SmoothLighting
         if (offset < 0 || offset >= height)
         {
             return;
+        }
+
+        if (TextureMaker.HiDef)
+        {
+            CalculateSmoothLightingHiDef(
+                xmin,
+                clampedYmin,
+                clampedYmax,
+                clampedStart,
+                clampedEnd,
+                offset,
+                width,
+                height,
+                background,
+                cameraMode
+            );
+        }
+        else
+        {
+            CalculateSmoothLightingReach(
+                xmin,
+                clampedYmin,
+                clampedYmax,
+                clampedStart,
+                clampedEnd,
+                offset,
+                width,
+                height,
+                background,
+                cameraMode
+            );
+        }
+    }
+
+    internal void CalculateSmoothLightingHiDef(
+        int xmin,
+        int clampedYmin,
+        int clampedYmax,
+        int clampedStart,
+        int clampedEnd,
+        int offset,
+        int width,
+        int height,
+        bool background,
+        bool cameraMode
+    )
+    {
+        if (_finalLightsHiDef is null || _finalLightsHiDef.Length < height * width)
+        {
+            _finalLightsHiDef = new Rgba64[height * width];
+        }
+
+        int caughtException = 0;
+
+        const int overbrightWhite = 16384;
+        const float overbrightMult = overbrightWhite / 65535f;
+
+        Rgba64 whiteLight = new(Vector4.One);
+        float brightness = Lighting.GlobalBrightness;
+        float fullBrightness = brightness;
+        float multFromOverbright;
+        if (FancyLightingMod.DrawOverbright)
+        {
+            ColorConverter.Assign(ref whiteLight, 1f, new Vector3(overbrightMult));
+            fullBrightness *= overbrightMult;
+            multFromOverbright = overbrightMult;
+        }
+        else
+        {
+            multFromOverbright = 1f;
+        }
+
+        if (background && (!_smoothLightingBackComplete || cameraMode))
+        {
+            Parallel.For(
+                clampedStart,
+                clampedEnd,
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                (x1) =>
+                {
+                    int i = height * x1 + offset;
+                    int x = x1 + xmin;
+                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    {
+                        try
+                        {
+                            // Illuminant Paint
+                            if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
+                            {
+                                _finalLightsHiDef[i++] = whiteLight;
+                                continue;
+                            }
+
+                            ColorConverter.Assign(ref _finalLightsHiDef[i], fullBrightness, _lights[i]);
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                        }
+
+                        ++i;
+                    }
+                }
+            );
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+
+            TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
+
+            _colorsBackground.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, height * width);
+
+            _smoothLightingBackComplete = !cameraMode;
+        }
+        else if (!background && (!_smoothLightingForeComplete || cameraMode))
+        {
+            _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
+                (float)(0.4 - 0.4 * Math.Cos(
+                    (int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1
+                        ? 0.08 * Main.timeForVisualEffects
+                        : 0.0
+                    )
+                )
+            ));
+
+            Parallel.For(
+                clampedStart,
+                clampedEnd,
+                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                (x1) =>
+                {
+                    int i = height * x1 + offset;
+                    int x = x1 + xmin;
+                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    {
+                        try
+                        {
+                            // Illuminant Paint
+                            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
+                            {
+                                _finalLightsHiDef[i++] = whiteLight;
+                                continue;
+                            }
+
+                            Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
+
+                            // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
+                            if (_glowingTiles[Main.tile[x, y].TileType])
+                            {
+                                ref Color glow = ref _glowingTileColors[Main.tile[x, y].TileType];
+
+                                lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
+                                lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
+                                lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
+                            }
+
+                            // Dangersense Potion
+                            else if (
+                                _isDangersenseActive
+                                && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer)
+                            )
+                            {
+                                lightColor.X = Math.Max(lightColor.X, 255f / 255f);
+                                lightColor.Y = Math.Max(lightColor.Y, 50f / 255f);
+                                lightColor.Z = Math.Max(lightColor.Z, 50f / 255f);
+                            }
+
+                            // Spelunker Potion
+                            else if (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
+                            {
+                                lightColor.X = Math.Max(lightColor.X, 200f / 255f);
+                                lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
+                            }
+
+                            ColorConverter.Assign(ref _finalLightsHiDef[i], multFromOverbright, lightColor);
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                        }
+
+                        ++i;
+                    }
+                }
+            );
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+
+            TextureMaker.MakeAtLeastSize(ref _colors, height, width);
+
+            _colors.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, height * width);
+
+            _smoothLightingForeComplete = !cameraMode;
+        }
+    }
+
+    internal void CalculateSmoothLightingReach(
+        int xmin,
+        int clampedYmin,
+        int clampedYmax,
+        int clampedStart,
+        int clampedEnd,
+        int offset,
+        int width,
+        int height,
+        bool background,
+        bool cameraMode
+    )
+    {
+        if (_finalLights is null || _finalLights.Length < height * width)
+        {
+            _finalLights = new Color[height * width];
         }
 
         int caughtException = 0;
@@ -576,7 +797,7 @@ internal sealed class SmoothLighting
                                 continue;
                             }
 
-                            ColorConversion.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
+                            ColorConverter.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -594,7 +815,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureSize.MakeAtLeastSize(ref _colorsBackground, height, width);
+            TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
 
             _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
@@ -660,7 +881,7 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
 
-                            ColorConversion.Assign(ref _finalLights[i], multFromOverbright, lightColor);
+                            ColorConverter.Assign(ref _finalLights[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -678,7 +899,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureSize.MakeAtLeastSize(ref _colors, height, width);
+            TextureMaker.MakeAtLeastSize(ref _colors, height, width);
 
             _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
 
@@ -712,7 +933,7 @@ internal sealed class SmoothLighting
         Vector2 offset;
         if (tempTarget is null)
         {
-            TextureSize.MakeSize(ref _drawTarget1, target.Width, target.Height);
+            TextureMaker.MakeSize(ref _drawTarget1, target.Width, target.Height);
             tempTarget = _drawTarget1;
             offset = new Vector2(Main.offScreenRange);
         }
@@ -725,7 +946,7 @@ internal sealed class SmoothLighting
 
         if (FancyLightingMod.SimulateNormalMaps || FancyLightingMod.DrawOverbright)
         {
-            TextureSize.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
+            TextureMaker.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
         }
 
         ApplySmoothLighting(
@@ -755,7 +976,7 @@ internal sealed class SmoothLighting
 
     internal RenderTarget2D GetCameraModeRenderTarget(RenderTarget2D screenTarget)
     {
-        TextureSize.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+        TextureMaker.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
         return _cameraModeTarget1;
     }
 
@@ -769,8 +990,8 @@ internal sealed class SmoothLighting
     {
         Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-        TextureSize.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
-        TextureSize.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+        TextureMaker.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+        TextureMaker.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
 
         if (FancyLightingMod.SmoothLightingEnabled)
         {
@@ -850,11 +1071,22 @@ internal sealed class SmoothLighting
         bool doScaling
     )
     {
-        bool simulateNormalMaps = !disableNormalMaps && FancyLightingMod.SimulateNormalMaps;
+        if (FancyLightingMod.RenderOnlyLight && background)
+        {
+            return;
+        }
+
         bool qualityNormalMaps = FancyLightingMod.UseQualityNormalMaps;
         bool fineNormalMaps = FancyLightingMod.UseFineNormalMaps;
         bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
-        bool doOverbright = FancyLightingMod.DrawOverbright && !FancyLightingMod.RenderOnlyLight;
+        bool doOverbright = FancyLightingMod.DrawOverbright;
+        bool simulateNormalMaps =
+            !disableNormalMaps
+            && FancyLightingMod.SimulateNormalMaps
+            && (!background || qualityNormalMaps);
+        bool noDithering = (qualityNormalMaps || doOverbright) && TextureMaker.HiDef;
+        bool qualityHiDefNormalMaps = qualityNormalMaps && TextureMaker.HiDef;
+        bool hiDefLightOnly = TextureMaker.HiDef && FancyLightingMod.RenderOnlyLight;
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
         Main.instance.GraphicsDevice.Clear(Color.White);
@@ -865,19 +1097,32 @@ internal sealed class SmoothLighting
 
         if (doBicubicUpscaling)
         {
-            GameShaders.Misc["FancyLighting:UpscaleBicubic"]
-                .UseShaderSpecificData(new Vector4(
-                    1f / lightMapTexture.Width,
-                    1f / lightMapTexture.Height,
-                    lightMapTexture.Width,
-                    lightMapTexture.Height))
-                .UseColor(
-                    16f * lightMapTexture.Width / _ditherMask.Width,
-                    16f * lightMapTexture.Height / _ditherMask.Height,
-                    0f)
-                .Apply(null);
-            Main.instance.GraphicsDevice.Textures[1] = _ditherMask;
-            Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.LinearWrap;
+            if (noDithering)
+            {
+                _bicubicNoDitherHiDefShader
+                    .UseShaderSpecificData(new Vector4(
+                        1f / lightMapTexture.Width,
+                        1f / lightMapTexture.Height,
+                        lightMapTexture.Width,
+                        lightMapTexture.Height))
+                    .Apply();
+            }
+            else
+            {
+                _bicubicShader
+                    .UseShaderSpecificData(new Vector4(
+                        1f / lightMapTexture.Width,
+                        1f / lightMapTexture.Height,
+                        lightMapTexture.Width,
+                        lightMapTexture.Height))
+                    .UseColor(
+                        16f * lightMapTexture.Width / _ditherMask.Width,
+                        16f * lightMapTexture.Height / _ditherMask.Height,
+                        0f)
+                    .Apply();
+                Main.instance.GraphicsDevice.Textures[1] = _ditherMask;
+                Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+            }
         }
 
         bool flippedGravity = doScaling && Main.LocalPlayer.gravDir == -1 && !FancyLightingMod._inCameraMode;
@@ -917,18 +1162,24 @@ internal sealed class SmoothLighting
                 FancyLightingMod.MultiplyBlend
             );
 
-            string shader
+            MiscShaderData shader
             = simulateNormalMaps
                 ? qualityNormalMaps
                     ? doOverbright
-                        ? "FancyLighting:QualityNormalsOverbright"
-                        : "FancyLighting:QualityNormals"
+                        ? hiDefLightOnly
+                            ? _qualityNormalsOverbrightLightOnlyHiDefShader
+                            : _qualityNormalsOverbrightShader
+                        : _qualityNormalsShader
                     : doOverbright
-                        ? "FancyLighting:SimulateNormalsOverbright"
-                        : "FancyLighting:SimulateNormals"
+                        ? hiDefLightOnly
+                            ? _normalsOverbrightLightOnlyHiDefShader
+                            : _normalsOverbrightShader
+                        : _normalsShader
                 : doScaling // doOverbright is guaranteed to be true here
-                    ? "FancyLighting:OverbrightMax" // if doScaling is true we're rendering tile entities
-                    : "FancyLighting:Overbright";
+                    ? _overbrightMaxShader // if doScaling is true we're rendering tile entities
+                    : hiDefLightOnly
+                        ? _overbrightLightOnlyHiDefShader
+                        : _overbrightShader;
 
             float normalMapRadius = qualityNormalMaps ? 30f : 25f;
             normalMapRadius *= FancyLightingMod.NormalMapsStrength;
@@ -943,8 +1194,9 @@ internal sealed class SmoothLighting
             }
 
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
+            float hiDefNormalMapStrength = background ? 1f : 0.75f;
 
-            GameShaders.Misc[shader]
+            shader
                 .UseShaderSpecificData(new Vector4(
                     normalMapResolution / worldTarget.Width,
                     normalMapResolution / worldTarget.Height,
@@ -953,10 +1205,19 @@ internal sealed class SmoothLighting
                 .UseColor(
                     (float)target2.Width / worldTarget.Width,
                     (float)target2.Height / worldTarget.Height,
-                    0f)
-                .Apply(null);
+                    hiDefNormalMapStrength);
             Main.instance.GraphicsDevice.Textures[1] = worldTarget;
             Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
+            if (noDithering)
+            {
+                shader.UseSecondaryColor(
+                    (float)target2.Width / _ditherMask.Width,
+                    (float)target2.Height / _ditherMask.Height,
+                    0f);
+                Main.instance.GraphicsDevice.Textures[2] = _ditherMask;
+                Main.instance.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
+            }
+            shader.Apply();
 
             Main.spriteBatch.Draw(
                 target2,
@@ -967,8 +1228,7 @@ internal sealed class SmoothLighting
 
         if (doBicubicUpscaling || simulateNormalMaps)
         {
-            GameShaders.Misc["FancyLighting:UpscaleNoFilter"]
-                .Apply(null);
+            _noFilterShader.Apply();
         }
 
         if (!doOverbright && !FancyLightingMod.RenderOnlyLight)

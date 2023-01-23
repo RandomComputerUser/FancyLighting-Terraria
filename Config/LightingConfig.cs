@@ -389,7 +389,7 @@ public sealed class LightingConfig : ModConfig
 
     [DefaultValue(false)]
     [Label("(Debug) Render Only Lighting")]
-    [Tooltip("When enabled, tiles, walls, and the background aren't rendered")]
+    [Tooltip("When enabled, tile, wall, and background textures aren't rendered")]
     public bool RenderOnlyLight
     {
         get => _renderOnlyLight;

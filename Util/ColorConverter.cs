@@ -1,8 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics.PackedVector;
 
 namespace FancyLighting.Util;
 
-public static class ColorConversion
+public static class ColorConverter
 {
     // Provide better conversions from Vector3 to Color than XNA
     // XNA uses (byte)(x * 255f) for each component
@@ -13,5 +14,14 @@ public static class ColorConversion
         color.G = (byte)(255f * MathHelper.Clamp(overbrightMult * rgb.Y, 0f, 1f) + 0.5f);
         color.B = (byte)(255f * MathHelper.Clamp(overbrightMult * rgb.Z, 0f, 1f) + 0.5f);
         color.A = byte.MaxValue;
+    }
+
+    public static void Assign(ref Rgba64 color, float overbrightMult, Vector3 rgb)
+    {
+        ulong R = (ulong)(65535f * MathHelper.Clamp(overbrightMult * rgb.X, 0f, 1f) + 0.5f);
+        ulong G = (ulong)(65535f * MathHelper.Clamp(overbrightMult * rgb.Y, 0f, 1f) + 0.5f);
+        ulong B = (ulong)(65535f * MathHelper.Clamp(overbrightMult * rgb.Z, 0f, 1f) + 0.5f);
+
+        color.PackedValue = R | G << 16 | B << 32 | (ulong)ushort.MaxValue << 48;
     }
 }

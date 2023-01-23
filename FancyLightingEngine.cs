@@ -35,7 +35,7 @@ internal sealed class FancyLightingEngine
     private float _lightLossExitingSolid;
 
     private readonly LightingSpread[,] _precomputedLightingSpread;
-    private readonly float[][] _multithreadLightMap;
+    private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
     private readonly int[][] _circles;
 
     private Vector3[] _tmp;
@@ -63,12 +63,6 @@ internal sealed class FancyLightingEngine
             _lightShadowPaintDecay[exponent] = (float)Math.Pow(0.175, exponent / 256.0);
         }
         _logSlowestDecay = Math.Log(0.91);
-
-        _multithreadLightMap = new float[256][];
-        for (int i = 0; i < 256; i++)
-        {
-            _multithreadLightMap[i] = new float[MAX_LIGHT_RANGE + 1];
-        }
 
         _circles = new int[MAX_LIGHT_RANGE + 1][];
         _circles[0] = new int[] { 0 };
@@ -611,259 +605,256 @@ internal sealed class FancyLightingEngine
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
-            lock (_multithreadLightMap[index % _multithreadLightMap.Length])
+            float[] workingLights = _workingLights.Value;
+
+            // Upper Right
+            if (doUpperRight)
             {
-                float[] workingLights = _multithreadLightMap[index % _multithreadLightMap.Length];
-
-                // Upper Right
-                if (doUpperRight)
+                workingLights[0] = initialDecay;
+                float value = 1f;
+                for (int i = index, y = 1; y <= topEdge; ++y)
                 {
-                    workingLights[0] = initialDecay;
-                    float value = 1f;
-                    for (int i = index, y = 1; y <= topEdge; ++y)
+                    value *= _lightMask[i][256];
+                    float[] mask = _lightMask[--i];
+
+                    if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
                     {
-                        value *= _lightMask[i][256];
-                        float[] mask = _lightMask[--i];
-
-                        if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
-                        {
-                            value *= _lightLossExitingSolid;
-                        }
-
-                        workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                        value *= _lightLossExitingSolid;
                     }
-                    for (int x = 1; x <= rightEdge; ++x)
+
+                    workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                }
+                for (int x = 1; x <= rightEdge; ++x)
+                {
+                    int i = index + height * x;
+                    float[] mask = _lightMask[i];
+
+                    float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
+                    workingLights[0] *= mask[256];
+                    if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
-                        int i = index + height * x;
-                        float[] mask = _lightMask[i];
+                        verticalLight *= _lightLossExitingSolid;
+                        workingLights[0] *= _lightLossExitingSolid;
+                    }
 
-                        float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
-                        workingLights[0] *= mask[256];
-                        if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
+                    int edge = Math.Min(topEdge, circle[x]);
+                    for (int y = 1; y <= edge; ++y)
+                    {
+                        mask = _lightMask[--i];
+                        float horizontalLight = workingLights[y];
+
+                        if (mask == _lightAirDecay)
                         {
-                            verticalLight *= _lightLossExitingSolid;
-                            workingLights[0] *= _lightLossExitingSolid;
-                        }
-
-                        int edge = Math.Min(topEdge, circle[x]);
-                        for (int y = 1; y <= edge; ++y)
-                        {
-                            mask = _lightMask[--i];
-                            float horizontalLight = workingLights[y];
-
-                            if (mask == _lightAirDecay)
+                            if (_lightMask[i + 1] == _lightSolidDecay)
                             {
-                                if (_lightMask[i + 1] == _lightSolidDecay)
-                                {
-                                    verticalLight *= _lightLossExitingSolid;
-                                }
-
-                                if (_lightMask[i - height] == _lightSolidDecay)
-                                {
-                                    horizontalLight *= _lightLossExitingSolid;
-                                }
+                                verticalLight *= _lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
-                            SetLightMap(i,
-                                  spread.LightFromBottom * verticalLight
-                                + spread.LightFromLeft * horizontalLight
-                            );
-                            workingLights[y] =
-                                spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
-                                + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
-                            verticalLight =
-                                spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
-                                + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
+
+                            if (_lightMask[i - height] == _lightSolidDecay)
+                            {
+                                horizontalLight *= _lightLossExitingSolid;
+                            }
                         }
+                        ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
+                        SetLightMap(i,
+                                spread.LightFromBottom * verticalLight
+                            + spread.LightFromLeft * horizontalLight
+                        );
+                        workingLights[y] =
+                            spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
+                            + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
+                        verticalLight =
+                            spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
+                            + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
                     }
                 }
+            }
 
-                // Upper Left
-                if (doUpperLeft)
+            // Upper Left
+            if (doUpperLeft)
+            {
+                workingLights[0] = initialDecay;
+                float value = 1f;
+                for (int i = index, y = 1; y <= topEdge; ++y)
                 {
-                    workingLights[0] = initialDecay;
-                    float value = 1f;
-                    for (int i = index, y = 1; y <= topEdge; ++y)
+                    value *= _lightMask[i][256];
+                    float[] mask = _lightMask[--i];
+
+                    if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
                     {
-                        value *= _lightMask[i][256];
-                        float[] mask = _lightMask[--i];
-
-                        if (y > 1 && mask == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
-                        {
-                            value *= _lightLossExitingSolid;
-                        }
-
-                        workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                        value *= _lightLossExitingSolid;
                     }
-                    for (int x = 1; x <= leftEdge; ++x)
+
+                    workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                }
+                for (int x = 1; x <= leftEdge; ++x)
+                {
+                    int i = index - height * x;
+                    float[] mask = _lightMask[i];
+
+                    float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
+                    workingLights[0] *= mask[256];
+                    if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
-                        int i = index - height * x;
-                        float[] mask = _lightMask[i];
+                        verticalLight *= _lightLossExitingSolid;
+                        workingLights[0] *= _lightLossExitingSolid;
+                    }
 
-                        float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
-                        workingLights[0] *= mask[256];
-                        if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
+                    int edge = Math.Min(topEdge, circle[x]);
+                    for (int y = 1; y <= edge; ++y)
+                    {
+                        mask = _lightMask[--i];
+                        float horizontalLight = workingLights[y];
+
+                        if (mask == _lightAirDecay)
                         {
-                            verticalLight *= _lightLossExitingSolid;
-                            workingLights[0] *= _lightLossExitingSolid;
-                        }
-
-                        int edge = Math.Min(topEdge, circle[x]);
-                        for (int y = 1; y <= edge; ++y)
-                        {
-                            mask = _lightMask[--i];
-                            float horizontalLight = workingLights[y];
-
-                            if (mask == _lightAirDecay)
+                            if (_lightMask[i + 1] == _lightSolidDecay)
                             {
-                                if (_lightMask[i + 1] == _lightSolidDecay)
-                                {
-                                    verticalLight *= _lightLossExitingSolid;
-                                }
-
-                                if (_lightMask[i + height] == _lightSolidDecay)
-                                {
-                                    horizontalLight *= _lightLossExitingSolid;
-                                }
+                                verticalLight *= _lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
-                            SetLightMap(i,
-                                  spread.LightFromBottom * verticalLight
-                                + spread.LightFromLeft * horizontalLight
-                            );
-                            workingLights[y] =
-                                spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
-                                + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
-                            verticalLight =
-                                spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
-                                + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
+
+                            if (_lightMask[i + height] == _lightSolidDecay)
+                            {
+                                horizontalLight *= _lightLossExitingSolid;
+                            }
                         }
+                        ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
+                        SetLightMap(i,
+                                spread.LightFromBottom * verticalLight
+                            + spread.LightFromLeft * horizontalLight
+                        );
+                        workingLights[y] =
+                            spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
+                            + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
+                        verticalLight =
+                            spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
+                            + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
                     }
                 }
+            }
 
-                // Lower Right
-                if (doLowerRight)
+            // Lower Right
+            if (doLowerRight)
+            {
+                workingLights[0] = initialDecay;
+                float value = 1f;
+                for (int i = index, y = 1; y <= bottomEdge; ++y)
                 {
-                    workingLights[0] = initialDecay;
-                    float value = 1f;
-                    for (int i = index, y = 1; y <= bottomEdge; ++y)
+                    value *= _lightMask[i][256];
+                    float[] mask = _lightMask[++i];
+
+                    if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
                     {
-                        value *= _lightMask[i][256];
-                        float[] mask = _lightMask[++i];
-
-                        if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
-                        {
-                            value *= _lightLossExitingSolid;
-                        }
-
-                        workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                        value *= _lightLossExitingSolid;
                     }
-                    for (int x = 1; x <= rightEdge; ++x)
+
+                    workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                }
+                for (int x = 1; x <= rightEdge; ++x)
+                {
+                    int i = index + height * x;
+                    float[] mask = _lightMask[i];
+
+                    float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
+                    workingLights[0] *= mask[256];
+                    if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
-                        int i = index + height * x;
-                        float[] mask = _lightMask[i];
+                        verticalLight *= _lightLossExitingSolid;
+                        workingLights[0] *= _lightLossExitingSolid;
+                    }
 
-                        float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
-                        workingLights[0] *= mask[256];
-                        if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
+                    int edge = Math.Min(bottomEdge, circle[x]);
+                    for (int y = 1; y <= edge; ++y)
+                    {
+                        mask = _lightMask[++i];
+                        float horizontalLight = workingLights[y];
+
+                        if (mask == _lightAirDecay)
                         {
-                            verticalLight *= _lightLossExitingSolid;
-                            workingLights[0] *= _lightLossExitingSolid;
-                        }
-
-                        int edge = Math.Min(bottomEdge, circle[x]);
-                        for (int y = 1; y <= edge; ++y)
-                        {
-                            mask = _lightMask[++i];
-                            float horizontalLight = workingLights[y];
-
-                            if (mask == _lightAirDecay)
+                            if (_lightMask[i - 1] == _lightSolidDecay)
                             {
-                                if (_lightMask[i - 1] == _lightSolidDecay)
-                                {
-                                    verticalLight *= _lightLossExitingSolid;
-                                }
-
-                                if (_lightMask[i - height] == _lightSolidDecay)
-                                {
-                                    horizontalLight *= _lightLossExitingSolid;
-                                }
+                                verticalLight *= _lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
-                            SetLightMap(i,
-                                  spread.LightFromBottom * verticalLight
-                                + spread.LightFromLeft * horizontalLight
-                            );
-                            workingLights[y] =
-                                spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
-                                + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
-                            verticalLight =
-                                spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
-                                + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
+
+                            if (_lightMask[i - height] == _lightSolidDecay)
+                            {
+                                horizontalLight *= _lightLossExitingSolid;
+                            }
                         }
+                        ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
+                        SetLightMap(i,
+                                spread.LightFromBottom * verticalLight
+                            + spread.LightFromLeft * horizontalLight
+                        );
+                        workingLights[y] =
+                            spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
+                            + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
+                        verticalLight =
+                            spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
+                            + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
                     }
                 }
+            }
 
-                // Lower Left
-                if (doLowerLeft)
+            // Lower Left
+            if (doLowerLeft)
+            {
+                workingLights[0] = initialDecay;
+                float value = 1f;
+                for (int i = index, y = 1; y <= bottomEdge; ++y)
                 {
-                    workingLights[0] = initialDecay;
-                    float value = 1f;
-                    for (int i = index, y = 1; y <= bottomEdge; ++y)
+                    value *= _lightMask[i][256];
+                    float[] mask = _lightMask[++i];
+
+                    if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
                     {
-                        value *= _lightMask[i][256];
-                        float[] mask = _lightMask[++i];
-
-                        if (y > 1 && mask == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
-                        {
-                            value *= _lightLossExitingSolid;
-                        }
-
-                        workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                        value *= _lightLossExitingSolid;
                     }
-                    for (int x = 1; x <= leftEdge; ++x)
+
+                    workingLights[y] = value * mask[_precomputedLightingSpread[0, y].DistanceToRight];
+                }
+                for (int x = 1; x <= leftEdge; ++x)
+                {
+                    int i = index - height * x;
+                    float[] mask = _lightMask[i];
+
+                    float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
+                    workingLights[0] *= mask[256];
+                    if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
-                        int i = index - height * x;
-                        float[] mask = _lightMask[i];
+                        verticalLight *= _lightLossExitingSolid;
+                        workingLights[0] *= _lightLossExitingSolid;
+                    }
 
-                        float verticalLight = workingLights[0] * mask[_precomputedLightingSpread[x, 0].DistanceToTop];
-                        workingLights[0] *= mask[256];
-                        if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
+                    int edge = Math.Min(bottomEdge, circle[x]);
+                    for (int y = 1; y <= edge; ++y)
+                    {
+                        mask = _lightMask[++i];
+                        float horizontalLight = workingLights[y];
+
+                        if (mask == _lightAirDecay)
                         {
-                            verticalLight *= _lightLossExitingSolid;
-                            workingLights[0] *= _lightLossExitingSolid;
-                        }
-
-                        int edge = Math.Min(bottomEdge, circle[x]);
-                        for (int y = 1; y <= edge; ++y)
-                        {
-                            mask = _lightMask[++i];
-                            float horizontalLight = workingLights[y];
-
-                            if (mask == _lightAirDecay)
+                            if (_lightMask[i - 1] == _lightSolidDecay)
                             {
-                                if (_lightMask[i - 1] == _lightSolidDecay)
-                                {
-                                    verticalLight *= _lightLossExitingSolid;
-                                }
-
-                                if (_lightMask[i + height] == _lightSolidDecay)
-                                {
-                                    horizontalLight *= _lightLossExitingSolid;
-                                }
+                                verticalLight *= _lightLossExitingSolid;
                             }
-                            ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
-                            SetLightMap(i,
-                                  spread.LightFromBottom * verticalLight
-                                + spread.LightFromLeft * horizontalLight
-                            );
-                            workingLights[y] =
-                                spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
-                                + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
-                            verticalLight =
-                                spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
-                                + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
+
+                            if (_lightMask[i + height] == _lightSolidDecay)
+                            {
+                                horizontalLight *= _lightLossExitingSolid;
+                            }
                         }
+                        ref LightingSpread spread = ref _precomputedLightingSpread[x, y];
+                        SetLightMap(i,
+                                spread.LightFromBottom * verticalLight
+                            + spread.LightFromLeft * horizontalLight
+                        );
+                        workingLights[y] =
+                            spread.RightLightFromBottom * verticalLight * mask[spread.DistanceToRight]
+                            + spread.RightLightFromLeft * horizontalLight * mask[spread.DistanceToRight];
+                        verticalLight =
+                            spread.TopLightFromLeft * horizontalLight * mask[spread.DistanceToTop]
+                            + spread.TopLightFromBottom * verticalLight * mask[spread.DistanceToTop];
                     }
                 }
             }

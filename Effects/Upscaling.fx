@@ -1,4 +1,4 @@
-﻿sampler uImage0 : register(s0);
+sampler uImage0 : register(s0);
 sampler uImage1 : register(s1);
 sampler uImage2 : register(s2);
 float3 uColor;
@@ -31,7 +31,7 @@ float4 Cubic(float v)
     return float4(x, y, z, w);
 }
 
-float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
+float3 BicubicColor(float2 coords)
 {
     float2 texCoords = uShaderSpecificData.zw * coords - 0.5;
 
@@ -57,10 +57,25 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float sx = s.x / (s.x + s.y);
     float sy = s.z / (s.z + s.w);
 
-    float3 color = lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
+    return lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
+}
+
+float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
+{
+    float3 color = BicubicColor(coords);
 
     // Dithering
     color += (tex2D(uImage1, coords * uColor.xy).rgb - 0.25) / 128;
+
+    return float4(color, 1);
+}
+
+float4 BicubicNoDitherHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    float3 color = BicubicColor(coords);
+
+    // No dithering
+    // Dithering is done in the overbright HiDef shaders
 
     return float4(color, 1);
 }
@@ -72,12 +87,17 @@ float4 NoFilter(float2 coords : TEXCOORD0) : COLOR0
 
 technique Technique1
 {
-    pass UpscaleBicubic
+    pass Bicubic
     {
         PixelShader = compile ps_2_0 Bicubic();
     }
 
-    pass UpscaleNoFilter
+    pass BicubicNoDitherHiDef
+    {
+        PixelShader = compile ps_3_0 BicubicNoDitherHiDef();
+    }
+
+    pass NoFilter
     {
         PixelShader = compile ps_2_0 NoFilter();
     }

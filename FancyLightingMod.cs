@@ -273,8 +273,8 @@ public sealed class FancyLightingMod : Mod
 
         RenderTarget2D target = (RenderTarget2D)Main.instance.GraphicsDevice.GetRenderTargets()[0].RenderTarget;
 
-        TextureSize.MakeSize(ref _screenTarget1, target.Width, target.Height);
-        TextureSize.MakeSize(ref _screenTarget2, target.Width, target.Height);
+        TextureMaker.MakeSize(ref _screenTarget1, target.Width, target.Height);
+        TextureMaker.MakeSize(ref _screenTarget2, target.Width, target.Height);
 
         Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget1);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
