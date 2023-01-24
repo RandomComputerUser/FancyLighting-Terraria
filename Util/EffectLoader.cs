@@ -6,32 +6,40 @@ using Terraria.ModLoader;
 
 namespace FancyLighting.Util;
 
-public static class EffectLoader
+internal static class EffectLoader
 {
-    public static MiscShaderData LoadEffect(
+    public static Shader LoadEffect(
         string filePath,
         string passName,
         bool hiDef = false
     )
     {
-        if (hiDef && TextureMaker.HiDef)
-        {
-            passName += "HiDef";
-        }
-
-        return new MiscShaderData(
+        MiscShaderData shaderData = new(
             new Ref<Effect>(ModContent.Request<Effect>(
                 filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
             ).Value),
             passName
         );
+
+        MiscShaderData hiDefShaderData = null;
+        if (hiDef)
+        {
+            hiDefShaderData = new(
+                new Ref<Effect>(ModContent.Request<Effect>(
+                    filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
+                ).Value),
+                passName + "HiDef"
+            );
+        }
+
+        return new Shader(shaderData, hiDefShaderData);
     }
 
-    public static void UnloadEffect(ref MiscShaderData effect)
+    public static void UnloadEffect(ref Shader effect)
     {
         try
         {
-            effect?.Shader?.Dispose();
+            ((MiscShaderData)effect)?.Shader?.Dispose();
         }
         catch (Exception) // Shouldn't normally happen
         {

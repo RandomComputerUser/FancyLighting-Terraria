@@ -52,6 +52,7 @@ public sealed class LightingConfig : ModConfig
                 _useCustomSkyColors = true;
 
                 _threadCount = Environment.ProcessorCount;
+                _useHiDefFeatures = false;
             }
             else if (_preset == Preset.QualityPreset)
             {
@@ -77,6 +78,7 @@ public sealed class LightingConfig : ModConfig
                 _useCustomSkyColors = true;
 
                 _threadCount = Environment.ProcessorCount;
+                _useHiDefFeatures = false;
             }
             else if (_preset == Preset.FastPreset)
             {
@@ -102,6 +104,7 @@ public sealed class LightingConfig : ModConfig
                 _useCustomSkyColors = true;
 
                 _threadCount = Environment.ProcessorCount;
+                _useHiDefFeatures = false;
             }
             else if (_preset == Preset.UltraPreset)
             {
@@ -127,6 +130,7 @@ public sealed class LightingConfig : ModConfig
                 _useCustomSkyColors = true;
 
                 _threadCount = Environment.ProcessorCount;
+                _useHiDefFeatures = true;
             }
             else if (_preset == Preset.DisableAllPreset)
             {
@@ -152,6 +156,7 @@ public sealed class LightingConfig : ModConfig
                 _useCustomSkyColors = false;
 
                 _threadCount = Environment.ProcessorCount;
+                _useHiDefFeatures = false;
             }
             else
             {
@@ -178,6 +183,7 @@ public sealed class LightingConfig : ModConfig
                     && _useCustomSkyColors
 
                     && _threadCount == Environment.ProcessorCount
+                    && !_useHiDefFeatures
                 )
                 {
                     _preset = Preset.DefaultPreset;
@@ -205,6 +211,7 @@ public sealed class LightingConfig : ModConfig
                     && _useCustomSkyColors
 
                     && _threadCount == Environment.ProcessorCount
+                    && !_useHiDefFeatures
                 )
                 {
                     _preset = Preset.QualityPreset;
@@ -232,6 +239,7 @@ public sealed class LightingConfig : ModConfig
                     && _useCustomSkyColors
 
                     && _threadCount == Environment.ProcessorCount
+                    && !_useHiDefFeatures
                 )
                 {
                     _preset = Preset.FastPreset;
@@ -259,6 +267,7 @@ public sealed class LightingConfig : ModConfig
                     && _useCustomSkyColors
 
                     && _threadCount == Environment.ProcessorCount
+                    && _useHiDefFeatures
                 )
                 {
                     _preset = Preset.UltraPreset;
@@ -286,6 +295,7 @@ public sealed class LightingConfig : ModConfig
                     && !_useCustomSkyColors
 
                     && _threadCount == Environment.ProcessorCount
+                    && !_useHiDefFeatures
                 )
                 {
                     _preset = Preset.DisableAllPreset;
@@ -580,6 +590,20 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _threadCount;
+
+    [DefaultValue(false)]
+    [Label("Use HiDef Features")]
+    [Tooltip("Toggles whether to use features of the HiDef graphics profile\nRequires roughly a DirectX 10-capable GPU to have any effect\nIf enabled, some visual effects are improved\nMay decrease rendering performance when enabled")]
+    public bool UseHiDefFeatures
+    {
+        get => _useHiDefFeatures;
+        set
+        {
+            _useHiDefFeatures = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private bool _useHiDefFeatures;
 
     public override void OnChanged()
     {

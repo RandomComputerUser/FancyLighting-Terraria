@@ -4,13 +4,10 @@ using Terraria;
 
 namespace FancyLighting.Util;
 
-public static class TextureMaker
+internal static class TextureMaker
 {
-    public static bool HiDef
-        => Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
-
     public static SurfaceFormat TextureSurfaceFormat
-        => HiDef
+        => FancyLightingMod.HiDefFeaturesEnabled
             ? SurfaceFormat.Rgba64
             : SurfaceFormat.Color;
 

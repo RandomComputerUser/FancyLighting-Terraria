@@ -20,10 +20,10 @@ internal sealed class AmbientOcclusion
 
     internal bool _drawingTileEntities;
 
-    private MiscShaderData _alphaToGrayscaleShader;
-    private MiscShaderData _alphaToLightGrayscaleShader;
-    private MiscShaderData _blurShader;
-    private MiscShaderData _finalBlurShader;
+    private Shader _alphaToGrayscaleShader;
+    private Shader _alphaToLightGrayscaleShader;
+    private Shader _blurShader;
+    private Shader _finalBlurShader;
 
     public AmbientOcclusion()
     {

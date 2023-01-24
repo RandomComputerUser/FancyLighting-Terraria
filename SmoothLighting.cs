@@ -59,18 +59,18 @@ internal sealed class SmoothLighting
 
     internal uint _printExceptionTime;
 
-    private MiscShaderData _bicubicShader;
-    private MiscShaderData _bicubicNoDitherHiDefShader;
-    private MiscShaderData _noFilterShader;
-    private MiscShaderData _qualityNormalsShader;
-    private MiscShaderData _qualityNormalsOverbrightShader;
-    private MiscShaderData _qualityNormalsOverbrightLightOnlyHiDefShader;
-    private MiscShaderData _normalsShader;
-    private MiscShaderData _normalsOverbrightShader;
-    private MiscShaderData _normalsOverbrightLightOnlyHiDefShader;
-    private MiscShaderData _overbrightShader;
-    private MiscShaderData _overbrightLightOnlyHiDefShader;
-    private MiscShaderData _overbrightMaxShader;
+    private Shader _bicubicShader;
+    private Shader _bicubicNoDitherHiDefShader;
+    private Shader _noFilterShader;
+    private Shader _qualityNormalsShader;
+    private Shader _qualityNormalsOverbrightShader;
+    private Shader _qualityNormalsOverbrightLightOnlyHiDefShader;
+    private Shader _normalsShader;
+    private Shader _normalsOverbrightShader;
+    private Shader _normalsOverbrightLightOnlyHiDefShader;
+    private Shader _overbrightShader;
+    private Shader _overbrightLightOnlyHiDefShader;
+    private Shader _overbrightMaxShader;
 
     public SmoothLighting(FancyLightingMod mod)
     {
@@ -536,7 +536,7 @@ internal sealed class SmoothLighting
             return;
         }
 
-        if (TextureMaker.HiDef)
+        if (FancyLightingMod.HiDefFeaturesEnabled)
         {
             CalculateSmoothLightingHiDef(
                 xmin,
@@ -1079,14 +1079,14 @@ internal sealed class SmoothLighting
         bool qualityNormalMaps = FancyLightingMod.UseQualityNormalMaps;
         bool fineNormalMaps = FancyLightingMod.UseFineNormalMaps;
         bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
-        bool doOverbright = FancyLightingMod.DrawOverbright;
         bool simulateNormalMaps =
             !disableNormalMaps
             && FancyLightingMod.SimulateNormalMaps
             && (!background || qualityNormalMaps);
-        bool noDithering = (qualityNormalMaps || doOverbright) && TextureMaker.HiDef;
-        bool qualityHiDefNormalMaps = qualityNormalMaps && TextureMaker.HiDef;
-        bool hiDefLightOnly = TextureMaker.HiDef && FancyLightingMod.RenderOnlyLight;
+        bool hiDef = FancyLightingMod.HiDefFeaturesEnabled;
+        bool lightOnly = FancyLightingMod.RenderOnlyLight;
+        bool doOverbright = FancyLightingMod.DrawOverbright && !(lightOnly && !hiDef);
+        bool noDithering = (qualityNormalMaps || doOverbright) && hiDef;
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
         Main.instance.GraphicsDevice.Clear(Color.White);
@@ -1166,18 +1166,18 @@ internal sealed class SmoothLighting
             = simulateNormalMaps
                 ? qualityNormalMaps
                     ? doOverbright
-                        ? hiDefLightOnly
+                        ? lightOnly
                             ? _qualityNormalsOverbrightLightOnlyHiDefShader
                             : _qualityNormalsOverbrightShader
                         : _qualityNormalsShader
                     : doOverbright
-                        ? hiDefLightOnly
+                        ? lightOnly
                             ? _normalsOverbrightLightOnlyHiDefShader
                             : _normalsOverbrightShader
                         : _normalsShader
                 : doScaling // doOverbright is guaranteed to be true here
                     ? _overbrightMaxShader // if doScaling is true we're rendering tile entities
-                    : hiDefLightOnly
+                    : lightOnly
                         ? _overbrightLightOnlyHiDefShader
                         : _overbrightShader;
 
@@ -1194,7 +1194,7 @@ internal sealed class SmoothLighting
             }
 
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
-            float hiDefNormalMapStrength = background ? 1f : 0.75f;
+            float hiDefNormalMapStrength = background ? 1f : 0.9f;
 
             shader
                 .UseShaderSpecificData(new Vector4(

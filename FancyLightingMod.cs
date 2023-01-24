@@ -36,6 +36,7 @@ public sealed class FancyLightingMod : Mod
     internal static bool _skyColorsEnabled;
 
     internal static int _threadCount;
+    internal static bool _useHiDefFeatures;
 
     internal static bool _overrideLightingColor;
     internal static bool _inCameraMode;
@@ -135,6 +136,9 @@ public sealed class FancyLightingMod : Mod
     public static bool CustomSkyColorsEnabled => _skyColorsEnabled;
 
     public static int ThreadCount => _threadCount;
+
+    public static bool HiDefFeaturesEnabled
+        => _useHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
 
     public override void Load()
     {

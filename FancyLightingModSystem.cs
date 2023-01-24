@@ -53,5 +53,6 @@ public sealed class FancyLightingModSystem : ModSystem
         FancyLightingMod._skyColorsEnabled = _configInstance.UseCustomSkyColors && Lighting.UsingNewLighting;
 
         FancyLightingMod._threadCount = _configInstance.ThreadCount;
+        FancyLightingMod._useHiDefFeatures = _configInstance.UseHiDefFeatures;
     }
 }
