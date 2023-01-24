@@ -11,4 +11,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Added a new option (disabled by default) to take advantage of HiDef graphics profile features, when possible
 - Higher-quality normal map simulation now uses a better formula when using HiDef features
 - Normal maps no longer affect walls without higher-quality normal maps enabled
-- When using  HiDef features, lighting is no longer darker with overbright and render only lighting enabled
+- When using HiDef features, lighting is no longer darker with overbright and render only lighting enabled
+- The Light Loss When Exiting Solid Blocks setting now has a max value of 100 (up from 65)
+- Shadow paint now absorbs 100% of light with the fancy lighting engine enabled
+- Improved dithering slightly

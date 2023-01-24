@@ -60,7 +60,7 @@ internal sealed class FancyLightingEngine
             _lightSolidDecay[exponent] = 1f;
             _lightWaterDecay[exponent] = 1f;
             _lightHoneyDecay[exponent] = 1f;
-            _lightShadowPaintDecay[exponent] = (float)Math.Pow(0.175, exponent / 256.0);
+            _lightShadowPaintDecay[exponent] = (float)Math.Pow(0.0, exponent / 256.0);
         }
         _logSlowestDecay = Math.Log(0.91);
 

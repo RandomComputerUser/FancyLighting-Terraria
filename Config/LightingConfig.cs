@@ -537,7 +537,7 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineMakeBrighter;
 
-    [Range(0, 65)]
+    [Range(0, 100)]
     [Increment(5)]
     [DefaultValue(50)]
     [Slider]

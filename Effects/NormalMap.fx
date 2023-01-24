@@ -32,7 +32,7 @@ float3 OverbrightLightAtHiDefNoDither(float2 coords)
 
 float3 Dither(float2 coords)
 {
-    return (tex2D(uImage2, coords * uSecondaryColor.xy).rgb - 0.25) / 128;
+    return (tex2D(uImage2, coords * uSecondaryColor.xy).rgb - 128 / 255.0) * (0.5 / 128);
 }
 
 float3 OverbrightLightAtHiDef(float2 coords)

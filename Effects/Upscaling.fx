@@ -65,7 +65,7 @@ float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
     float3 color = BicubicColor(coords);
 
     // Dithering
-    color += (tex2D(uImage1, coords * uColor.xy).rgb - 0.25) / 128;
+    color += (tex2D(uImage1, coords * uColor.xy).rgb - 128 / 255.0) * (0.5 / 128);
 
     return float4(color, 1);
 }
