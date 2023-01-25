@@ -15,3 +15,4 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - The Light Loss When Exiting Solid Blocks setting now has a max value of 100 (up from 65)
 - Shadow paint now absorbs 100% of light with the fancy lighting engine enabled
 - Improved dithering slightly
+- Fixed bug where ambient occlusion did not render if smooth lighting was disabled

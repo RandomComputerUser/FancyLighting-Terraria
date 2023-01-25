@@ -526,6 +526,10 @@ public sealed class FancyLightingMod : Mod
         if (!SmoothLightingEnabled)
         {
             orig(self);
+            if (AmbientOcclusionEnabled)
+            {
+                _ambientOcclusionInstance.ApplyAmbientOcclusion();
+            }
             return;
         }
 
@@ -547,7 +551,10 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);
-        _ambientOcclusionInstance.ApplyAmbientOcclusion();
+        if (AmbientOcclusionEnabled)
+        {
+            _ambientOcclusionInstance.ApplyAmbientOcclusion();
+        }
     }
 
     private void _ProcessBlur(
