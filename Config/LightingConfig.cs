@@ -442,7 +442,7 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _doNonSolidAmbientOcclusion;
 
-    [DefaultValue(true)]
+    [DefaultValue(false)]
     [Label("Enable Ambient Occlusion From Tile Entities")]
     [Tooltip("Toggles whether tile entities generate ambient occlusion\nTile entities generate weaker ambient occlusion\nPrimarily affects moving, non-solid tiles (e.g., tiles affected by wind)")]
     public bool DoTileEntityAmbientOcclusion
