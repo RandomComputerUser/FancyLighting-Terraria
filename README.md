@@ -16,3 +16,5 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Shadow paint now absorbs 100% of light with the fancy lighting engine enabled
 - Improved dithering slightly
 - Fixed bug where ambient occlusion did not render if smooth lighting was disabled
+- Smooth lighting is now automatically disabled if an IndexOutOfRangeException occurs
+- Lots of code changes

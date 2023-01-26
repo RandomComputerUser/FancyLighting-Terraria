@@ -1,3 +1,4 @@
+using FancyLighting.Config;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,46 +15,22 @@ public sealed class FancyLightingMod : Mod
 {
     public static BlendState MultiplyBlend { get; private set; }
 
-    internal static bool _smoothLightingEnabled;
-    internal static bool _blurLightMap;
-    internal static Config.RenderMode _lightMapRenderMode;
-    internal static int _normalMapsStrength;
-    internal static bool _useQualityNormalMaps;
-    internal static bool _useFineNormalMaps;
-    internal static bool _renderOnlyLight;
-
-    internal static bool _ambientOcclusionEnabled;
-    internal static bool _ambientOcclusionNonSolid;
-    internal static bool _ambientOcclusionTileEntity;
-    internal static int _ambientOcclusionRadius;
-    internal static int _ambientOcclusionIntensity;
-
-    internal static bool _fancyLightingEngineEnabled;
-    internal static bool _fancyLightingEngineUseTemporal;
-    internal static int _fancyLightingEngineLightLoss;
-    internal static bool _fancyLightingEngineMakeBrighter;
-
-    internal static bool _skyColorsEnabled;
-
-    internal static int _threadCount;
-    internal static bool _useHiDefFeatures;
-
     internal static bool _overrideLightingColor;
     internal static bool _inCameraMode;
 
-    internal FancyLightingEngine _fancyLightingEngineInstance;
-    internal SmoothLighting _smoothLightingInstance;
-    internal AmbientOcclusion _ambientOcclusionInstance;
+    private FancyLightingEngine _fancyLightingEngineInstance;
+    private SmoothLighting _smoothLightingInstance;
+    private AmbientOcclusion _ambientOcclusionInstance;
 
     internal FieldInfo field_activeEngine;
-    internal FieldInfo field_activeLightMap;
+    private FieldInfo field_activeLightMap;
     internal FieldInfo field_workingProcessedArea;
     internal FieldInfo field_colors;
     internal FieldInfo field_mask;
 
     private static RenderTarget2D _cameraModeTarget;
     internal static Rectangle _cameraModeArea;
-    internal static CaptureBiome _cameraModeBiome;
+    private static CaptureBiome _cameraModeBiome;
 
     private static RenderTarget2D _screenTarget1;
     private static RenderTarget2D _screenTarget2;
@@ -95,51 +72,6 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
-    public static bool ModifyCameraModeRendering => SmoothLightingEnabled || AmbientOcclusionEnabled;
-
-    public static bool SmoothLightingEnabled => _smoothLightingEnabled && Lighting.UsingNewLighting;
-
-    public static bool BlurLightMap => _blurLightMap;
-
-    public static bool UseBicubicScaling => _lightMapRenderMode != Config.RenderMode.Bilinear;
-
-    public static bool DrawOverbright => _lightMapRenderMode == Config.RenderMode.BicubicOverbright;
-
-    public static bool SimulateNormalMaps => _normalMapsStrength > 0;
-
-    public static bool UseQualityNormalMaps => _useQualityNormalMaps;
-
-    public static bool UseFineNormalMaps => _useFineNormalMaps;
-
-    public static float NormalMapsStrength => _normalMapsStrength / 100f;
-
-    public static bool RenderOnlyLight => _renderOnlyLight;
-
-    public static bool AmbientOcclusionEnabled => _ambientOcclusionEnabled && Lighting.UsingNewLighting;
-
-    public static bool DoNonSolidAmbientOcclusion => _ambientOcclusionNonSolid;
-
-    public static bool DoTileEntityAmbientOcclusion => _ambientOcclusionTileEntity;
-
-    public static int AmbientOcclusionRadius => _ambientOcclusionRadius;
-
-    public static float AmbientOcclusionIntensity => (100 - _ambientOcclusionIntensity) / 100f;
-
-    public static bool FancyLightingEngineEnabled => _fancyLightingEngineEnabled && Lighting.UsingNewLighting;
-
-    public static bool FancyLightingEngineUseTemporal => _fancyLightingEngineUseTemporal;
-
-    public static float FancyLightingEngineLightLoss => (100 - _fancyLightingEngineLightLoss) / 100f;
-
-    public static bool FancyLightingEngineMakeBrighter => _fancyLightingEngineMakeBrighter;
-
-    public static bool CustomSkyColorsEnabled => _skyColorsEnabled;
-
-    public static int ThreadCount => _threadCount;
-
-    public static bool HiDefFeaturesEnabled
-        => _useHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
-
     public override void Load()
     {
         if (Main.netMode == NetmodeID.Server)
@@ -149,8 +81,6 @@ public sealed class FancyLightingMod : Mod
 
         _overrideLightingColor = false;
         _inCameraMode = false;
-
-        ModContent.GetInstance<FancyLightingModSystem>()?.UpdateSettings();
 
         BlendState blend = new()
         {
@@ -164,11 +94,16 @@ public sealed class FancyLightingMod : Mod
         _ambientOcclusionInstance = new AmbientOcclusion();
         _fancyLightingEngineInstance = new FancyLightingEngine();
 
-        field_activeEngine = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
-        field_activeLightMap = typeof(LightingEngine).GetField("_activeLightMap", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_workingProcessedArea = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_colors = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_mask = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
+        field_activeEngine
+            = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
+        field_activeLightMap
+            = typeof(LightingEngine).GetField("_activeLightMap", BindingFlags.NonPublic | BindingFlags.Instance);
+        field_workingProcessedArea
+            = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
+        field_colors
+            = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
+        field_mask
+            = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
 
         AddHooks();
         SkyColors.AddSkyColorsHooks();
@@ -226,6 +161,7 @@ public sealed class FancyLightingMod : Mod
             orig(x, y, ref slices);
             return;
         }
+
         for (int i = 0; i < 9; ++i)
         {
             slices[i] = Vector3.One;
@@ -244,6 +180,7 @@ public sealed class FancyLightingMod : Mod
             orig(x, y, ref slices);
             return;
         }
+
         for (int i = 0; i < 4; ++i)
         {
             slices[i] = Vector3.One;
@@ -260,9 +197,9 @@ public sealed class FancyLightingMod : Mod
     )
     {
         if (intoRenderTargets
-            || !DrawOverbright
-            || !SmoothLightingEnabled
-            || RenderOnlyLight
+            || !LightingConfig.Instance.DrawOverbright()
+            || !LightingConfig.Instance.SmoothLightingEnabled()
+            || LightingConfig.Instance.RenderOnlyLight
             || _ambientOcclusionInstance._drawingTileEntities)
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets);
@@ -306,7 +243,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (RenderOnlyLight && SmoothLightingEnabled)
+        if (LightingConfig.Instance.RenderOnlyLight && LightingConfig.Instance.SmoothLightingEnabled())
         {
             Main.instance.GraphicsDevice.SetRenderTarget(Main.waterTarget);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -314,13 +251,15 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (!DrawOverbright || !SmoothLightingEnabled)
+        if (!LightingConfig.Instance.DrawOverbright() || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
         }
+
         _smoothLightingInstance.CalculateSmoothLighting(false);
         orig(self);
+
         if (Main.drawToScreen)
         {
             return;
@@ -335,15 +274,19 @@ public sealed class FancyLightingMod : Mod
         bool isBackground
     )
     {
-        if (_inCameraMode || !DrawOverbright || !SmoothLightingEnabled)
+        if (
+            _inCameraMode
+            || !LightingConfig.Instance.DrawOverbright()
+            || !LightingConfig.Instance.SmoothLightingEnabled()
+        )
         {
             orig(self, isBackground);
             return;
         }
+
         OverrideLightingColor = isBackground
             ? _smoothLightingInstance.DrawSmoothLightingBack
             : _smoothLightingInstance.DrawSmoothLightingFore;
-
         try
         {
             orig(self, isBackground);
@@ -360,20 +303,22 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!SmoothLightingEnabled || !(FancyLightingEngineEnabled || DrawOverbright))
+        if (!LightingConfig.Instance.ModifyBackgroundRendering())
         {
             orig(self);
             return;
         }
+
         _smoothLightingInstance.CalculateSmoothLighting(true);
         orig(self);
+
         if (Main.drawToScreen)
         {
             return;
         }
 
         _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true, true);
-        if (DrawOverbright)
+        if (LightingConfig.Instance.DrawOverbright())
         {
             _smoothLightingInstance.DrawSmoothLighting(Main.instance.backWaterTarget, true, true);
         }
@@ -384,7 +329,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!SmoothLightingEnabled || !(FancyLightingEngineEnabled || DrawOverbright))
+        if (!LightingConfig.Instance.ModifyBackgroundRendering())
         {
             orig(self);
             return;
@@ -393,7 +338,7 @@ public sealed class FancyLightingMod : Mod
         if (_inCameraMode)
         {
             _smoothLightingInstance.CalculateSmoothLighting(true, true);
-            OverrideLightingColor = SmoothLightingEnabled;
+            OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
             Main.tileBatch.End();
             Main.spriteBatch.End();
@@ -403,7 +348,6 @@ public sealed class FancyLightingMod : Mod
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
             Main.tileBatch.Begin();
             Main.spriteBatch.Begin();
-
             try
             {
                 orig(self);
@@ -412,7 +356,6 @@ public sealed class FancyLightingMod : Mod
             {
                 OverrideLightingColor = false;
             }
-
             Main.tileBatch.End();
             Main.spriteBatch.End();
 
@@ -426,7 +369,6 @@ public sealed class FancyLightingMod : Mod
         else
         {
             OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
-
             try
             {
                 orig(self);
@@ -445,7 +387,6 @@ public sealed class FancyLightingMod : Mod
     {
         bool initialLightingOverride = OverrideLightingColor;
         OverrideLightingColor = false;
-
         try
         {
             orig(self);
@@ -461,7 +402,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!SmoothLightingEnabled)
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -469,7 +410,6 @@ public sealed class FancyLightingMod : Mod
 
         _smoothLightingInstance.CalculateSmoothLighting(false);
         OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
-
         try
         {
             orig(self);
@@ -492,7 +432,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!SmoothLightingEnabled)
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -500,7 +440,6 @@ public sealed class FancyLightingMod : Mod
 
         _smoothLightingInstance.CalculateSmoothLighting(false);
         OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
-
         try
         {
             orig(self);
@@ -523,10 +462,10 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!SmoothLightingEnabled)
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
-            if (AmbientOcclusionEnabled)
+            if (LightingConfig.Instance.AmbientOcclusionEnabled())
             {
                 _ambientOcclusionInstance.ApplyAmbientOcclusion();
             }
@@ -535,7 +474,6 @@ public sealed class FancyLightingMod : Mod
 
         _smoothLightingInstance.CalculateSmoothLighting(true);
         OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
-
         try
         {
             orig(self);
@@ -551,7 +489,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);
-        if (AmbientOcclusionEnabled)
+        if (LightingConfig.Instance.AmbientOcclusionEnabled())
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusion();
         }
@@ -562,7 +500,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Graphics.Light.LightingEngine self
     )
     {
-        if (!FancyLightingEngineEnabled)
+        if (!LightingConfig.Instance.FancyLightingEngineEnabled())
         {
             orig(self);
             return;
@@ -577,11 +515,15 @@ public sealed class FancyLightingMod : Mod
         Terraria.Graphics.Light.LightMap self
     )
     {
-        if (!SmoothLightingEnabled && !FancyLightingEngineEnabled)
+        if (
+            !LightingConfig.Instance.SmoothLightingEnabled()
+            && !LightingConfig.Instance.FancyLightingEngineEnabled()
+        )
         {
             orig(self);
             return;
         }
+
         Vector3[] colors = (Vector3[])field_colors.GetValue(self);
         LightMaskMode[] lightDecay = (LightMaskMode[])field_mask.GetValue(self);
         if (colors is null || lightDecay is null)
@@ -589,7 +531,8 @@ public sealed class FancyLightingMod : Mod
             orig(self);
             return;
         }
-        if (FancyLightingEngineEnabled)
+
+        if (LightingConfig.Instance.FancyLightingEngineEnabled())
         {
             _fancyLightingEngineInstance.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
         }
@@ -598,7 +541,7 @@ public sealed class FancyLightingMod : Mod
             orig(self);
         }
 
-        if (SmoothLightingEnabled)
+        if (LightingConfig.Instance.SmoothLightingEnabled())
         {
             _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
         }
@@ -616,7 +559,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
-        OverrideLightingColor = SmoothLightingEnabled;
+        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -624,7 +567,6 @@ public sealed class FancyLightingMod : Mod
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
-
         try
         {
             orig(self);
@@ -633,15 +575,16 @@ public sealed class FancyLightingMod : Mod
         {
             OverrideLightingColor = false;
         }
-
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
-            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, AmbientOcclusionEnabled
+            _cameraModeTarget,
+            _smoothLightingInstance._cameraModeTarget1,
+            true,
+            LightingConfig.Instance.AmbientOcclusionEnabled()
         );
-
-        if (AmbientOcclusionEnabled)
+        if (LightingConfig.Instance.AmbientOcclusionEnabled())
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
                 _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome
@@ -668,7 +611,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false, true);
-        OverrideLightingColor = SmoothLightingEnabled;
+        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -676,7 +619,6 @@ public sealed class FancyLightingMod : Mod
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
-
         try
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets, waterStyleOverride);
@@ -685,7 +627,6 @@ public sealed class FancyLightingMod : Mod
         {
             OverrideLightingColor = false;
         }
-
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
@@ -704,7 +645,7 @@ public sealed class FancyLightingMod : Mod
         CaptureSettings settings
     )
     {
-        if (ModifyCameraModeRendering)
+        if (LightingConfig.Instance.ModifyCameraModeRendering())
         {
             RenderTargetBinding[] renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
             _cameraModeTarget = renderTargets is null || renderTargets.Length < 1

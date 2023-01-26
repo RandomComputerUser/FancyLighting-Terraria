@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FancyLighting.Config;
+using Microsoft.Xna.Framework;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -268,13 +269,13 @@ internal sealed class FancyLightingEngine
         int height
     )
     {
-        _lightLossExitingSolid = FancyLightingMod.FancyLightingEngineLightLoss;
-        _brightnessCutoff = FancyLightingMod.FancyLightingEngineUseTemporal
+        _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
+        _brightnessCutoff = LightingConfig.Instance.FancyLightingEngineUseTemporal
             ? (float)Math.Clamp(Math.Sqrt(_temporalData / 1228.8) * 0.02, 0.02, 0.125)
             : 0.04f;
         _temporalData = 0;
 
-        float decayMult = FancyLightingMod.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
+        float decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
         float lightAirDecayBaseline = decayMult * Math.Min(lightMap.LightDecayThroughAir, 0.97f);
         float lightSolidDecayBaseline = decayMult * Math.Min(lightMap.LightDecayThroughSolid, 0.97f);
         float lightWaterDecayBaseline = decayMult * Math.Min(
@@ -346,7 +347,7 @@ internal sealed class FancyLightingEngine
         Parallel.For(
             0,
             width,
-            new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
             (i) =>
             {
                 int endIndex = height * (i + 1);
@@ -381,14 +382,14 @@ internal sealed class FancyLightingEngine
         Parallel.For(
             0,
             length,
-            new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
             (i) => ProcessLight(i, colors, width, height)
         );
 
         Array.Copy(_tmp, colors, length);
     }
 
-    internal void ProcessLight(int index, Vector3[] colors, int width, int height)
+    private void ProcessLight(int index, Vector3[] colors, int width, int height)
     {
         Vector3 color = colors[index];
         if (color.X <= 0f && color.Y <= 0f && color.Z <= 0f)
@@ -860,7 +861,7 @@ internal sealed class FancyLightingEngine
             }
         }
 
-        if (FancyLightingMod.FancyLightingEngineUseTemporal)
+        if (LightingConfig.Instance.FancyLightingEngineUseTemporal)
         {
             int approximateWorkDone = 0;
             if (!skipUp)

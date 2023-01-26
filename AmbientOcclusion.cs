@@ -1,4 +1,5 @@
-﻿using FancyLighting.Util;
+﻿using FancyLighting.Config;
+using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -9,14 +10,14 @@ namespace FancyLighting;
 
 internal sealed class AmbientOcclusion
 {
-    internal RenderTarget2D _drawTarget1;
-    internal RenderTarget2D _drawTarget2;
+    private RenderTarget2D _drawTarget1;
+    private RenderTarget2D _drawTarget2;
 
-    internal RenderTarget2D _cameraModeTarget1;
-    internal RenderTarget2D _cameraModeTarget2;
-    internal RenderTarget2D _cameraModeTarget3;
+    private RenderTarget2D _cameraModeTarget1;
+    private RenderTarget2D _cameraModeTarget2;
+    private RenderTarget2D _cameraModeTarget3;
 
-    internal RenderTarget2D _tileEntityTarget;
+    private RenderTarget2D _tileEntityTarget;
 
     internal bool _drawingTileEntities;
 
@@ -47,7 +48,7 @@ internal sealed class AmbientOcclusion
         _drawingTileEntities = false;
     }
 
-    internal void Unload()
+    public void Unload()
     {
         _drawTarget1?.Dispose();
         _drawTarget2?.Dispose();
@@ -61,7 +62,7 @@ internal sealed class AmbientOcclusion
         EffectLoader.UnloadEffect(ref _finalBlurShader);
     }
 
-    internal void initSurfaces()
+    private void InitSurfaces()
     {
         TextureMaker.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
         TextureMaker.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
@@ -69,12 +70,12 @@ internal sealed class AmbientOcclusion
 
     internal void ApplyAmbientOcclusion()
     {
-        if (!FancyLightingMod.AmbientOcclusionEnabled)
+        if (!LightingConfig.Instance.AmbientOcclusionEnabled())
         {
             return;
         }
 
-        initSurfaces();
+        InitSurfaces();
 
         ApplyAmbientOcclusionInner(
             Main.instance.wallTarget,
@@ -128,15 +129,15 @@ internal sealed class AmbientOcclusion
         Main.spriteBatch.End();
 
         bool extraLayer =
-            FancyLightingMod.DoNonSolidAmbientOcclusion
-            || FancyLightingMod.DoTileEntityAmbientOcclusion;
+            LightingConfig.Instance.DoNonSolidAmbientOcclusion
+            || LightingConfig.Instance.DoTileEntityAmbientOcclusion;
 
         if (extraLayer)
         {
             Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
         }
-        if (FancyLightingMod.DoNonSolidAmbientOcclusion)
+        if (LightingConfig.Instance.DoNonSolidAmbientOcclusion)
         {
             Main.instance.TilesRenderer.PreDrawTiles(false, false, false);
             Main.tileBatch.Begin();
@@ -149,11 +150,10 @@ internal sealed class AmbientOcclusion
             {
                 Main.instance.TilesRenderer.Draw(false, false, false, Main.bloodMoon ? 9 : biome.WaterStyle);
             }
-
             Main.tileBatch.End();
             Main.spriteBatch.End();
         }
-        if (FancyLightingMod.DoTileEntityAmbientOcclusion)
+        if (LightingConfig.Instance.DoTileEntityAmbientOcclusion)
         {
             _drawingTileEntities = true;
             try
@@ -249,8 +249,8 @@ internal sealed class AmbientOcclusion
             useTarget2 = !useTarget2;
         }
 
-        bool drawNonSolidTiles = FancyLightingMod.DoNonSolidAmbientOcclusion;
-        bool drawTileEntities = FancyLightingMod.DoTileEntityAmbientOcclusion;
+        bool drawNonSolidTiles = LightingConfig.Instance.DoNonSolidAmbientOcclusion;
+        bool drawTileEntities = LightingConfig.Instance.DoTileEntityAmbientOcclusion;
 
         if (!(drawNonSolidTiles || drawTileEntities))
         {
@@ -350,42 +350,42 @@ internal sealed class AmbientOcclusion
 
         // We need to switch between render targets
         useTarget2 = true;
-        switch (FancyLightingMod.AmbientOcclusionRadius)
+        switch (LightingConfig.Instance.AmbientOcclusionRadius)
         {
         case 1:
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         case 2:
             ApplyBlurPass(ref useTarget2, 1, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 1, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         case 3:
             ApplyBlurPass(ref useTarget2, 2, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 2, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         case 4:
         default:
             ApplyBlurPass(ref useTarget2, 3, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 3, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         case 5:
             ApplyBlurPass(ref useTarget2, 4, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 4, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         case 6:
             ApplyBlurPass(ref useTarget2, 5, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 5, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, FancyLightingMod.AmbientOcclusionIntensity);
+            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
             break;
         }
 

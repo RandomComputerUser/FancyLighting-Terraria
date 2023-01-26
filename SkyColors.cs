@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FancyLighting.Config;
+using Microsoft.Xna.Framework;
 using System;
 using Terraria;
 
@@ -132,7 +133,7 @@ public sealed class SkyColors
         out Color moonColor
     )
     {
-        if (!FancyLightingMod.CustomSkyColorsEnabled)
+        if (!(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false))
         {
             orig(info, out sunColor, out moonColor);
             return;
@@ -160,7 +161,7 @@ public sealed class SkyColors
         ref Color moonColor
     )
     {
-        if (!FancyLightingMod.CustomSkyColorsEnabled)
+        if (!(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? true))
         {
             orig(ref backColor, ref moonColor);
             return;

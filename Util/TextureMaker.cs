@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using FancyLighting.Config;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using Terraria;
 
@@ -7,7 +8,7 @@ namespace FancyLighting.Util;
 internal static class TextureMaker
 {
     public static SurfaceFormat TextureSurfaceFormat
-        => FancyLightingMod.HiDefFeaturesEnabled
+        => LightingConfig.Instance.HiDefFeaturesEnabled()
             ? SurfaceFormat.Rgba64
             : SurfaceFormat.Color;
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FancyLighting.Config;
+using Microsoft.Xna.Framework;
 using Terraria.Graphics.Shaders;
 
 namespace FancyLighting.Util;
@@ -15,7 +16,7 @@ internal class Shader
     }
 
     public static implicit operator MiscShaderData(Shader shader)
-        => shader._hiDefShaderData is not null && FancyLightingMod.HiDefFeaturesEnabled
+        => shader._hiDefShaderData is not null && LightingConfig.Instance.HiDefFeaturesEnabled()
             ? shader._hiDefShaderData
             : shader._shaderData;
 

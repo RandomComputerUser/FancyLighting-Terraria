@@ -1,4 +1,5 @@
-﻿using FancyLighting.Util;
+﻿using FancyLighting.Config;
+using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
@@ -15,24 +16,25 @@ namespace FancyLighting;
 
 internal sealed class SmoothLighting
 {
-    internal Texture2D _colors;
-    internal Texture2D _colorsBackground;
+    private Texture2D _colors;
+    private Texture2D _colorsBackground;
 
     private readonly Texture2D _ditherMask;
 
-    internal Vector2 _lightMapPosition;
-    internal Vector2 _lightMapPositionFlipped;
-    internal Rectangle _lightMapTileArea;
-    internal Rectangle _lightMapRenderArea;
+    private Vector2 _lightMapPosition;
+    private Vector2 _lightMapPositionFlipped;
+    private Rectangle _lightMapTileArea;
+    private Rectangle _lightMapRenderArea;
 
-    internal RenderTarget2D _drawTarget1;
-    internal RenderTarget2D _drawTarget2;
+    private RenderTarget2D _drawTarget1;
+    private RenderTarget2D _drawTarget2;
 
-    internal Vector3[] _lights;
+    private Vector3[] _lights;
+    private Color[] _finalLights;
+    private Rgba64[] _finalLightsHiDef;
+
     internal Vector3[] _whiteLights;
     internal Vector3[] _tmpLights;
-    internal Color[] _finalLights;
-    internal Rgba64[] _finalLightsHiDef;
 
     private readonly bool[] _glowingTiles;
     private readonly Color[] _glowingTileColors;
@@ -47,17 +49,17 @@ internal sealed class SmoothLighting
 
     internal RenderTarget2D _cameraModeTarget1;
     internal RenderTarget2D _cameraModeTarget2;
-    internal RenderTarget2D _cameraModeTarget3;
+    private RenderTarget2D _cameraModeTarget3;
 
-    internal bool DrawSmoothLightingBack => _smoothLightingBackComplete && FancyLightingMod.SmoothLightingEnabled;
+    internal bool DrawSmoothLightingBack
+        => _smoothLightingBackComplete && LightingConfig.Instance.SmoothLightingEnabled();
 
-    internal bool DrawSmoothLightingFore => _smoothLightingForeComplete && FancyLightingMod.SmoothLightingEnabled;
-
-    internal TileLightScanner _tileLightScannerInstance;
+    internal bool DrawSmoothLightingFore
+        => _smoothLightingForeComplete && LightingConfig.Instance.SmoothLightingEnabled();
 
     private readonly FancyLightingMod _modInstance;
 
-    internal uint _printExceptionTime;
+    private int _printExceptionTime;
 
     private Shader _bicubicShader;
     private Shader _bicubicNoDitherHiDefShader;
@@ -74,7 +76,6 @@ internal sealed class SmoothLighting
 
     public SmoothLighting(FancyLightingMod mod)
     {
-        _tileLightScannerInstance = new TileLightScanner();
         _modInstance = mod;
 
         _lightMapTileArea = new Rectangle(0, 0, 0, 0);
@@ -178,11 +179,9 @@ internal sealed class SmoothLighting
         _ditherMask = ModContent.Request<Texture2D>(
             "FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad
         ).Value;
-
-        _printExceptionTime = 0;
     }
 
-    internal void Unload()
+    public void Unload()
     {
         _drawTarget1?.Dispose();
         _drawTarget2?.Dispose();
@@ -205,18 +204,15 @@ internal sealed class SmoothLighting
 
     private void PrintException()
     {
-        if (Main.GameUpdateCount >= _printExceptionTime)
-        {
-            Main.NewText(
-                "[Fancy Lighting] Caught an IndexOutOfRangeException; smooth lighting will be skipped this time.",
-                Color.Orange
-            );
-            Main.NewText(
-                "[Fancy Lighting] Disable smooth lighting if this message repeatedly appears.",
-                Color.Orange
-            );
-            _printExceptionTime = Main.GameUpdateCount + 5 * 60;
-        }
+        LightingConfig.Instance.UseSmoothLighting = false;
+        Main.NewText(
+            "[Fancy Lighting] Caught an IndexOutOfRangeException while trying to run smooth lighting",
+            Color.Orange
+        );
+        Main.NewText(
+            "[Fancy Lighting] Smooth lighting has been automatically disabled",
+            Color.Orange
+        );
     }
 
     internal void GetAndBlurLightMap(Vector3[] colors, int width, int height)
@@ -247,12 +243,12 @@ internal sealed class SmoothLighting
 
         int caughtException = 0;
 
-        if (FancyLightingMod.BlurLightMap)
+        if (LightingConfig.Instance.UseLightMapBlurring)
         {
             Parallel.For(
                 1,
                 width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x) =>
                 {
                     int i = height * x;
@@ -333,12 +329,12 @@ internal sealed class SmoothLighting
             Array.Copy(colors, _lights, height * width);
         }
 
-        if (FancyLightingMod.SimulateNormalMaps)
+        if (LightingConfig.Instance.UseNormalMaps())
         {
             Parallel.For(
                 1,
                 width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x) =>
                 {
                     int i = height * x + 1;
@@ -426,7 +422,7 @@ internal sealed class SmoothLighting
             Parallel.For(
                 0,
                 width,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x) =>
                 {
                     int i = height * x;
@@ -475,7 +471,7 @@ internal sealed class SmoothLighting
 
     internal void CalculateSmoothLighting(bool background, bool cameraMode = false)
     {
-        if (!FancyLightingMod.SmoothLightingEnabled)
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             return;
         }
@@ -536,7 +532,7 @@ internal sealed class SmoothLighting
             return;
         }
 
-        if (FancyLightingMod.HiDefFeaturesEnabled)
+        if (LightingConfig.Instance.HiDefFeaturesEnabled())
         {
             CalculateSmoothLightingHiDef(
                 xmin,
@@ -568,7 +564,7 @@ internal sealed class SmoothLighting
         }
     }
 
-    internal void CalculateSmoothLightingHiDef(
+    private void CalculateSmoothLightingHiDef(
         int xmin,
         int clampedYmin,
         int clampedYmax,
@@ -595,7 +591,7 @@ internal sealed class SmoothLighting
         float brightness = Lighting.GlobalBrightness;
         float fullBrightness = brightness;
         float multFromOverbright;
-        if (FancyLightingMod.DrawOverbright)
+        if (LightingConfig.Instance.DrawOverbright())
         {
             ColorConverter.Assign(ref whiteLight, 1f, new Vector3(overbrightMult));
             fullBrightness *= overbrightMult;
@@ -611,7 +607,7 @@ internal sealed class SmoothLighting
             Parallel.For(
                 clampedStart,
                 clampedEnd,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x1) =>
                 {
                     int i = height * x1 + offset;
@@ -665,7 +661,7 @@ internal sealed class SmoothLighting
             Parallel.For(
                 clampedStart,
                 clampedEnd,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x1) =>
                 {
                     int i = height * x1 + offset;
@@ -737,7 +733,7 @@ internal sealed class SmoothLighting
         }
     }
 
-    internal void CalculateSmoothLightingReach(
+    private void CalculateSmoothLightingReach(
         int xmin,
         int clampedYmin,
         int clampedYmax,
@@ -764,7 +760,7 @@ internal sealed class SmoothLighting
         float brightness = Lighting.GlobalBrightness;
         float fullBrightness = brightness;
         float multFromOverbright;
-        if (FancyLightingMod.DrawOverbright)
+        if (LightingConfig.Instance.DrawOverbright())
         {
             whiteLight = new Color(overbrightWhite, overbrightWhite, overbrightWhite);
             fullBrightness *= overbrightMult;
@@ -781,7 +777,7 @@ internal sealed class SmoothLighting
             Parallel.For(
                 clampedStart,
                 clampedEnd,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x1) =>
                 {
                     int i = height * x1 + offset;
@@ -835,7 +831,7 @@ internal sealed class SmoothLighting
             Parallel.For(
                 clampedStart,
                 clampedEnd,
-                new ParallelOptions { MaxDegreeOfParallelism = FancyLightingMod.ThreadCount },
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (x1) =>
                 {
                     int i = height * x1 + offset;
@@ -914,7 +910,7 @@ internal sealed class SmoothLighting
         RenderTarget2D tempTarget = null
     )
     {
-        if (!FancyLightingMod.SmoothLightingEnabled)
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             return;
         }
@@ -944,7 +940,7 @@ internal sealed class SmoothLighting
 
         Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-        if (FancyLightingMod.SimulateNormalMaps || FancyLightingMod.DrawOverbright)
+        if (LightingConfig.Instance.UseNormalMaps() || LightingConfig.Instance.DrawOverbright())
         {
             TextureMaker.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
         }
@@ -993,7 +989,7 @@ internal sealed class SmoothLighting
         TextureMaker.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
         TextureMaker.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
 
-        if (FancyLightingMod.SmoothLightingEnabled)
+        if (LightingConfig.Instance.SmoothLightingEnabled())
         {
             ApplySmoothLighting(
                 lightMapTexture,
@@ -1071,21 +1067,21 @@ internal sealed class SmoothLighting
         bool doScaling
     )
     {
-        if (FancyLightingMod.RenderOnlyLight && background)
+        if (LightingConfig.Instance.RenderOnlyLight && background)
         {
             return;
         }
 
-        bool qualityNormalMaps = FancyLightingMod.UseQualityNormalMaps;
-        bool fineNormalMaps = FancyLightingMod.UseFineNormalMaps;
-        bool doBicubicUpscaling = FancyLightingMod.UseBicubicScaling;
+        bool qualityNormalMaps = LightingConfig.Instance.QualityNormalMaps;
+        bool fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
+        bool doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
         bool simulateNormalMaps =
             !disableNormalMaps
-            && FancyLightingMod.SimulateNormalMaps
+            && LightingConfig.Instance.UseNormalMaps()
             && (!background || qualityNormalMaps);
-        bool hiDef = FancyLightingMod.HiDefFeaturesEnabled;
-        bool lightOnly = FancyLightingMod.RenderOnlyLight;
-        bool doOverbright = FancyLightingMod.DrawOverbright && !(lightOnly && !hiDef);
+        bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
+        bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
+        bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
         bool noDithering = (qualityNormalMaps || doOverbright) && hiDef;
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
@@ -1182,7 +1178,7 @@ internal sealed class SmoothLighting
                         : _overbrightShader;
 
             float normalMapRadius = qualityNormalMaps ? 30f : 25f;
-            normalMapRadius *= FancyLightingMod.NormalMapsStrength;
+            normalMapRadius *= LightingConfig.Instance.NormalMapsMultiplier();
 
             if (fineNormalMaps)
             {
@@ -1231,7 +1227,7 @@ internal sealed class SmoothLighting
             _noFilterShader.Apply();
         }
 
-        if (!doOverbright && !FancyLightingMod.RenderOnlyLight)
+        if (!doOverbright && !LightingConfig.Instance.RenderOnlyLight)
         {
             Main.spriteBatch.Draw(
                 worldTarget,
