@@ -144,6 +144,7 @@ public sealed class FancyLightingMod : Mod
         On.Terraria.Graphics.Light.LightMap.Blur += _Blur;
         // For some reason the order in which these are added matters to ensure that camera mode works
         // Maybe DrawCapture needs to be added last
+        On.Terraria.Main.DrawWater += _DrawWater;
         On.Terraria.Main.DrawWalls += _DrawWalls;
         On.Terraria.Main.DrawTiles += _DrawTiles;
         On.Terraria.Main.DrawCapture += _DrawCapture;
@@ -274,8 +275,7 @@ public sealed class FancyLightingMod : Mod
         bool isBackground
     )
     {
-        if (
-            _inCameraMode
+        if (_inCameraMode
             || !LightingConfig.Instance.DrawOverbright()
             || !LightingConfig.Instance.SmoothLightingEnabled()
         )
@@ -545,6 +545,49 @@ public sealed class FancyLightingMod : Mod
         {
             _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
         }
+    }
+
+    private void _DrawWater(
+        On.Terraria.Main.orig_DrawWater orig,
+        Terraria.Main self,
+        bool bg,
+        int Style,
+        float Alpha
+    )
+    {
+        if (!_inCameraMode
+            || !LightingConfig.Instance.DrawOverbright()
+            || !LightingConfig.Instance.SmoothLightingEnabled()
+        )
+        {
+            orig(self, bg, Style, Alpha);
+            return;
+        }
+
+        _smoothLightingInstance.CalculateSmoothLighting(bg, true);
+        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+
+        Main.spriteBatch.End();
+        Main.instance.GraphicsDevice.SetRenderTarget(
+            _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
+        );
+        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.spriteBatch.Begin();
+        try
+        {
+            orig(self, bg, Style, Alpha);
+        }
+        finally
+        {
+            OverrideLightingColor = false;
+        }
+        Main.spriteBatch.End();
+
+        _smoothLightingInstance.DrawSmoothLightingCameraMode(
+            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, bg, false, true
+        );
+
+        Main.spriteBatch.Begin();
     }
 
     private void _DrawWalls(
