@@ -59,8 +59,6 @@ internal sealed class SmoothLighting
 
     private readonly FancyLightingMod _modInstance;
 
-    private int _printExceptionTime;
-
     private Shader _bicubicShader;
     private Shader _bicubicNoDitherHiDefShader;
     private Shader _noFilterShader;
