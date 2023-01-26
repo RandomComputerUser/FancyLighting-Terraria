@@ -65,7 +65,7 @@ public sealed class LightingConfig : ModConfig
                     = PresetOptions.PresetOptionsLookup.TryGetValue(value, out PresetOptions presetOptions);
                 if (isPresetOptions)
                 {
-                    presetOptions.CopyTo(this);
+                    CopyFrom(presetOptions);
                     _preset = value;
                 }
                 else
@@ -376,4 +376,31 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private bool _useHiDefFeatures;
+
+    private void CopyFrom(PresetOptions options)
+    {
+        _useSmoothLighting = options.UseSmoothLighting;
+        _useLightMapBlurring = options.UseLightMapBlurring;
+        _lightMapRenderMode = options.LightMapRenderMode;
+        _normalMapsStrength = options.NormalMapsStrength;
+        _useQualityNormalMaps = options.QualityNormalMaps;
+        _useFineNormalMaps = options.FineNormalMaps;
+        _renderOnlyLight = options.RenderOnlyLight;
+
+        _useAmbientOcclusion = options.UseAmbientOcclusion;
+        _doNonSolidAmbientOcclusion = options.DoNonSolidAmbientOcclusion;
+        _doTileEntityAmbientOcclusion = options.DoTileEntityAmbientOcclusion;
+        _ambientOcclusionRadius = options.AmbientOcclusionRadius;
+        _ambientOcclusionIntensity = options.AmbientOcclusionIntensity;
+
+        _useFancyLightingEngine = options.UseFancyLightingEngine;
+        _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
+        _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
+        _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
+
+        _useCustomSkyColors = options.UseCustomSkyColors;
+
+        _threadCount = options.ThreadCount;
+        _useHiDefFeatures = options.UseHiDefFeatures;
+    }
 }

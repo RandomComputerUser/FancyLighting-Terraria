@@ -58,33 +58,6 @@ internal record PresetOptions
         UseHiDefFeatures = config.UseHiDefFeatures;
     }
 
-    public void CopyTo(LightingConfig config)
-    {
-        config.UseSmoothLighting = UseSmoothLighting;
-        config.UseLightMapBlurring = UseLightMapBlurring;
-        config.LightMapRenderMode = LightMapRenderMode;
-        config.NormalMapsStrength = NormalMapsStrength;
-        config.QualityNormalMaps = QualityNormalMaps;
-        config.FineNormalMaps = FineNormalMaps;
-        config.RenderOnlyLight = RenderOnlyLight;
-
-        config.UseAmbientOcclusion = UseAmbientOcclusion;
-        config.DoNonSolidAmbientOcclusion = DoNonSolidAmbientOcclusion;
-        config.DoTileEntityAmbientOcclusion = DoTileEntityAmbientOcclusion;
-        config.AmbientOcclusionRadius = AmbientOcclusionRadius;
-        config.AmbientOcclusionIntensity = AmbientOcclusionIntensity;
-
-        config.UseFancyLightingEngine = UseFancyLightingEngine;
-        config.FancyLightingEngineUseTemporal = FancyLightingEngineUseTemporal;
-        config.FancyLightingEngineMakeBrighter = FancyLightingEngineMakeBrighter;
-        config.FancyLightingEngineLightLoss = FancyLightingEngineLightLoss;
-
-        config.UseCustomSkyColors = UseCustomSkyColors;
-
-        config.ThreadCount = ThreadCount;
-        config.UseHiDefFeatures = UseHiDefFeatures;
-    }
-
     public static PresetOptions DefaultPresetOptions = new();
 
     public static PresetOptions QualityPresetOptions = new()
@@ -146,11 +119,11 @@ internal record PresetOptions
 
     public static Dictionary<PresetOptions, Preset> PresetLookup = new()
     {
+        [DisableAllPresetOptions] = Preset.DisableAllPreset,
+        [FastPresetOptions] = Preset.FastPreset,
         [DefaultPresetOptions] = Preset.DefaultPreset,
         [QualityPresetOptions] = Preset.QualityPreset,
-        [FastPresetOptions] = Preset.FastPreset,
         [UltraPresetOptions] = Preset.UltraPreset,
-        [DisableAllPresetOptions] = Preset.DisableAllPreset
     };
 
     public static Dictionary<Preset, PresetOptions> PresetOptionsLookup =
