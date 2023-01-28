@@ -8,7 +8,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 ### Latest Version
 
 **v0.6.0 (2023-??-??)**
-- NOTE: The settings preset may need to be reselected after updating
+NOTE: The settings preset may need to be reselected after updating
+- Updated fancy sky colors
 - Added a new option (disabled by default) to take advantage of HiDef graphics profile features, when possible
 - Higher-quality normal map simulation now uses a better formula when using HiDef features
 - Normal maps no longer affect walls without higher-quality normal maps enabled
