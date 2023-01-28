@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics.PackedVector;
 
 namespace FancyLighting.Util;
 
-public static class ColorConverter
+public static class VectorToColor
 {
     // Provide better conversions from Vector3 to Color than XNA
     // XNA uses (byte)(x * 255f) for each component

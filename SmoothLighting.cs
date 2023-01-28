@@ -591,7 +591,7 @@ internal sealed class SmoothLighting
         float multFromOverbright;
         if (LightingConfig.Instance.DrawOverbright())
         {
-            ColorConverter.Assign(ref whiteLight, 1f, new Vector3(overbrightMult));
+            VectorToColor.Assign(ref whiteLight, 1f, new Vector3(overbrightMult));
             fullBrightness *= overbrightMult;
             multFromOverbright = overbrightMult;
         }
@@ -621,7 +621,7 @@ internal sealed class SmoothLighting
                                 continue;
                             }
 
-                            ColorConverter.Assign(ref _finalLightsHiDef[i], fullBrightness, _lights[i]);
+                            VectorToColor.Assign(ref _finalLightsHiDef[i], fullBrightness, _lights[i]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -705,7 +705,7 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
 
-                            ColorConverter.Assign(ref _finalLightsHiDef[i], multFromOverbright, lightColor);
+                            VectorToColor.Assign(ref _finalLightsHiDef[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -791,7 +791,7 @@ internal sealed class SmoothLighting
                                 continue;
                             }
 
-                            ColorConverter.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
+                            VectorToColor.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -875,7 +875,7 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
 
-                            ColorConverter.Assign(ref _finalLights[i], multFromOverbright, lightColor);
+                            VectorToColor.Assign(ref _finalLights[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {
