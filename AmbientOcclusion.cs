@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Graphics.Capture;
-using Terraria.Graphics.Shaders;
 
 namespace FancyLighting;
 
@@ -230,13 +229,12 @@ internal sealed class AmbientOcclusion
                 RasterizerState.CullNone
             );
 
-            MiscShaderData shader = finalPass ? _finalBlurShader : _blurShader;
+            Shader shader = finalPass ? _finalBlurShader : _blurShader;
             shader
-                .UseShaderSpecificData(new Vector4(
+                .SetParameter("BlurSize", new Vector2(
                     (float)dx / surfaceSource.Width,
-                    (float)dy / surfaceSource.Height,
-                    raiseBrightness,
-                    0f))
+                    (float)dy / surfaceSource.Height))
+                .SetParameter("BrightnessIncrease", raiseBrightness)
                 .Apply();
 
             Main.spriteBatch.Draw(

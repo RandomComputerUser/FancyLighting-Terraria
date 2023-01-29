@@ -1,7 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
-using Terraria;
-using Terraria.Graphics.Shaders;
 using Terraria.ModLoader;
 
 namespace FancyLighting.Util;
@@ -14,32 +12,28 @@ internal static class EffectLoader
         bool hiDef = false
     )
     {
-        MiscShaderData shaderData = new(
-            new Ref<Effect>(ModContent.Request<Effect>(
-                filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
-            ).Value),
-            passName
-        );
+        Effect effect = ModContent.Request<Effect>(
+            filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
+        ).Value;
 
-        MiscShaderData hiDefShaderData = null;
+        string hiDefPassName;
         if (hiDef)
         {
-            hiDefShaderData = new(
-                new Ref<Effect>(ModContent.Request<Effect>(
-                    filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
-                ).Value),
-                passName + "HiDef"
-            );
+            hiDefPassName = passName + "HiDef";
+        }
+        else
+        {
+            hiDefPassName = null;
         }
 
-        return new Shader(shaderData, hiDefShaderData);
+        return new Shader(effect, passName, hiDefPassName);
     }
 
-    public static void UnloadEffect(ref Shader effect)
+    public static void UnloadEffect(ref Shader shader)
     {
         try
         {
-            ((MiscShaderData)effect)?.Shader?.Dispose();
+            shader.Unload();
         }
         catch (Exception) // Shouldn't normally happen
         {
@@ -47,7 +41,7 @@ internal static class EffectLoader
         }
         finally
         {
-            effect = null;
+            shader = null;
         }
     }
 }

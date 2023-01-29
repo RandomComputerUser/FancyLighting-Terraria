@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.Graphics.Light;
-using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -1094,25 +1093,22 @@ internal sealed class SmoothLighting
             if (noDithering)
             {
                 _bicubicNoDitherHiDefShader
-                    .UseShaderSpecificData(new Vector4(
+                    .SetParameter("LightMapSize", lightMapTexture.Size())
+                    .SetParameter("PixelSize", new Vector2(
                         1f / lightMapTexture.Width,
-                        1f / lightMapTexture.Height,
-                        lightMapTexture.Width,
-                        lightMapTexture.Height))
+                        1f / lightMapTexture.Height))
                     .Apply();
             }
             else
             {
                 _bicubicShader
-                    .UseShaderSpecificData(new Vector4(
+                    .SetParameter("LightMapSize", lightMapTexture.Size())
+                    .SetParameter("PixelSize", new Vector2(
                         1f / lightMapTexture.Width,
-                        1f / lightMapTexture.Height,
-                        lightMapTexture.Width,
-                        lightMapTexture.Height))
-                    .UseColor(
+                        1f / lightMapTexture.Height))
+                    .SetParameter("DitherCoordMult", new Vector2(
                         16f * lightMapTexture.Width / _ditherMask.Width,
-                        16f * lightMapTexture.Height / _ditherMask.Height,
-                        0f)
+                        16f * lightMapTexture.Height / _ditherMask.Height))
                     .Apply();
                 Main.instance.GraphicsDevice.Textures[1] = _ditherMask;
                 Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
@@ -1156,7 +1152,7 @@ internal sealed class SmoothLighting
                 FancyLightingMod.MultiplyBlend
             );
 
-            MiscShaderData shader
+            Shader shader
             = simulateNormalMaps
                 ? qualityNormalMaps
                     ? doOverbright
@@ -1191,23 +1187,23 @@ internal sealed class SmoothLighting
             float hiDefNormalMapStrength = background ? 1f : 0.9f;
 
             shader
-                .UseShaderSpecificData(new Vector4(
+                .SetParameter("NormalMapResolution", new Vector2(
                     normalMapResolution / worldTarget.Width,
-                    normalMapResolution / worldTarget.Height,
+                    normalMapResolution / worldTarget.Height))
+                .SetParameter("NormalMapRadius", new Vector2(
                     normalMapRadius / target2.Width,
                     normalMapRadius / target2.Height))
-                .UseColor(
+                .SetParameter("WorldCoordMult", new Vector2(
                     (float)target2.Width / worldTarget.Width,
-                    (float)target2.Height / worldTarget.Height,
-                    hiDefNormalMapStrength);
+                    (float)target2.Height / worldTarget.Height))
+                .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
             Main.instance.GraphicsDevice.Textures[1] = worldTarget;
             Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
             if (noDithering)
             {
-                shader.UseSecondaryColor(
+                shader.SetParameter("DitherCoordMult", new Vector2(
                     (float)target2.Width / _ditherMask.Width,
-                    (float)target2.Height / _ditherMask.Height,
-                    0f);
+                    (float)target2.Height / _ditherMask.Height));
                 Main.instance.GraphicsDevice.Textures[2] = _ditherMask;
                 Main.instance.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
             }

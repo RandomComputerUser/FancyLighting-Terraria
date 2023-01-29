@@ -1,27 +1,58 @@
 ﻿using FancyLighting.Config;
 using Microsoft.Xna.Framework;
-using Terraria.Graphics.Shaders;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace FancyLighting.Util;
 
 internal class Shader
 {
-    private MiscShaderData _shaderData;
-    private MiscShaderData _hiDefShaderData;
+    protected Effect Effect { get; init; }
 
-    internal Shader(MiscShaderData shaderData, MiscShaderData hiDefShaderData = null)
+    private EffectPass _shader;
+    private EffectPass _hiDefShader;
+
+    protected EffectPass EffectPass
+        => _hiDefShader is not null && LightingConfig.Instance.HiDefFeaturesEnabled()
+            ? _hiDefShader
+            : _shader;
+
+    public Shader(Effect effect, string passName, string hiDefPassName = "")
     {
-        _shaderData = shaderData;
-        _hiDefShaderData = hiDefShaderData;
+        Effect = effect;
+
+        _shader = effect.CurrentTechnique.Passes[passName];
+        if (string.IsNullOrEmpty(hiDefPassName))
+        {
+            _hiDefShader = null;
+        }
+        else
+        {
+            _hiDefShader = effect.CurrentTechnique.Passes[hiDefPassName];
+        }
     }
 
-    public static implicit operator MiscShaderData(Shader shader)
-        => shader._hiDefShaderData is not null && LightingConfig.Instance.HiDefFeaturesEnabled()
-            ? shader._hiDefShaderData
-            : shader._shaderData;
+    public void Unload() => Effect?.Dispose();
 
-    internal MiscShaderData UseShaderSpecificData(Vector4 vec)
-        => ((MiscShaderData)this)?.UseShaderSpecificData(vec);
+    public Shader SetParameter(string parameterName, float value)
+    {
+        Effect.Parameters[parameterName].SetValue(value);
+        return this;
+    }
+    public Shader SetParameter(string parameterName, Vector2 value)
+    {
+        Effect.Parameters[parameterName].SetValue(value);
+        return this;
+    }
+    public Shader SetParameter(string parameterName, Vector3 value)
+    {
+        Effect.Parameters[parameterName].SetValue(value);
+        return this;
+    }
+    public Shader SetParameter(string parameterName, Vector4 value)
+    {
+        Effect.Parameters[parameterName].SetValue(value);
+        return this;
+    }
 
-    internal void Apply() => ((MiscShaderData)this)?.Apply();
+    public void Apply() => EffectPass?.Apply();
 }

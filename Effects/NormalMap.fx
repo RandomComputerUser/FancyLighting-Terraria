@@ -1,38 +1,29 @@
-sampler uImage0 : register(s0);
-sampler uImage1 : register(s1);
-sampler uImage2 : register(s2);
-float3 uColor;
-float3 uSecondaryColor;
-float uOpacity : register(C0);
-float uSaturation;
-float uRotation;
-float uTime;
-float4 uSourceRect;
-float2 uWorldPosition;
-float uDirection;
-float3 uLightSource;
-float2 uImageSize0;
-float2 uImageSize1;
-float2 uImageSize2;
-float4 uShaderSpecificData;
+sampler LightSampler : register(s0);
+sampler WorldSampler : register(s1);
+sampler DitherSampler : register(s2);
+float2 NormalMapResolution;
+float2 NormalMapRadius;
+float HiDefNormalMapStrength;
+float2 WorldCoordMult;
+float2 DitherCoordMult;
 
-#define WORLD_TEX_COORDS (uColor.xy * coords)
+#define WORLD_TEX_COORDS (WorldCoordMult * coords)
 
 float3 OverbrightLightAt(float2 coords)
 {
-    float3 color = tex2D(uImage0, coords).rgb;
+    float3 color = tex2D(LightSampler, coords).rgb;
     return (255.0 / 128) * color;
 }
 
 float3 OverbrightLightAtHiDefNoDither(float2 coords)
 {
-    float3 color = tex2D(uImage0, coords).rgb;
+    float3 color = tex2D(LightSampler, coords).rgb;
     return (65535.0 / 16384) * color;
 }
 
 float3 Dither(float2 coords)
 {
-    return (tex2D(uImage2, coords * uSecondaryColor.xy).rgb - 128 / 255.0) * (0.5 / 128);
+    return (tex2D(DitherSampler, coords * DitherCoordMult).rgb - 128 / 255.0) * (0.5 / 128);
 }
 
 float3 OverbrightLightAtHiDef(float2 coords)
@@ -63,14 +54,14 @@ float2 Gradient(
 
 float2 QualityNormalsGradientBase(float2 coords, float2 worldTexCoords)
 {
-    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
-    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
-    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
-    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
-    float3 upLeft = tex2D(uImage1, worldTexCoords - uShaderSpecificData.xy).rgb;
-    float3 downRight = tex2D(uImage1, worldTexCoords + uShaderSpecificData.xy).rgb;
-    float3 upRight = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, -uShaderSpecificData.y)).rgb;
-    float3 downLeft = tex2D(uImage1, worldTexCoords + float2(-uShaderSpecificData.x, uShaderSpecificData.y)).rgb;
+    float4 left = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, 0));
+    float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
+    float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
+    float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
+    float3 upLeft = tex2D(WorldSampler, worldTexCoords - NormalMapResolution).rgb;
+    float3 downRight = tex2D(WorldSampler, worldTexCoords + NormalMapResolution).rgb;
+    float3 upRight = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
+    float3 downLeft = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
 
     float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
     float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
@@ -82,26 +73,26 @@ float2 QualityNormalsGradient(float2 coords, float2 worldTexCoords)
 {
     float2 gradient = QualityNormalsGradientBase(coords, worldTexCoords);
 
-    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 1.0 / 4);
 
     gradient = sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient)));
 
-    return gradient * uShaderSpecificData.zw;
+    return gradient * NormalMapRadius;
 }
 
 float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
 {
     float2 gradient = QualityNormalsGradientBase(coords, worldTexCoords);
-    gradient *= uShaderSpecificData.zw;
+    gradient *= NormalMapRadius;
 
-    float3 originalColor = tex2D(uImage0, coords);
-    float3 colorDiff = tex2D(uImage0, coords + gradient).rgb - originalColor;
+    float3 originalColor = tex2D(LightSampler, coords);
+    float3 colorDiff = tex2D(LightSampler, coords + gradient).rgb - originalColor;
 
-    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
 
-    colorDiff = sign(colorDiff) * min(0.4, uColor.z * sqrt(abs(colorDiff)));
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff + Dither(coords);
@@ -110,15 +101,15 @@ float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
 float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
 {
     float2 gradient = QualityNormalsGradientBase(coords, worldTexCoords);
-    gradient *= uShaderSpecificData.zw;
+    gradient *= NormalMapRadius;
 
     float3 originalColor = OverbrightLightAtHiDefNoDither(coords);
     float3 colorDiff = OverbrightLightAtHiDefNoDither(coords + gradient).rgb - originalColor;
 
-    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
 
-    colorDiff = sign(colorDiff) * min(0.4, uColor.z * sqrt(abs(colorDiff)));
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff + Dither(coords);
@@ -126,58 +117,54 @@ float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
 
 float2 NormalsGradient(float2 coords, float2 worldTexCoords)
 {
-    float4 left = tex2D(uImage1, worldTexCoords - float2(uShaderSpecificData.x, 0));
-    float4 right = tex2D(uImage1, worldTexCoords + float2(uShaderSpecificData.x, 0));
-    float4 up = tex2D(uImage1, worldTexCoords - float2(0, uShaderSpecificData.y));
-    float4 down = tex2D(uImage1, worldTexCoords + float2(0, uShaderSpecificData.y));
+    float4 left = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, 0));
+    float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
+    float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
+    float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
 
     float3 horizontalColorDiff = left.rgb - right.rgb;
     float3 verticalColorDiff = up.rgb - down.rgb;
 
     float2 gradient = Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
 
-    float3 color = tex2D(uImage1, worldTexCoords).rgb;
+    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 1.0 / 4);
 
-    return sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient))) * uShaderSpecificData.zw;
+    return sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient))) * NormalMapRadius;
 }
 
 float4 QualityNormals(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(tex2D(uImage0, coords + gradient).rgb, 1);
+    return float4(tex2D(LightSampler, coords + gradient).rgb, 1);
 }
 
 float4 QualityNormalsHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float3 color = QualityNormalsColorHiDef(coords, worldTexCoords);
+    float3 color = QualityNormalsColorHiDef(coords, WORLD_TEX_COORDS);
 
     return float4(color, 1);
 }
 
 float4 QualityNormalsOverbright(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float2 gradient = QualityNormalsGradient(coords, worldTexCoords);
+    float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
 
     return float4(OverbrightLightAt(coords + gradient), 1)
-        * tex2D(uImage1, worldTexCoords);
+        * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 QualityNormalsOverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float3 color = QualityNormalsColorOverbrightHiDef(coords, worldTexCoords);
+    float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
-    return float4(color, 1) * tex2D(uImage1, worldTexCoords);
+    return float4(color, 1) * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float3 color = QualityNormalsColorOverbrightHiDef(coords, worldTexCoords);
+    float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
     return float4(color, 1); // No dithering
 }
@@ -186,45 +173,40 @@ float4 Normals(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(tex2D(uImage0, coords + gradient).rgb, 1);
+    return float4(tex2D(LightSampler, coords + gradient).rgb, 1);
 }
 
 float4 NormalsOverbright(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float2 gradient = NormalsGradient(coords, worldTexCoords);
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return float4(OverbrightLightAt(coords + gradient), 1)
-           * tex2D(uImage1, worldTexCoords);
+           * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 NormalsOverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float2 gradient = NormalsGradient(coords, worldTexCoords);
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return float4(OverbrightLightAtHiDef(coords + gradient), 1)
-           * tex2D(uImage1, worldTexCoords);
+           * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 NormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    float2 gradient = NormalsGradient(coords, worldTexCoords);
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return float4(OverbrightLightAtHiDef(coords + gradient), 1);
 }
 
 float4 Overbright(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    return float4(OverbrightLightAt(coords), 1) * tex2D(uImage1, worldTexCoords);
+    return float4(OverbrightLightAt(coords), 1) * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 OverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    return float4(OverbrightLightAtHiDef(coords), 1) * tex2D(uImage1, worldTexCoords);
+    return float4(OverbrightLightAtHiDef(coords), 1) * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -234,14 +216,12 @@ float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 OverbrightMax(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    return float4(max(OverbrightLightAt(coords), 1), 1) * tex2D(uImage1, worldTexCoords);
+    return float4(max(OverbrightLightAt(coords), 1), 1) * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 OverbrightMaxHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 worldTexCoords = WORLD_TEX_COORDS;
-    return float4(max(OverbrightLightAtHiDef(coords), 1), 1) * tex2D(uImage1, worldTexCoords);
+    return float4(max(OverbrightLightAtHiDef(coords), 1), 1) * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 technique Technique1
