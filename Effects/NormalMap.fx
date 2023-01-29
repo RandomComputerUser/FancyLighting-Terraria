@@ -1,6 +1,7 @@
 sampler LightSampler : register(s0);
 sampler WorldSampler : register(s1);
 sampler DitherSampler : register(s2);
+
 float2 NormalMapResolution;
 float2 NormalMapRadius;
 float HiDefNormalMapStrength;
