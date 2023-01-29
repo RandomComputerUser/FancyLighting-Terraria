@@ -21,7 +21,7 @@ public sealed class SkyColors
 
         Vector3 midnightColor = new Vector3(8, 10, 15) / 255f;
         Vector3 twilightColor1 = new Vector3(10, 13, 18) / 255f;
-        Vector3 twilightColor2 = new Vector3(80, 35, 23) / 255f;
+        Vector3 twilightColor2 = new Vector3(60, 35, 23) / 255f;
         Vector3 sunrisesetColor = new Vector3(150, 70, 32) / 255f;
         Vector3 goldenHourColor1 = new Vector3(250, 130, 55) / 255f;
         Vector3 goldenHourColor2 = new Vector3(300, 230, 170) / 255f;
@@ -33,11 +33,11 @@ public sealed class SkyColors
             (sunriseTime - 1.5, twilightColor1),
             (sunriseTime - 0.5, twilightColor2),
             (sunriseTime, sunrisesetColor),
-            (sunriseTime + 0.5, goldenHourColor1),
+            (sunriseTime + 0.75, goldenHourColor1),
             (sunriseTime + 1.5, goldenHourColor2),
             (noonTime, noonColor),
             (sunsetTime - 1.5, goldenHourColor2),
-            (sunsetTime - 0.5, goldenHourColor1),
+            (sunsetTime - 0.75, goldenHourColor1),
             (sunsetTime, sunrisesetColor),
             (sunsetTime + 0.5, twilightColor2),
             (sunsetTime + 1.5, twilightColor1),
