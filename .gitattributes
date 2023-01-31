@@ -4,6 +4,7 @@
 * text eol=lf
 
 *.png binary
+*.xnb binary
 
 ###############################################################################
 # Set default behavior for command prompt diff.
