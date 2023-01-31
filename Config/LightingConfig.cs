@@ -37,7 +37,7 @@ public sealed class LightingConfig : ModConfig
     // Serialize this last
     [JsonProperty(Order = 1000)]
     [Label("Settings Preset")]
-    [Tooltip("A preset for the above settings may be chosen")]
+    [Tooltip("A preset for the settings below may be chosen\nPresets ordered by quality (increasing) and performance (decreasing):\nDisable All -> Fast -> Default -> Quality -> Ultra")]
     [DefaultValue(DefaultOptions.ConfigPreset)]
     [DrawTicks]
     public Preset ConfigPreset
