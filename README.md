@@ -23,3 +23,4 @@ NOTE: The settings preset may need to be reselected after updating
 - Fixed bug where overbright lighting would not be applied to liquids in camera mode
 - Smooth lighting is now automatically disabled if an IndexOutOfRangeException occurs
 - Lots of code changes
+- Updated the mod icon
