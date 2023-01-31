@@ -7,7 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.6.0 (2023-??-??)**
+**v0.6.0 (2023-01-30)**
 NOTE: The settings preset may need to be reselected after updating
 - Updated fancy sky colors
 - Added a new option (disabled by default) to take advantage of HiDef graphics profile features, when possible
