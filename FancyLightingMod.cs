@@ -18,9 +18,9 @@ public sealed class FancyLightingMod : Mod
     internal static bool _overrideLightingColor;
     internal static bool _inCameraMode;
 
-    private FancyLightingEngine _fancyLightingEngineInstance;
     private SmoothLighting _smoothLightingInstance;
     private AmbientOcclusion _ambientOcclusionInstance;
+    private FancyLightingEngine _fancyLightingEngineInstance;
 
     internal FieldInfo field_activeEngine;
     private FieldInfo field_activeLightMap;
@@ -142,6 +142,7 @@ public sealed class FancyLightingMod : Mod
         On.Terraria.Main.RenderWalls += _RenderWalls;
         On.Terraria.Graphics.Light.LightingEngine.ProcessBlur += _ProcessBlur;
         On.Terraria.Graphics.Light.LightMap.Blur += _Blur;
+        // Camera mode hooks added below
         // For some reason the order in which these are added matters to ensure that camera mode works
         // Maybe DrawCapture needs to be added last
         On.Terraria.Main.DrawWater += _DrawWater;
@@ -207,13 +208,12 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if ((Main.instance.GraphicsDevice.GetRenderTargets()?.Length ?? 0) < 1)
+        RenderTarget2D target = MainRenderTarget.Get();
+        if (target is null)
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets);
             return;
         }
-
-        RenderTarget2D target = (RenderTarget2D)Main.instance.GraphicsDevice.GetRenderTargets()[0].RenderTarget;
 
         TextureMaker.MakeSize(ref _screenTarget1, target.Width, target.Height);
         TextureMaker.MakeSize(ref _screenTarget2, target.Width, target.Height);
@@ -547,6 +547,8 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
+    // Camera mode hooks below
+
     private void _DrawWater(
         On.Terraria.Main.orig_DrawWater orig,
         Terraria.Main self,
@@ -690,10 +692,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (LightingConfig.Instance.ModifyCameraModeRendering())
         {
-            RenderTargetBinding[] renderTargets = Main.instance.GraphicsDevice.GetRenderTargets();
-            _cameraModeTarget = renderTargets is null || renderTargets.Length < 1
-                ? null
-                : (RenderTarget2D)renderTargets[0].RenderTarget;
+            _cameraModeTarget = MainRenderTarget.Get();
             _inCameraMode = _cameraModeTarget is not null;
         }
         else

@@ -152,19 +152,6 @@ internal sealed class AmbientOcclusion
             Main.tileBatch.End();
             Main.spriteBatch.End();
         }
-        if (LightingConfig.Instance.DoTileEntityAmbientOcclusion)
-        {
-            _drawingTileEntities = true;
-            try
-            {
-                Main.instance.TilesRenderer.PostDrawTiles(false, false, false);
-                Main.instance.TilesRenderer.PostDrawTiles(true, false, false);
-            }
-            finally
-            {
-                _drawingTileEntities = false;
-            }
-        }
 
         ApplyAmbientOcclusionInner(
             wallTarget,
@@ -294,9 +281,8 @@ internal sealed class AmbientOcclusion
                 finally
                 {
                     _drawingTileEntities = false;
+                    Main.GameViewMatrix.Zoom = currentZoom;
                 }
-
-                Main.GameViewMatrix.Zoom = currentZoom;
             }
 
             Main.instance.GraphicsDevice.SetRenderTarget(target1);
@@ -319,7 +305,7 @@ internal sealed class AmbientOcclusion
 
             _alphaToLightGrayscaleShader.Apply();
 
-            if (tile2Target is not null)
+            if (drawNonSolidTiles && tile2Target is not null)
             {
                 Main.spriteBatch.Draw(
                     tile2Target,
