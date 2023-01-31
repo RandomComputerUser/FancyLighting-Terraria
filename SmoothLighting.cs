@@ -1184,7 +1184,8 @@ internal sealed class SmoothLighting
             }
 
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
-            float hiDefNormalMapStrength = background ? 1f : 0.9f;
+            float hiDefNormalMapStrength = background ? 0.44f : 0.9f;
+            float hiDefNormalMapExp = background ? 1 / 3f : 1 / 2f;
 
             shader
                 .SetParameter("NormalMapResolution", new Vector2(
@@ -1196,7 +1197,8 @@ internal sealed class SmoothLighting
                 .SetParameter("WorldCoordMult", new Vector2(
                     (float)target2.Width / worldTarget.Width,
                     (float)target2.Height / worldTarget.Height))
-                .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
+                .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength)
+                .SetParameter("HiDefNormalMapExp", hiDefNormalMapExp);
             Main.instance.GraphicsDevice.Textures[1] = worldTarget;
             Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
             if (noDithering)

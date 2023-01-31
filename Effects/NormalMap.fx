@@ -5,6 +5,7 @@ sampler DitherSampler : register(s2);
 float2 NormalMapResolution;
 float2 NormalMapRadius;
 float HiDefNormalMapStrength;
+float HiDefNormalMapExp;
 float2 WorldCoordMult;
 float2 DitherCoordMult;
 
@@ -90,10 +91,10 @@ float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = tex2D(LightSampler, coords);
     float3 colorDiff = tex2D(LightSampler, coords + gradient).rgb - originalColor;
 
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * pow(abs(colorDiff), HiDefNormalMapExp));
+
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
-
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff + Dither(coords);
@@ -107,10 +108,10 @@ float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = OverbrightLightAtHiDefNoDither(coords);
     float3 colorDiff = OverbrightLightAtHiDefNoDither(coords + gradient).rgb - originalColor;
 
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * pow(abs(colorDiff), HiDefNormalMapExp));
+
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
-
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff + Dither(coords);
@@ -167,7 +168,7 @@ float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR
 {
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
-    return float4(color, 1); // No dithering
+    return float4(color, 1);
 }
 
 float4 Normals(float2 coords : TEXCOORD0) : COLOR0
