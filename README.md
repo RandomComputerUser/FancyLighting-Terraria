@@ -7,21 +7,6 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.6.0 (2023-01-30)**
-
-NOTE: The settings preset may need to be reselected after updating
-- Updated fancy sky colors
-- Added a new option (disabled by default) to take advantage of HiDef graphics profile features, when possible
-- Higher-quality normal map simulation now uses a better formula when using HiDef features
-- Normal maps no longer affect walls without higher-quality normal maps enabled
-- When using HiDef features, lighting is no longer darker with overbright and render only lighting enabled
-- The Light Loss When Exiting Solid Blocks setting now has a max value of 100 (up from 65)
-- Shadow paint now absorbs 100% of light with the fancy lighting engine enabled
-- Improved dithering slightly
-- Reordered the settings presets
-- Fixed bug where tile entity ambient occlusion was enabled by default
-- Fixed bug where ambient occlusion did not render if smooth lighting was disabled
-- Fixed bug where overbright lighting would not be applied to liquids in camera mode
-- Smooth lighting is now automatically disabled if an IndexOutOfRangeException occurs
-- Lots of code changes
-- Updated the mod icon
+**v0.6.1 (2023-02-06)**
+- Changed the default sky colors
+- Added sky color profiles

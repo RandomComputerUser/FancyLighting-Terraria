@@ -25,6 +25,7 @@ internal record PresetOptions
     public int FancyLightingEngineLightLoss { get; init; } = DefaultOptions.FancyLightingEngineLightLoss;
 
     public bool UseCustomSkyColors { get; init; } = DefaultOptions.UseCustomSkyColors;
+    public SkyColorPreset CustomSkyPreset { get; init; } = DefaultOptions.CustomSkyPreset;
 
     public int ThreadCount { get; init; } = DefaultOptions.RuntimeDefaultThreadCount;
     public bool UseHiDefFeatures { get; init; } = DefaultOptions.UseHiDefFeatures;
@@ -53,6 +54,7 @@ internal record PresetOptions
         FancyLightingEngineLightLoss = config.FancyLightingEngineLightLoss;
 
         UseCustomSkyColors = config.UseCustomSkyColors;
+        CustomSkyPreset = config.CustomSkyPreset;
 
         ThreadCount = config.ThreadCount;
         UseHiDefFeatures = config.UseHiDefFeatures;

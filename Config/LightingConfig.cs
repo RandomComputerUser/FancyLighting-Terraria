@@ -344,6 +344,21 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useCustomSkyColors;
 
+    [Label("Sky Color Profile")]
+    [Tooltip("Controls which set of sky colors is used")]
+    [DefaultValue(DefaultOptions.CustomSkyPreset)]
+    [DrawTicks]
+    public SkyColorPreset CustomSkyPreset
+    {
+        get => _customSkyPreset;
+        set
+        {
+            _customSkyPreset = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private SkyColorPreset _customSkyPreset;
+
     // Other Settings
     [Header("General")]
 
@@ -399,6 +414,7 @@ public sealed class LightingConfig : ModConfig
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
 
         _useCustomSkyColors = options.UseCustomSkyColors;
+        _customSkyPreset = options.CustomSkyPreset;
 
         _threadCount = options.ThreadCount;
         _useHiDefFeatures = options.UseHiDefFeatures;

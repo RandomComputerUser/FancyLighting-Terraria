@@ -26,6 +26,7 @@ public static class DefaultOptions
     public const int FancyLightingEngineLightLoss = 50;
 
     public const bool UseCustomSkyColors = true;
+    public const SkyColorPreset CustomSkyPreset = SkyColorPreset.Profile1;
 
     public const int ThreadCount = 8; // Used for the DefaultValue attribute in LightingConfig
     public static int RuntimeDefaultThreadCount => Environment.ProcessorCount;
