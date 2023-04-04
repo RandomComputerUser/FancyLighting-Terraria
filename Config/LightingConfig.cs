@@ -108,6 +108,20 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useLightMapBlurring;
 
+    [Label("Use Brighter Blurring")]
+    [Tooltip("Controls the blurring function used to blur the light map\nWhen enabled, light map blurring cannot darken a tile's lighting\nIncreases the brightness of highlights")]
+    [DefaultValue(DefaultOptions.UseBrighterBlurring)]
+    public bool UseBrighterBlurring
+    {
+        get => _useBrighterBlurring;
+        set
+        {
+            _useBrighterBlurring = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private bool _useBrighterBlurring;
+
     [Label("Light Map Render Mode")]
     [Tooltip("Controls how the light map is rendered\nAffects the smoothness of lighting\nBicubic upscaling is smoother than bilinear upscaling\nOverbright rendering increases the maximum brightness of light")]
     [DefaultValue(DefaultOptions.LightMapRenderMode)]
@@ -396,6 +410,7 @@ public sealed class LightingConfig : ModConfig
     {
         _useSmoothLighting = options.UseSmoothLighting;
         _useLightMapBlurring = options.UseLightMapBlurring;
+        _useBrighterBlurring = options.UseBrighterBlurring;
         _lightMapRenderMode = options.LightMapRenderMode;
         _normalMapsStrength = options.NormalMapsStrength;
         _useQualityNormalMaps = options.QualityNormalMaps;

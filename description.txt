@@ -22,6 +22,9 @@ Supported effects and glowing tiles:
 - Martian Conduit Plating (partial)
 - Lava Lamp
 
-Effects and glowing tiles from other mods may not work properly with smooth lighting.
+Unsupported effects and glowing tiles (vanilla):
+- Ash tree trunk
+
+Effects and glowing tiles not listed, especially those from other mods, will probably not work when smooth lighting is enabled.
 
 Requires OpenGL 2.1 or later

@@ -193,9 +193,12 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _noFilterShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyHiDefShader);
         EffectLoader.UnloadEffect(ref _normalsShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyHiDefShader);
         EffectLoader.UnloadEffect(ref _overbrightShader);
+        EffectLoader.UnloadEffect(ref _overbrightLightOnlyHiDefShader);
         EffectLoader.UnloadEffect(ref _overbrightMaxShader);
     }
 
@@ -242,45 +245,89 @@ internal sealed class SmoothLighting
 
         if (LightingConfig.Instance.UseLightMapBlurring)
         {
-            Parallel.For(
-                1,
-                width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (x) =>
-                {
-                    int i = height * x;
-                    for (int y = 1; y < height - 1; ++y)
+            if (LightingConfig.Instance.UseBrighterBlurring)
+            {
+                Parallel.For(
+                    1,
+                    width - 1,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
                     {
-                        ++i;
-
-                        try
+                        int i = height * x;
+                        for (int y = 1; y < height - 1; ++y)
                         {
-                            // Faster to do it separately for each component
-                            _lights[i].X = (
-                                  1f * colors[i - height - 1].X + 2f * colors[i - 1].X + 1f * colors[i + height - 1].X
-                                + 2f * colors[i - height].X + 4f * colors[i].X + 2f * colors[i + height].X
-                                + 1f * colors[i - height + 1].X + 2f * colors[i + 1].X + 1f * colors[i + height + 1].X
-                            ) / 16f;
+                            ++i;
 
-                            _lights[i].Y = (
-                                  1f * colors[i - height - 1].Y + 2f * colors[i - 1].Y + 1f * colors[i + height - 1].Y
-                                + 2f * colors[i - height].Y + 4f * colors[i].Y + 2f * colors[i + height].Y
-                                + 1f * colors[i - height + 1].Y + 2f * colors[i + 1].Y + 1f * colors[i + height + 1].Y
-                            ) / 16f;
+                            try
+                            {
+                                _lights[i].X = Math.Max(colors[i].X, (
+                                      (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
+                                    + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
+                                    + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
+                                ) / 16f);
 
-                            _lights[i].Z = (
-                                  1f * colors[i - height - 1].Z + 2f * colors[i - 1].Z + 1f * colors[i + height - 1].Z
-                                + 2f * colors[i - height].Z + 4f * colors[i].Z + 2f * colors[i + height].Z
-                                + 1f * colors[i - height + 1].Z + 2f * colors[i + 1].Z + 1f * colors[i + height + 1].Z
-                            ) / 16f;
-                        }
-                        catch (IndexOutOfRangeException)
-                        {
-                            Interlocked.Exchange(ref caughtException, 1);
+                                _lights[i].Y = Math.Max(colors[i].Y, (
+                                      (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
+                                    + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
+                                    + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
+                                ) / 16f);
+
+                                _lights[i].Z = Math.Max(colors[i].Z, (
+                                      (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
+                                    + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
+                                    + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
+                                ) / 16f);
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
                         }
                     }
-                }
-            );
+                );
+            }
+            else
+            {
+                Parallel.For(
+                    1,
+                    width - 1,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 1; y < height - 1; ++y)
+                        {
+                            ++i;
+
+                            try
+                            {
+                                // Faster to do it separately for each component
+                                _lights[i].X = (
+                                      (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
+                                    + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
+                                    + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
+                                ) / 16f;
+
+                                _lights[i].Y = (
+                                      (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
+                                    + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
+                                    + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
+                                ) / 16f;
+
+                                _lights[i].Z = (
+                                      (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
+                                    + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
+                                    + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
+                                ) / 16f;
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
+                        }
+                    }
+                );
+            }
 
             if (caughtException == 1)
             {
@@ -326,120 +373,93 @@ internal sealed class SmoothLighting
             Array.Copy(colors, _lights, height * width);
         }
 
-        if (LightingConfig.Instance.UseNormalMaps())
-        {
-            Parallel.For(
-                1,
-                width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (x) =>
+        const float LOW = 0.49f / 255f;
+
+        Parallel.For(
+            1,
+            width - 1,
+            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+            (x) =>
+            {
+                int i = height * x;
+                for (int y = 1; y < height - 1; ++y)
                 {
-                    int i = height * x + 1;
-                    for (int y = 1; y < height - 1; ++y)
+                    try
                     {
-                        try
+                        ++i;
+
+                        ref Vector3 color = ref _lights[i];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            ref Vector3 color = ref _lights[i];
-                            if (color.X >= 1f / 255f || color.Y >= 1f / 255f || color.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            Vector3 otherColor;
-
-                            otherColor = _lights[i - 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i + 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i - height];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i + height];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i - height - 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i - height + 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i + height - 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            otherColor = _lights[i + height + 1];
-                            if (otherColor.X >= 1f / 255f || otherColor.Y >= 1f / 255f || otherColor.Z >= 1f / 255f)
-                            {
-                                _whiteLights[i++] = Vector3.One;
-                                continue;
-                            }
-
-                            _whiteLights[i++] = new Vector3(1f / 255f, 1f / 255f, 1f / 255f);
+                            _whiteLights[i] = Vector3.One;
+                            continue;
                         }
-                        catch (IndexOutOfRangeException)
+
+                        color = ref _lights[i - 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            Interlocked.Exchange(ref caughtException, 1);
+                            _whiteLights[i] = Vector3.One;
+                            continue;
                         }
+
+                        color = ref _lights[i + 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i - height];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i - height - 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i - height + 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i + height];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i + height - 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        color = ref _lights[i + height + 1];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _whiteLights[i] = Vector3.One;
+                            continue;
+                        }
+
+                        _whiteLights[i] = new Vector3(LOW);
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        Interlocked.Exchange(ref caughtException, 1);
                     }
                 }
-            );
-        }
-        else
-        {
-            Parallel.For(
-                0,
-                width,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (x) =>
-                {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
-                    {
-                        try
-                        {
-                            ref Vector3 color = ref _lights[i];
-                            _whiteLights[i++] = color.X < 1f / 255f && color.Y < 1f / 255f && color.Z < 1f / 255f
-                                ? new Vector3(1f / 255f, 1f / 255f, 1f / 255f)
-                                : Vector3.One;
-                        }
-                        catch (IndexOutOfRangeException)
-                        {
-                            Interlocked.Exchange(ref caughtException, 1);
-                        }
-                    }
-                }
-            );
-        }
+            }
+        );
 
         LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
         _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
@@ -614,7 +634,14 @@ internal sealed class SmoothLighting
                         try
                         {
                             // Illuminant Paint
-                            if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
+                            if (Main.tile[x, y].IsWallFullbright)
+                            {
+                                _finalLightsHiDef[i++] = whiteLight;
+                                continue;
+                            }
+
+                            // Shimmer
+                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
@@ -668,7 +695,14 @@ internal sealed class SmoothLighting
                         try
                         {
                             // Illuminant Paint
-                            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
+                            if (Main.tile[x, y].IsTileFullbright)
+                            {
+                                _finalLightsHiDef[i++] = whiteLight;
+                                continue;
+                            }
+
+                            // Shimmer
+                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
@@ -784,7 +818,14 @@ internal sealed class SmoothLighting
                         try
                         {
                             // Illuminant Paint
-                            if (Main.tile[x, y].WallColor == PaintID.IlluminantPaint)
+                            if (Main.tile[x, y].IsWallFullbright)
+                            {
+                                _finalLights[i++] = whiteLight;
+                                continue;
+                            }
+
+                            // Shimmer
+                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
@@ -838,7 +879,14 @@ internal sealed class SmoothLighting
                         try
                         {
                             // Illuminant Paint
-                            if (Main.tile[x, y].TileColor == PaintID.IlluminantPaint)
+                            if (Main.tile[x, y].IsTileFullbright)
+                            {
+                                _finalLights[i++] = whiteLight;
+                                continue;
+                            }
+
+                            // Shimmer
+                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
@@ -1079,7 +1127,7 @@ internal sealed class SmoothLighting
         bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
-        bool noDithering = (qualityNormalMaps || doOverbright) && hiDef;
+        bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
         Main.instance.GraphicsDevice.Clear(Color.White);

@@ -129,69 +129,29 @@ public sealed class FancyLightingMod : Mod
 
     private void AddHooks()
     {
-        On.Terraria.Lighting.GetColor9Slice_int_int_refVector3Array += _GetColor9Slice_int_int_refVector3Array;
-        On.Terraria.Lighting.GetColor4Slice_int_int_refVector3Array += _GetColor4Slice_int_int_refVector3Array;
-        On.Terraria.GameContent.Drawing.TileDrawing.PostDrawTiles += _PostDrawTiles;
-        On.Terraria.Main.RenderWater += _RenderWater;
-        On.Terraria.Main.DrawWaters += _DrawWaters;
-        On.Terraria.Main.RenderBackground += _RenderBackground;
-        On.Terraria.Main.DrawBackground += _DrawBackground;
-        On.Terraria.Main.RenderBlack += _RenderBlack;
-        On.Terraria.Main.RenderTiles += _RenderTiles;
-        On.Terraria.Main.RenderTiles2 += _RenderTiles2;
-        On.Terraria.Main.RenderWalls += _RenderWalls;
-        On.Terraria.Graphics.Light.LightingEngine.ProcessBlur += _ProcessBlur;
-        On.Terraria.Graphics.Light.LightMap.Blur += _Blur;
+        Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
+        Terraria.On_Main.RenderWater += _RenderWater;
+        Terraria.On_Main.DrawWaters += _DrawWaters;
+        Terraria.On_Main.RenderBackground += _RenderBackground;
+        Terraria.On_Main.DrawBackground += _DrawBackground;
+        Terraria.On_Main.RenderBlack += _RenderBlack;
+        Terraria.On_Main.RenderTiles += _RenderTiles;
+        Terraria.On_Main.RenderTiles2 += _RenderTiles2;
+        Terraria.On_Main.RenderWalls += _RenderWalls;
+        Terraria.Graphics.Light.On_LightingEngine.ProcessBlur += _ProcessBlur;
+        Terraria.Graphics.Light.On_LightMap.Blur += _Blur;
         // Camera mode hooks added below
         // For some reason the order in which these are added matters to ensure that camera mode works
         // Maybe DrawCapture needs to be added last
-        On.Terraria.Main.DrawWater += _DrawWater;
-        On.Terraria.Main.DrawWalls += _DrawWalls;
-        On.Terraria.Main.DrawTiles += _DrawTiles;
-        On.Terraria.Main.DrawCapture += _DrawCapture;
-    }
-
-    private static void _GetColor9Slice_int_int_refVector3Array(
-        On.Terraria.Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
-        int x,
-        int y,
-        ref Vector3[] slices
-    )
-    {
-        if (!_overrideLightingColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (int i = 0; i < 9; ++i)
-        {
-            slices[i] = Vector3.One;
-        }
-    }
-
-    private static void _GetColor4Slice_int_int_refVector3Array(
-        On.Terraria.Lighting.orig_GetColor4Slice_int_int_refVector3Array orig,
-        int x,
-        int y,
-        ref Vector3[] slices
-    )
-    {
-        if (!_overrideLightingColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (int i = 0; i < 4; ++i)
-        {
-            slices[i] = Vector3.One;
-        }
+        Terraria.On_Main.DrawLiquid += _DrawLiquid;
+        Terraria.On_Main.DrawWalls += _DrawWalls;
+        Terraria.On_Main.DrawTiles += _DrawTiles;
+        Terraria.On_Main.DrawCapture += _DrawCapture;
     }
 
     // Tile entities
     private void _PostDrawTiles(
-        On.Terraria.GameContent.Drawing.TileDrawing.orig_PostDrawTiles orig,
+        Terraria.GameContent.Drawing.On_TileDrawing.orig_PostDrawTiles orig,
         Terraria.GameContent.Drawing.TileDrawing self,
         bool solidLayer,
         bool forRenderTargets,
@@ -240,7 +200,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _RenderWater(
-        On.Terraria.Main.orig_RenderWater orig,
+        Terraria.On_Main.orig_RenderWater orig,
         Terraria.Main self
     )
     {
@@ -252,7 +212,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (!LightingConfig.Instance.DrawOverbright() || !LightingConfig.Instance.SmoothLightingEnabled())
+        if (!LightingConfig.Instance.UseBicubicScaling() || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -270,13 +230,13 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _DrawWaters(
-        On.Terraria.Main.orig_DrawWaters orig,
+        Terraria.On_Main.orig_DrawWaters orig,
         Terraria.Main self,
         bool isBackground
     )
     {
         if (_inCameraMode
-            || !LightingConfig.Instance.DrawOverbright()
+            || !LightingConfig.Instance.UseBicubicScaling()
             || !LightingConfig.Instance.SmoothLightingEnabled()
         )
         {
@@ -299,7 +259,7 @@ public sealed class FancyLightingMod : Mod
 
     // Cave backgrounds
     private void _RenderBackground(
-        On.Terraria.Main.orig_RenderBackground orig,
+        Terraria.On_Main.orig_RenderBackground orig,
         Terraria.Main self
     )
     {
@@ -325,7 +285,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _DrawBackground(
-        On.Terraria.Main.orig_DrawBackground orig,
+        Terraria.On_Main.orig_DrawBackground orig,
         Terraria.Main self
     )
     {
@@ -381,7 +341,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _RenderBlack(
-        On.Terraria.Main.orig_RenderBlack orig,
+        Terraria.On_Main.orig_RenderBlack orig,
         Terraria.Main self
     )
     {
@@ -398,7 +358,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _RenderTiles(
-        On.Terraria.Main.orig_RenderTiles orig,
+        Terraria.On_Main.orig_RenderTiles orig,
         Terraria.Main self
     )
     {
@@ -428,7 +388,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _RenderTiles2(
-        On.Terraria.Main.orig_RenderTiles2 orig,
+        Terraria.On_Main.orig_RenderTiles2 orig,
         Terraria.Main self
     )
     {
@@ -458,7 +418,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _RenderWalls(
-        On.Terraria.Main.orig_RenderWalls orig,
+        Terraria.On_Main.orig_RenderWalls orig,
         Terraria.Main self
     )
     {
@@ -496,7 +456,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _ProcessBlur(
-        On.Terraria.Graphics.Light.LightingEngine.orig_ProcessBlur orig,
+        Terraria.Graphics.Light.On_LightingEngine.orig_ProcessBlur orig,
         Terraria.Graphics.Light.LightingEngine self
     )
     {
@@ -511,7 +471,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _Blur(
-        On.Terraria.Graphics.Light.LightMap.orig_Blur orig,
+        Terraria.Graphics.Light.On_LightMap.orig_Blur orig,
         Terraria.Graphics.Light.LightMap self
     )
     {
@@ -534,7 +494,9 @@ public sealed class FancyLightingMod : Mod
 
         if (LightingConfig.Instance.FancyLightingEngineEnabled())
         {
-            _fancyLightingEngineInstance.SpreadLight(self, colors, lightDecay, self.Width, self.Height);
+            _fancyLightingEngineInstance.SpreadLight(
+                self, colors, lightDecay, self.Width, self.Height
+            );
         }
         else
         {
@@ -549,20 +511,21 @@ public sealed class FancyLightingMod : Mod
 
     // Camera mode hooks below
 
-    private void _DrawWater(
-        On.Terraria.Main.orig_DrawWater orig,
+    private void _DrawLiquid(
+        Terraria.On_Main.orig_DrawLiquid orig,
         Terraria.Main self,
         bool bg,
         int Style,
-        float Alpha
+        float Alpha,
+        bool drawSinglePassLiquids
     )
     {
         if (!_inCameraMode
-            || !LightingConfig.Instance.DrawOverbright()
+            || !LightingConfig.Instance.UseBicubicScaling()
             || !LightingConfig.Instance.SmoothLightingEnabled()
         )
         {
-            orig(self, bg, Style, Alpha);
+            orig(self, bg, Style, Alpha, drawSinglePassLiquids);
             return;
         }
 
@@ -577,7 +540,7 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.Begin();
         try
         {
-            orig(self, bg, Style, Alpha);
+            orig(self, bg, Style, Alpha, drawSinglePassLiquids);
         }
         finally
         {
@@ -593,7 +556,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _DrawWalls(
-        On.Terraria.Main.orig_DrawWalls orig,
+        Terraria.On_Main.orig_DrawWalls orig,
         Terraria.Main self
     )
     {
@@ -641,7 +604,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _DrawTiles(
-        On.Terraria.Main.orig_DrawTiles orig,
+        Terraria.On_Main.orig_DrawTiles orig,
         Terraria.Main self,
         bool solidLayer,
         bool forRenderTargets,
@@ -684,7 +647,7 @@ public sealed class FancyLightingMod : Mod
     }
 
     private void _DrawCapture(
-        On.Terraria.Main.orig_DrawCapture orig,
+        Terraria.On_Main.orig_DrawCapture orig,
         Terraria.Main self,
         Rectangle area,
         CaptureSettings settings
