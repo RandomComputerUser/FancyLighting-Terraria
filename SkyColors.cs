@@ -8,7 +8,7 @@ using Terraria;
 
 namespace FancyLighting;
 
-public sealed class SkyColors
+public static class SkyColors
 {
     public static Dictionary<SkyColorPreset, ISimpleColorProfile> Profiles { get; private set; }
 

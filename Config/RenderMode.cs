@@ -5,9 +5,9 @@ namespace FancyLighting.Config;
 public enum RenderMode : int
 {
     [Label("Bilinear Upscaling")]
-    Bilinear,
+    Bilinear = 0,
     [Label("Bicubic Upscaling")]
-    Bicubic,
+    Bicubic = 1,
     [Label("Bicubic with Overbright")]
-    BicubicOverbright
+    BicubicOverbright = 2
 }
