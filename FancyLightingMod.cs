@@ -212,7 +212,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (!LightingConfig.Instance.UseBicubicScaling() || !LightingConfig.Instance.SmoothLightingEnabled())
+        if (!LightingConfig.Instance.DrawOverbright() || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -236,7 +236,7 @@ public sealed class FancyLightingMod : Mod
     )
     {
         if (_inCameraMode
-            || !LightingConfig.Instance.UseBicubicScaling()
+            || !LightingConfig.Instance.DrawOverbright()
             || !LightingConfig.Instance.SmoothLightingEnabled()
         )
         {
@@ -521,7 +521,7 @@ public sealed class FancyLightingMod : Mod
     )
     {
         if (!_inCameraMode
-            || !LightingConfig.Instance.UseBicubicScaling()
+            || !LightingConfig.Instance.DrawOverbright()
             || !LightingConfig.Instance.SmoothLightingEnabled()
         )
         {

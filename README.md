@@ -9,8 +9,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
+- Changed sky color profile 1
 - Added a new option to increase the brightness of lighting when using light map blurring
-- Liquid rendering is now improved when using bicubic upscaling without overbright (in addition to with overbright)
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine (probably not noticeable)
 - Made slight changes to the way smooth lighting is rendered
