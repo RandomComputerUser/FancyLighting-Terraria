@@ -24,6 +24,7 @@ internal record PresetOptions
     public bool FancyLightingEngineUseTemporal { get; init; } = DefaultOptions.FancyLightingEngineUseTemporal;
     public bool FancyLightingEngineMakeBrighter { get; init; } = DefaultOptions.FancyLightingEngineMakeBrighter;
     public int FancyLightingEngineLightLoss { get; init; } = DefaultOptions.FancyLightingEngineLightLoss;
+    public int FancyLightingEngineLightAbsorption { get; init; } = DefaultOptions.FancyLightingEngineLightAbsorption;
 
     public bool UseCustomSkyColors { get; init; } = DefaultOptions.UseCustomSkyColors;
     public SkyColorPreset CustomSkyPreset { get; init; } = DefaultOptions.CustomSkyPreset;
@@ -54,6 +55,7 @@ internal record PresetOptions
         FancyLightingEngineUseTemporal = config.FancyLightingEngineUseTemporal;
         FancyLightingEngineMakeBrighter = config.FancyLightingEngineMakeBrighter;
         FancyLightingEngineLightLoss = config.FancyLightingEngineLightLoss;
+        FancyLightingEngineLightAbsorption = config.FancyLightingEngineLightAbsorption;
 
         UseCustomSkyColors = config.UseCustomSkyColors;
         CustomSkyPreset = config.CustomSkyPreset;

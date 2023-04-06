@@ -18,13 +18,14 @@ public static class DefaultOptions
     public const bool UseAmbientOcclusion = true;
     public const bool DoNonSolidAmbientOcclusion = true;
     public const bool DoTileEntityAmbientOcclusion = false;
-    public const int AmbientOcclusionRadius = 4;
-    public const int AmbientOcclusionIntensity = 35;
+    public const int AmbientOcclusionRadius = 6;
+    public const int AmbientOcclusionIntensity = 40;
 
     public const bool UseFancyLightingEngine = true;
     public const bool FancyLightingEngineUseTemporal = true;
     public const bool FancyLightingEngineMakeBrighter = false;
-    public const int FancyLightingEngineLightLoss = 50;
+    public const int FancyLightingEngineLightLoss = 60;
+    public const int FancyLightingEngineLightAbsorption = 70;
 
     public const bool UseCustomSkyColors = true;
     public const SkyColorPreset CustomSkyPreset = SkyColorPreset.Profile1;

@@ -10,6 +10,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
 - Changed sky color profile 1
+- Tweaked some default settings for ambient occlusion and the fancy lighting engine
+- Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine (probably not noticeable)

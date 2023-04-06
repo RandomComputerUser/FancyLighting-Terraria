@@ -16,6 +16,7 @@ Because smooth lighting overrides built-in tile light rendering, glowmasks and t
 Supported effects and glowing tiles:
 - Spelunker Potion
 - Dangersense Potion
+- Shimmer
 - Crystal Shard and Gelatin Crystal
 - Glowing Moss
 - Meteorite Brick

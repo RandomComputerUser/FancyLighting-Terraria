@@ -27,6 +27,7 @@ public sealed class LightingConfig : ModConfig
     internal float AmbientOcclusionAlpha() => 1f - AmbientOcclusionIntensity / 100f;
     internal bool FancyLightingEngineEnabled() => UseFancyLightingEngine && Lighting.UsingNewLighting;
     internal float FancyLightingEngineExitMultiplier() => 1f - FancyLightingEngineLightLoss / 100f;
+    internal double FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100.0;
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
@@ -323,8 +324,8 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineMakeBrighter;
 
-    [Label("Light Loss (%) When Exiting Solid Blocks")]
-    [Tooltip("Controls how much light is lost when light exits a solid block into the air\nHigher values correspond to darker shadows")]
+    [Label("Light Loss (%) Exiting Solid Blocks")]
+    [Tooltip("Controls how much light is lost exiting a solid block into the air\nHigher values correspond to darker shadows")]
     [Range(0, 100)]
     [Increment(5)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightLoss)]
@@ -340,6 +341,24 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _fancyLightingEngineLightLoss;
+
+    [Label("Light Absorption (relative %) Within Solid Blocks")]
+    [Tooltip("Controls how much light is absorbed within solid blocks\nLower values allow light to spread farther into solid surfaces\nThe percentage is relative to the vanilla value")]
+    [Range(50, 200)]
+    [Increment(10)]
+    [DefaultValue(DefaultOptions.FancyLightingEngineLightAbsorption)]
+    [Slider]
+    [DrawTicks]
+    public int FancyLightingEngineLightAbsorption
+    {
+        get => _fancyLightingEngineLightAbsorption;
+        set
+        {
+            _fancyLightingEngineLightAbsorption = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private int _fancyLightingEngineLightAbsorption;
 
     // Sky Color
     [Header("Sky Color")]
@@ -427,6 +446,7 @@ public sealed class LightingConfig : ModConfig
         _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
         _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
+        _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
 
         _useCustomSkyColors = options.UseCustomSkyColors;
         _customSkyPreset = options.CustomSkyPreset;

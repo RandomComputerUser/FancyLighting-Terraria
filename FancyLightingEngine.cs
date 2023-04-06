@@ -276,16 +276,25 @@ internal sealed class FancyLightingEngine
             : 0.04f;
         _temporalData = 0;
 
+        const float MAX_DECAY_VALUE = 0.97f;
+
         float decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
-        float lightAirDecayBaseline = decayMult * Math.Min(lightMap.LightDecayThroughAir, 0.97f);
-        float lightSolidDecayBaseline = decayMult * Math.Min(lightMap.LightDecayThroughSolid, 0.97f);
+        float lightAirDecayBaseline
+            = decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_VALUE);
+        float lightSolidDecayBaseline = decayMult * Math.Min(
+            (float)Math.Pow(
+                lightMap.LightDecayThroughSolid,
+                LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
+            ),
+            MAX_DECAY_VALUE
+        );
         float lightWaterDecayBaseline = decayMult * Math.Min(
             0.625f * lightMap.LightDecayThroughWater.Length() / Vector3.One.Length()
             + 0.375f * Math.Max(
                 lightMap.LightDecayThroughWater.X,
                 Math.Max(lightMap.LightDecayThroughWater.Y, lightMap.LightDecayThroughWater.Z)
             ),
-            0.97f
+            MAX_DECAY_VALUE
         );
         float lightHoneyDecayBaseline = decayMult * Math.Min(
             0.625f * lightMap.LightDecayThroughHoney.Length() / Vector3.One.Length()
@@ -293,7 +302,7 @@ internal sealed class FancyLightingEngine
                 lightMap.LightDecayThroughHoney.X,
                 Math.Max(lightMap.LightDecayThroughHoney.Y, lightMap.LightDecayThroughHoney.Z)
             ),
-            0.97f
+            MAX_DECAY_VALUE
         );
         _logSlowestDecay = Math.Log(
             Math.Max(lightAirDecayBaseline,
@@ -392,10 +401,10 @@ internal sealed class FancyLightingEngine
 
     private void ProcessLight(int index, Vector3[] colors, int width, int height)
     {
-        const float LOW = 0.03f;
+        const float LOW_LIGHT = 0.03f;
 
         Vector3 color = colors[index];
-        if (color.X <= LOW && color.Y <= LOW && color.Z <= LOW)
+        if (color.X <= LOW_LIGHT && color.Y <= LOW_LIGHT && color.Z <= LOW_LIGHT)
         {
             return;
         }
