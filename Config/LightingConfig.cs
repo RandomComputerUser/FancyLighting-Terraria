@@ -344,7 +344,7 @@ public sealed class LightingConfig : ModConfig
 
     [Label("Light Absorption (relative %) Within Solid Blocks")]
     [Tooltip("Controls how much light is absorbed within solid blocks\nLower values allow light to spread farther into solid surfaces\nThe percentage is relative to the vanilla value")]
-    [Range(50, 200)]
+    [Range(70, 200)]
     [Increment(10)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightAbsorption)]
     [Slider]
