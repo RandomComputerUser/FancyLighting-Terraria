@@ -215,7 +215,7 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useAmbientOcclusion;
 
-    [Label("Enable Ambient Occlusion From Non-Solid Tiles")]
+    [Label("Enable Ambient Occlusion from Non-Solid Tiles")]
     [Tooltip("Toggles whether non-solid blocks generate ambient occlusion\nNon-solid tiles generate weaker ambient occlusion\nPrimarily affects furniture and torches\nNot all non-solid tiles are affected")]
     [DefaultValue(DefaultOptions.DoNonSolidAmbientOcclusion)]
     public bool DoNonSolidAmbientOcclusion
@@ -229,7 +229,7 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _doNonSolidAmbientOcclusion;
 
-    [Label("Enable Ambient Occlusion From Tile Entities")]
+    [Label("Enable Ambient Occlusion from Tile Entities")]
     [Tooltip("Toggles whether tile entities generate ambient occlusion\nTile entities generate weaker ambient occlusion\nPrimarily affects moving, non-solid tiles (e.g., tiles affected by wind)")]
     [DefaultValue(DefaultOptions.DoTileEntityAmbientOcclusion)]
     public bool DoTileEntityAmbientOcclusion
@@ -342,8 +342,8 @@ public sealed class LightingConfig : ModConfig
     }
     private int _fancyLightingEngineLightLoss;
 
-    [Label("Light Absorption (relative %) Within Solid Blocks")]
-    [Tooltip("Controls how much light is absorbed within solid blocks\nLower values allow light to spread farther into solid surfaces\nThe percentage is relative to the vanilla value")]
+    [Label("Light Absorption (relative %) of Solid Blocks")]
+    [Tooltip("Controls how much light is absorbed inside solid blocks\nLower values allow light to spread farther into solid blocks\nA value of 100% is equivalent to vanilla")]
     [Range(70, 200)]
     [Increment(10)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightAbsorption)]
