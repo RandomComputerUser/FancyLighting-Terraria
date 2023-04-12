@@ -129,6 +129,10 @@ public sealed class FancyLightingMod : Mod
 
     private void AddHooks()
     {
+        Terraria.On_Lighting.GetColor9Slice_int_int_refVector3Array += _GetColor9Slice_int_int_refVector3Array;
+        Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array += _GetColor4Slice_int_int_refVector3Array;
+        Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray += _GetColor9Slice_int_int_refColorArray;
+        Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray += _GetColor4Slice_int_int_refColorArray;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
         Terraria.On_Main.RenderWater += _RenderWater;
         Terraria.On_Main.DrawWaters += _DrawWaters;
@@ -147,6 +151,96 @@ public sealed class FancyLightingMod : Mod
         Terraria.On_Main.DrawWalls += _DrawWalls;
         Terraria.On_Main.DrawTiles += _DrawTiles;
         Terraria.On_Main.DrawCapture += _DrawCapture;
+    }
+
+    private static void _GetColor9Slice_int_int_refVector3Array(
+       Terraria.On_Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
+       int x,
+       int y,
+       ref Vector3[] slices
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            orig(x, y, ref slices);
+            return;
+        }
+
+        // Faster than the original function
+
+        for (int i = 0; i < slices.Length; ++i)
+        {
+            ref Vector3 slice = ref slices[i];
+            slice.X = 1f;
+            slice.Y = 1f;
+            slice.Z = 1f;
+        }
+    }
+
+    private static void _GetColor4Slice_int_int_refVector3Array(
+        Terraria.On_Lighting.orig_GetColor4Slice_int_int_refVector3Array orig,
+        int x,
+        int y,
+        ref Vector3[] slices
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            orig(x, y, ref slices);
+            return;
+        }
+
+        // Faster than the original function
+
+        for (int i = 0; i < slices.Length; ++i)
+        {
+            ref Vector3 slice = ref slices[i];
+            slice.X = 1f;
+            slice.Y = 1f;
+            slice.Z = 1f;
+        }
+    }
+
+    private static void _GetColor9Slice_int_int_refColorArray(
+       Terraria.On_Lighting.orig_GetColor9Slice_int_int_refColorArray orig,
+       int x,
+       int y,
+       ref Color[] slices
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            orig(x, y, ref slices);
+            return;
+        }
+
+        // Faster than the original function
+
+        for (int i = 0; i < slices.Length; ++i)
+        {
+            slices[i].PackedValue = 0xFFFFFFFF; // White
+        }
+    }
+
+    private static void _GetColor4Slice_int_int_refColorArray(
+        Terraria.On_Lighting.orig_GetColor4Slice_int_int_refColorArray orig,
+        int x,
+        int y,
+        ref Color[] slices
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            orig(x, y, ref slices);
+            return;
+        }
+
+        // Faster than the original function
+
+        for (int i = 0; i < slices.Length; ++i)
+        {
+            slices[i].PackedValue = 0xFFFFFFFF; // White
+        }
     }
 
     // Tile entities

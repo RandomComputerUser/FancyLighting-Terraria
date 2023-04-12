@@ -388,70 +388,92 @@ internal sealed class SmoothLighting
                     {
                         ++i;
 
+                        ref Vector3 whiteLight = ref _whiteLights[i];
+
                         ref Vector3 color = ref _lights[i];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i - 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i + 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i - height];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i - height - 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i - height + 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i + height];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i + height - 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
                         color = ref _lights[i + height + 1];
                         if (color.X > LOW || color.Y > LOW || color.Z > LOW)
                         {
-                            _whiteLights[i] = Vector3.One;
+                            whiteLight.X = 1f;
+                            whiteLight.Y = 1f;
+                            whiteLight.Z = 1f;
                             continue;
                         }
 
-                        _whiteLights[i] = new Vector3(LOW);
+                        whiteLight.X = LOW;
+                        whiteLight.Y = LOW;
+                        whiteLight.Z = LOW;
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -460,6 +482,12 @@ internal sealed class SmoothLighting
                 }
             }
         );
+
+        if (caughtException == 1)
+        {
+            PrintException();
+            return;
+        }
 
         LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
         _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
