@@ -661,15 +661,17 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Tile tile = Main.tile[x, y];
+
                             // Illuminant Paint
-                            if (Main.tile[x, y].IsWallFullbright)
+                            if (tile.IsWallFullbright)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
                             }
 
                             // Shimmer
-                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
+                            if (tile.LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
@@ -722,15 +724,17 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Tile tile = Main.tile[x, y];
+
                             // Illuminant Paint
-                            if (Main.tile[x, y].IsTileFullbright)
+                            if (tile.IsTileFullbright)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
                             }
 
                             // Shimmer
-                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
+                            if (tile.LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLightsHiDef[i++] = whiteLight;
                                 continue;
@@ -739,9 +743,9 @@ internal sealed class SmoothLighting
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
                             // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
-                            if (_glowingTiles[Main.tile[x, y].TileType])
+                            if (_glowingTiles[tile.TileType])
                             {
-                                ref Color glow = ref _glowingTileColors[Main.tile[x, y].TileType];
+                                ref Color glow = ref _glowingTileColors[tile.TileType];
 
                                 lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
@@ -845,15 +849,17 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Tile tile = Main.tile[x, y];
+
                             // Illuminant Paint
-                            if (Main.tile[x, y].IsWallFullbright)
+                            if (tile.IsWallFullbright)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
                             }
 
                             // Shimmer
-                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
+                            if (tile.LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
@@ -906,15 +912,17 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Tile tile = Main.tile[x, y];
+
                             // Illuminant Paint
-                            if (Main.tile[x, y].IsTileFullbright)
+                            if (tile.IsTileFullbright)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
                             }
 
                             // Shimmer
-                            if (Main.tile[x, y].LiquidType == LiquidID.Shimmer)
+                            if (tile.LiquidType == LiquidID.Shimmer)
                             {
                                 _finalLights[i++] = whiteLight;
                                 continue;
@@ -923,9 +931,9 @@ internal sealed class SmoothLighting
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
                             // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
-                            if (_glowingTiles[Main.tile[x, y].TileType])
+                            if (_glowingTiles[tile.TileType])
                             {
-                                ref Color glow = ref _glowingTileColors[Main.tile[x, y].TileType];
+                                ref Color glow = ref _glowingTileColors[tile.TileType];
 
                                 lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
