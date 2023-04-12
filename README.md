@@ -13,6 +13,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Tweaked some default settings for ambient occlusion and the fancy lighting engine
 - Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring
+- Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine (probably not noticeable)
 - Made slight changes to the way smooth lighting is rendered

@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Reflection;
 using Terraria;
+using Terraria.Graphics;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Light;
 using Terraria.ID;
@@ -129,6 +130,8 @@ public sealed class FancyLightingMod : Mod
 
     private void AddHooks()
     {
+        Terraria.On_Lighting.GetSubLight += _GetSubLight;
+        Terraria.On_Lighting.GetCornerColors += _GetCornerColors;
         Terraria.On_Lighting.GetColor9Slice_int_int_refVector3Array += _GetColor9Slice_int_int_refVector3Array;
         Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array += _GetColor4Slice_int_int_refVector3Array;
         Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray += _GetColor9Slice_int_int_refColorArray;
@@ -153,6 +156,36 @@ public sealed class FancyLightingMod : Mod
         Terraria.On_Main.DrawCapture += _DrawCapture;
     }
 
+    private static Vector3 _GetSubLight(
+        Terraria.On_Lighting.orig_GetSubLight orig,
+        Vector2 position
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            return orig(position);
+        }
+
+        return Vector3.One;
+    }
+
+    private static void _GetCornerColors(
+        Terraria.On_Lighting.orig_GetCornerColors orig,
+        int centerX,
+        int centerY,
+        out VertexColors vertices,
+        float scale
+    )
+    {
+        if (!_overrideLightingColor)
+        {
+            orig(centerX, centerY, out vertices, scale);
+            return;
+        }
+
+        vertices = new(Color.White);
+    }
+
     private static void _GetColor9Slice_int_int_refVector3Array(
        Terraria.On_Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
        int x,
@@ -165,8 +198,6 @@ public sealed class FancyLightingMod : Mod
             orig(x, y, ref slices);
             return;
         }
-
-        // Faster than the original function
 
         for (int i = 0; i < slices.Length; ++i)
         {
@@ -190,8 +221,6 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        // Faster than the original function
-
         for (int i = 0; i < slices.Length; ++i)
         {
             ref Vector3 slice = ref slices[i];
@@ -214,8 +243,6 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        // Faster than the original function
-
         for (int i = 0; i < slices.Length; ++i)
         {
             slices[i].PackedValue = 0xFFFFFFFF; // White
@@ -234,8 +261,6 @@ public sealed class FancyLightingMod : Mod
             orig(x, y, ref slices);
             return;
         }
-
-        // Faster than the original function
 
         for (int i = 0; i < slices.Length; ++i)
         {
@@ -306,7 +331,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (!LightingConfig.Instance.DrawOverbright() || !LightingConfig.Instance.SmoothLightingEnabled())
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -329,10 +354,7 @@ public sealed class FancyLightingMod : Mod
         bool isBackground
     )
     {
-        if (_inCameraMode
-            || !LightingConfig.Instance.DrawOverbright()
-            || !LightingConfig.Instance.SmoothLightingEnabled()
-        )
+        if (_inCameraMode || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self, isBackground);
             return;
@@ -357,7 +379,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!LightingConfig.Instance.ModifyBackgroundRendering())
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -372,10 +394,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true, true);
-        if (LightingConfig.Instance.DrawOverbright())
-        {
-            _smoothLightingInstance.DrawSmoothLighting(Main.instance.backWaterTarget, true, true);
-        }
+        _smoothLightingInstance.DrawSmoothLighting(Main.instance.backWaterTarget, true, true);
     }
 
     private void _DrawBackground(
@@ -383,7 +402,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!LightingConfig.Instance.ModifyBackgroundRendering())
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self);
             return;
@@ -614,9 +633,7 @@ public sealed class FancyLightingMod : Mod
         bool drawSinglePassLiquids
     )
     {
-        if (!_inCameraMode
-            || !LightingConfig.Instance.DrawOverbright()
-            || !LightingConfig.Instance.SmoothLightingEnabled()
+        if (!_inCameraMode || !LightingConfig.Instance.SmoothLightingEnabled()
         )
         {
             orig(self, bg, Style, Alpha, drawSinglePassLiquids);

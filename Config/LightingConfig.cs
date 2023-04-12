@@ -16,8 +16,6 @@ public sealed class LightingConfig : ModConfig
     public static LightingConfig Instance;
 
     internal bool ModifyCameraModeRendering() => SmoothLightingEnabled() || AmbientOcclusionEnabled();
-    internal bool ModifyBackgroundRendering()
-        => SmoothLightingEnabled() && (FancyLightingEngineEnabled() || DrawOverbright());
     internal bool SmoothLightingEnabled() => UseSmoothLighting && Lighting.UsingNewLighting;
     internal bool UseBicubicScaling() => LightMapRenderMode != RenderMode.Bilinear;
     internal bool DrawOverbright() => LightMapRenderMode == RenderMode.BicubicOverbright;
