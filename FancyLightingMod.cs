@@ -287,6 +287,22 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
+        if (_inCameraMode)
+        {
+            Main.instance.GraphicsDevice.SetRenderTarget(
+                _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
+            );
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+
+            _smoothLightingInstance.CalculateSmoothLighting(false, true);
+            _smoothLightingInstance.DrawSmoothLightingCameraMode(
+                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, false, false, true, true
+            );
+
+            return;
+        }
+
         RenderTarget2D target = MainRenderTarget.Get();
         if (target is null)
         {
@@ -307,7 +323,7 @@ public sealed class FancyLightingMod : Mod
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
         orig(self, solidLayer, forRenderTargets, intoRenderTargets);
 
-        _smoothLightingInstance.CalculateSmoothLighting(false, _inCameraMode);
+        _smoothLightingInstance.CalculateSmoothLighting(false, false);
         _smoothLightingInstance.DrawSmoothLighting(_screenTarget2, false, true, target);
 
         Main.instance.GraphicsDevice.SetRenderTarget(target);

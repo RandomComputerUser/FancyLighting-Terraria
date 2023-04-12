@@ -1062,7 +1062,8 @@ internal sealed class SmoothLighting
         RenderTarget2D target,
         bool background,
         bool skipFinalPass = false,
-        bool disableNormalMaps = false
+        bool disableNormalMaps = false,
+        bool tileEntities = false
     )
     {
         Texture2D lightMapTexture = background ? _colorsBackground : _colors;
@@ -1082,7 +1083,7 @@ internal sealed class SmoothLighting
                 target,
                 background,
                 disableNormalMaps,
-                false
+                tileEntities
             );
         }
         else
