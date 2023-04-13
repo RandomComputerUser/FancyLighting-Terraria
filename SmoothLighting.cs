@@ -43,8 +43,8 @@ internal sealed class SmoothLighting
 
     private bool _smoothLightingLightMapValid;
     private bool _smoothLightingPositionValid;
-    private bool _smoothLightingBackComplete;
     private bool _smoothLightingForeComplete;
+    private bool _smoothLightingBackComplete;
 
     internal RenderTarget2D _cameraModeTarget1;
     internal RenderTarget2D _cameraModeTarget2;
@@ -60,6 +60,7 @@ internal sealed class SmoothLighting
 
     private Shader _bicubicShader;
     private Shader _bicubicNoDitherHiDefShader;
+    private Shader _bicubicOverbrightHiDefShader;
     private Shader _noFilterShader;
     private Shader _qualityNormalsShader;
     private Shader _qualityNormalsOverbrightShader;
@@ -126,6 +127,10 @@ internal sealed class SmoothLighting
             "FancyLighting/Effects/Upscaling",
             "BicubicNoDitherHiDef"
         );
+        _bicubicOverbrightHiDefShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/Upscaling",
+            "BicubicOverbrightHiDef"
+        );
         _noFilterShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
             "NoFilter"
@@ -190,6 +195,7 @@ internal sealed class SmoothLighting
         _ditherMask?.Dispose();
         EffectLoader.UnloadEffect(ref _bicubicShader);
         EffectLoader.UnloadEffect(ref _bicubicNoDitherHiDefShader);
+        EffectLoader.UnloadEffect(ref _bicubicOverbrightHiDefShader);
         EffectLoader.UnloadEffect(ref _noFilterShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
@@ -219,8 +225,8 @@ internal sealed class SmoothLighting
     {
         _smoothLightingLightMapValid = false;
         _smoothLightingPositionValid = false;
-        _smoothLightingBackComplete = false;
         _smoothLightingForeComplete = false;
+        _smoothLightingBackComplete = false;
 
         if (_lights is null || _lights.Length < height * width)
         {
@@ -1250,17 +1256,32 @@ internal sealed class SmoothLighting
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
         bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
+        // Gamma-correct bicubic interpolation not used because it
+        // is too slow and makes too little of a difference
+        bool doGammaCorrectBicubic = false; // = LightingConfig.Instance.UseGammaCorrection();
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
         Main.instance.GraphicsDevice.Clear(Color.White);
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
-            FancyLightingMod.MultiplyBlend
+            FancyLightingMod.MultiplyBlend,
+            doGammaCorrectBicubic ? SamplerState.PointClamp : SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
         );
 
         if (doBicubicUpscaling)
         {
-            if (noDithering)
+            if (doGammaCorrectBicubic)
+            {
+                _bicubicOverbrightHiDefShader
+                    .SetParameter("LightMapSize", lightMapTexture.Size())
+                    .SetParameter("PixelSize", new Vector2(
+                        1f / lightMapTexture.Width,
+                        1f / lightMapTexture.Height))
+                    .Apply();
+            }
+            else if (noDithering)
             {
                 _bicubicNoDitherHiDefShader
                     .SetParameter("LightMapSize", lightMapTexture.Size())
