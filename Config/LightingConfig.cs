@@ -29,6 +29,8 @@ public sealed class LightingConfig : ModConfig
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
+    internal bool UseGammaCorrection()
+        => DrawOverbright() && HiDefFeaturesEnabled();
 
     // Presets
     [Header("Presets")]
@@ -409,8 +411,8 @@ public sealed class LightingConfig : ModConfig
     }
     private int _threadCount;
 
-    [Label("Use HiDef Features")]
-    [Tooltip("Toggles whether to use features of the HiDef graphics profile\nRequires roughly a DirectX 10-capable GPU to have any effect\nIf enabled, some visual effects are improved\nMay decrease rendering performance when enabled")]
+    [Label("Use Enhanced Shaders and Colors")]
+    [Tooltip("Toggles whether to use enhanced shaders and colors allowed by the HiDef graphics profile\nRequires roughly a DirectX 10-capable GPU to have any effect\nIf enabled, some visual effects are improved\nMay decrease rendering performance when enabled")]
     [DefaultValue(DefaultOptions.UseHiDefFeatures)]
     public bool UseHiDefFeatures
     {

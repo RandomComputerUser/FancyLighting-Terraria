@@ -9,6 +9,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
+- Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
+- Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Changed sky color profile 1
 - Tweaked some default settings for ambient occlusion and the fancy lighting engine
 - Added an option to change the light absorption of solid blocks

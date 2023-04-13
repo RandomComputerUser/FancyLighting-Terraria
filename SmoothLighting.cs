@@ -132,43 +132,43 @@ internal sealed class SmoothLighting
         );
 
         _qualityNormalsShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "QualityNormals",
             true
         );
         _qualityNormalsOverbrightShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "QualityNormalsOverbright",
             true
         );
         _qualityNormalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "QualityNormalsOverbrightLightOnlyHiDef"
         );
         _normalsShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "Normals"
         );
         _normalsOverbrightShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "NormalsOverbright",
             true
         );
         _normalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "NormalsOverbrightLightOnlyHiDef"
         );
         _overbrightShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "Overbright",
             true
         );
         _overbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "OverbrightLightOnlyHiDef"
         );
         _overbrightMaxShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/NormalMap",
+            "FancyLighting/Effects/LightRendering",
             "OverbrightMax",
             true
         );
@@ -242,6 +242,37 @@ internal sealed class SmoothLighting
         }
 
         int caughtException = 0;
+
+        if (LightingConfig.Instance.UseGammaCorrection())
+        {
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (x) =>
+                {
+                    int i = height * x;
+                    for (int y = 0; y < height; ++y)
+                    {
+                        try
+                        {
+                            ConvertSrgbToLinear(ref colors[i]);
+                            ++i;
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                        }
+                    }
+                }
+            );
+        }
+
+        if (caughtException == 1)
+        {
+            PrintException();
+            return;
+        }
 
         if (LightingConfig.Instance.UseLightMapBlurring)
         {
@@ -373,7 +404,8 @@ internal sealed class SmoothLighting
             Array.Copy(colors, _lights, height * width);
         }
 
-        const float LOW = 0.49f / 255f;
+        float LOW = LightingConfig.Instance.UseGammaCorrection() ? (float)7.730824E-7 : 0.49f / 255f;
+        const float LOW_SRGB = 0.49f / 255f;
 
         Parallel.For(
             1,
@@ -471,9 +503,9 @@ internal sealed class SmoothLighting
                             continue;
                         }
 
-                        whiteLight.X = LOW;
-                        whiteLight.Y = LOW;
-                        whiteLight.Z = LOW;
+                        whiteLight.X = LOW_SRGB;
+                        whiteLight.Y = LOW_SRGB;
+                        whiteLight.Z = LOW_SRGB;
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -494,6 +526,18 @@ internal sealed class SmoothLighting
         _lightMapRenderArea = new Rectangle(0, 0, _lightMapTileArea.Height, _lightMapTileArea.Width);
 
         _smoothLightingLightMapValid = true;
+    }
+
+    private static void ConvertSrgbToLinear(ref Vector3 color)
+    {
+        // Intentionally not the standard sRGB conversion
+        // The linear function for low values wouldn't make sense, I think
+
+        // Using MathF.Sqrt() instead of MathF.Pow() gives us
+        // better performance and a gamma of 2.25 (close to 2.2)
+        color.X *= color.X * MathF.Sqrt(MathF.Sqrt(color.X));
+        color.Y *= color.Y * MathF.Sqrt(MathF.Sqrt(color.Y));
+        color.Z *= color.Z * MathF.Sqrt(MathF.Sqrt(color.Z));
     }
 
     private void GetColorsPosition(bool cameraMode)
@@ -747,9 +791,23 @@ internal sealed class SmoothLighting
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
-                                lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
-                                lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
-                                lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
+                                if (LightingConfig.Instance.UseGammaCorrection())
+                                {
+                                    Vector3 linearGlowColor
+                                        = new(glow.R / 255f, glow.G / 255f, glow.B / 255f);
+
+                                    ConvertSrgbToLinear(ref linearGlowColor);
+
+                                    lightColor.X = Math.Max(lightColor.X, linearGlowColor.X);
+                                    lightColor.Y = Math.Max(lightColor.Y, linearGlowColor.Y);
+                                    lightColor.Z = Math.Max(lightColor.Z, linearGlowColor.Z);
+                                }
+                                else
+                                {
+                                    lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
+                                    lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
+                                    lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
+                                }
                             }
 
                             // Dangersense Potion
