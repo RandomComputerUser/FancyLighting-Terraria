@@ -78,6 +78,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
+        FancyLightingEngineLightLoss = 60,
         UseHiDefFeatures = false,
     };
 
@@ -93,6 +94,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = false,
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
+        FancyLightingEngineLightLoss = 60,
         UseHiDefFeatures = false,
     };
 
@@ -108,6 +110,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
+        FancyLightingEngineLightLoss = 40,
         UseHiDefFeatures = true,
     };
 
@@ -123,6 +126,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = false,
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
+        FancyLightingEngineLightLoss = 60,
         UseCustomSkyColors = false,
         UseHiDefFeatures = false,
     };
