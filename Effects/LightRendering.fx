@@ -53,7 +53,8 @@ float3 OverbrightLightAt(float2 coords)
 float3 OverbrightLightAtHiDef(float2 coords)
 {
     float3 color = tex2D(LightSampler, coords).rgb;
-    return (65535.0 / 16384) * color;
+    color *= (65535.0 / 16384);
+    return color * color * sqrt(sqrt(color)); // gamma of 2.25
 }
 
 float3 Dither(float2 coords)

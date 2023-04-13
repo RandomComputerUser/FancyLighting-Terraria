@@ -243,39 +243,39 @@ internal sealed class SmoothLighting
 
         int caughtException = 0;
 
-        if (LightingConfig.Instance.UseGammaCorrection())
-        {
-            Parallel.For(
-                0,
-                width,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (x) =>
-                {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
-                    {
-                        try
-                        {
-                            ConvertSrgbToLinear(ref colors[i]);
-                            ++i;
-                        }
-                        catch (IndexOutOfRangeException)
-                        {
-                            Interlocked.Exchange(ref caughtException, 1);
-                        }
-                    }
-                }
-            );
-        }
-
-        if (caughtException == 1)
-        {
-            PrintException();
-            return;
-        }
-
         if (LightingConfig.Instance.UseLightMapBlurring)
         {
+            if (LightingConfig.Instance.UseGammaCorrection())
+            {
+                Parallel.For(
+                    0,
+                    width,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 0; y < height; ++y)
+                        {
+                            try
+                            {
+                                ConvertSrgbToLinear(ref colors[i]);
+                                ++i;
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
+                        }
+                    }
+                );
+            }
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+
             if (LightingConfig.Instance.UseBrighterBlurring)
             {
                 Parallel.For(
@@ -397,6 +397,37 @@ internal sealed class SmoothLighting
                 }
             }
 
+            if (LightingConfig.Instance.UseGammaCorrection())
+            {
+                Parallel.For(
+                    0,
+                    width,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 0; y < height; ++y)
+                        {
+                            try
+                            {
+                                ConvertLinearToSrgb(ref _lights[i]);
+                                ++i;
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                            }
+                        }
+                    }
+                );
+            }
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+
             Array.Copy(_lights, colors, height * width);
         }
         else
@@ -404,8 +435,7 @@ internal sealed class SmoothLighting
             Array.Copy(colors, _lights, height * width);
         }
 
-        float LOW = LightingConfig.Instance.UseGammaCorrection() ? (float)7.730824E-7 : 0.49f / 255f;
-        const float LOW_SRGB = 0.49f / 255f;
+        const float LOW = 0.49f / 255f;
 
         Parallel.For(
             1,
@@ -503,9 +533,9 @@ internal sealed class SmoothLighting
                             continue;
                         }
 
-                        whiteLight.X = LOW_SRGB;
-                        whiteLight.Y = LOW_SRGB;
-                        whiteLight.Z = LOW_SRGB;
+                        whiteLight.X = LOW;
+                        whiteLight.Y = LOW;
+                        whiteLight.Z = LOW;
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -538,6 +568,17 @@ internal sealed class SmoothLighting
         color.X *= color.X * MathF.Sqrt(MathF.Sqrt(color.X));
         color.Y *= color.Y * MathF.Sqrt(MathF.Sqrt(color.Y));
         color.Z *= color.Z * MathF.Sqrt(MathF.Sqrt(color.Z));
+    }
+
+    private static void ConvertLinearToSrgb(ref Vector3 color)
+    {
+        // This function exists so that the game doesn't render dark areas
+        // as completely black, as that feature was adjusted for sRGB
+
+        // MathF.Exp() might be slightly faster than MathF.Pow()?
+        color.X = MathF.Exp(MathF.Log(color.X) * (1 / 2.25f));
+        color.Y = MathF.Exp(MathF.Log(color.Y) * (1 / 2.25f));
+        color.Z = MathF.Exp(MathF.Log(color.Z) * (1 / 2.25f));
     }
 
     private void GetColorsPosition(bool cameraMode)
@@ -791,23 +832,9 @@ internal sealed class SmoothLighting
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
-                                if (LightingConfig.Instance.UseGammaCorrection())
-                                {
-                                    Vector3 linearGlowColor
-                                        = new(glow.R / 255f, glow.G / 255f, glow.B / 255f);
-
-                                    ConvertSrgbToLinear(ref linearGlowColor);
-
-                                    lightColor.X = Math.Max(lightColor.X, linearGlowColor.X);
-                                    lightColor.Y = Math.Max(lightColor.Y, linearGlowColor.Y);
-                                    lightColor.Z = Math.Max(lightColor.Z, linearGlowColor.Z);
-                                }
-                                else
-                                {
-                                    lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
-                                    lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
-                                    lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
-                                }
+                                lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
+                                lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
+                                lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
                             }
 
                             // Dangersense Potion
