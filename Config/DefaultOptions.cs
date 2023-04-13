@@ -25,7 +25,7 @@ public static class DefaultOptions
     public const bool FancyLightingEngineUseTemporal = true;
     public const bool FancyLightingEngineMakeBrighter = false;
     public const int FancyLightingEngineLightLoss = 60;
-    public const int FancyLightingEngineLightAbsorption = 70;
+    public const int FancyLightingEngineLightAbsorption = 100;
 
     public const bool UseCustomSkyColors = true;
     public const SkyColorPreset CustomSkyPreset = SkyColorPreset.Profile1;
