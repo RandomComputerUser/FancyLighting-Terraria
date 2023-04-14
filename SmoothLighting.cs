@@ -722,11 +722,12 @@ internal sealed class SmoothLighting
 
         Rgba64 whiteLight = new(Vector4.One);
         float brightness = Lighting.GlobalBrightness;
+        float glowMult = brightness / 255f;
         float fullBrightness = brightness;
         float multFromOverbright;
         if (LightingConfig.Instance.DrawOverbright())
         {
-            VectorToColor.Assign(ref whiteLight, 1f, new Vector3(overbrightMult));
+            VectorToColor.Assign(ref whiteLight, brightness, new Vector3(overbrightMult));
             fullBrightness *= overbrightMult;
             multFromOverbright = overbrightMult;
         }
@@ -835,9 +836,9 @@ internal sealed class SmoothLighting
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
-                                lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
-                                lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
-                                lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
+                                lightColor.X = Math.Max(lightColor.X, glowMult * glow.R);
+                                lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
+                                lightColor.Z = Math.Max(lightColor.Z, glowMult * glow.B);
                             }
 
                             // Dangersense Potion
@@ -909,11 +910,12 @@ internal sealed class SmoothLighting
 
         Color whiteLight;
         float brightness = Lighting.GlobalBrightness;
+        float glowMult = brightness / 255f;
         float fullBrightness = brightness;
         float multFromOverbright;
         if (LightingConfig.Instance.DrawOverbright())
         {
-            whiteLight = new Color(overbrightWhite, overbrightWhite, overbrightWhite);
+            whiteLight = new Color(new Vector3(overbrightMult * brightness));
             fullBrightness *= overbrightMult;
             multFromOverbright = overbrightMult;
         }
@@ -1023,9 +1025,9 @@ internal sealed class SmoothLighting
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
-                                lightColor.X = Math.Max(lightColor.X, glow.R / 255f);
-                                lightColor.Y = Math.Max(lightColor.Y, glow.G / 255f);
-                                lightColor.Z = Math.Max(lightColor.Z, glow.B / 255f);
+                                lightColor.X = Math.Max(lightColor.X, glowMult * glow.R);
+                                lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
+                                lightColor.Z = Math.Max(lightColor.Z, glowMult * glow.B);
                             }
 
                             // Dangersense Potion
