@@ -60,7 +60,6 @@ internal sealed class SmoothLighting
 
     private Shader _bicubicShader;
     private Shader _bicubicNoDitherHiDefShader;
-    private Shader _bicubicOverbrightHiDefShader;
     private Shader _noFilterShader;
     private Shader _qualityNormalsShader;
     private Shader _qualityNormalsOverbrightShader;
@@ -127,10 +126,6 @@ internal sealed class SmoothLighting
             "FancyLighting/Effects/Upscaling",
             "BicubicNoDitherHiDef"
         );
-        _bicubicOverbrightHiDefShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/Upscaling",
-            "BicubicOverbrightHiDef"
-        );
         _noFilterShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
             "NoFilter"
@@ -195,7 +190,6 @@ internal sealed class SmoothLighting
         _ditherMask?.Dispose();
         EffectLoader.UnloadEffect(ref _bicubicShader);
         EffectLoader.UnloadEffect(ref _bicubicNoDitherHiDefShader);
-        EffectLoader.UnloadEffect(ref _bicubicOverbrightHiDefShader);
         EffectLoader.UnloadEffect(ref _noFilterShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
@@ -274,12 +268,12 @@ internal sealed class SmoothLighting
                         }
                     }
                 );
-            }
 
-            if (caughtException == 1)
-            {
-                PrintException();
-                return;
+                if (caughtException == 1)
+                {
+                    PrintException();
+                    return;
+                }
             }
 
             if (LightingConfig.Instance.UseBrighterBlurring)
@@ -426,12 +420,12 @@ internal sealed class SmoothLighting
                         }
                     }
                 );
-            }
 
-            if (caughtException == 1)
-            {
-                PrintException();
-                return;
+                if (caughtException == 1)
+                {
+                    PrintException();
+                    return;
+                }
             }
 
             Array.Copy(_lights, colors, height * width);
@@ -570,10 +564,13 @@ internal sealed class SmoothLighting
         // The linear function for low values wouldn't make sense, I think
 
         // Using MathF.Sqrt() instead of MathF.Pow() gives us
-        // better performance and a gamma of 2.25 (close to 2.2)
-        color.X *= color.X * MathF.Sqrt(MathF.Sqrt(color.X));
-        color.Y *= color.Y * MathF.Sqrt(MathF.Sqrt(color.Y));
-        color.Z *= color.Z * MathF.Sqrt(MathF.Sqrt(color.Z));
+        // better performance and a gamma of 2.25 (close to 2.2)]
+        color.X *= MathF.Sqrt(color.X);
+        color.X *= MathF.Sqrt(color.X);
+        color.Y *= MathF.Sqrt(color.Y);
+        color.Y *= MathF.Sqrt(color.Y);
+        color.Z *= MathF.Sqrt(color.Z);
+        color.Z *= MathF.Sqrt(color.Z);
     }
 
     private static void ConvertLinearToSrgb(ref Vector3 color)
@@ -1256,32 +1253,21 @@ internal sealed class SmoothLighting
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
         bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
-        // Gamma-correct bicubic interpolation not used because it
-        // is too slow and makes too little of a difference
-        bool doGammaCorrectBicubic = false; // = LightingConfig.Instance.UseGammaCorrection();
+        bool doGamma = LightingConfig.Instance.UseGammaCorrection();
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
         Main.instance.GraphicsDevice.Clear(Color.White);
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
             FancyLightingMod.MultiplyBlend,
-            doGammaCorrectBicubic ? SamplerState.PointClamp : SamplerState.LinearClamp,
+            SamplerState.LinearClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
 
         if (doBicubicUpscaling)
         {
-            if (doGammaCorrectBicubic)
-            {
-                _bicubicOverbrightHiDefShader
-                    .SetParameter("LightMapSize", lightMapTexture.Size())
-                    .SetParameter("PixelSize", new Vector2(
-                        1f / lightMapTexture.Width,
-                        1f / lightMapTexture.Height))
-                    .Apply();
-            }
-            else if (noDithering)
+            if (noDithering)
             {
                 _bicubicNoDitherHiDefShader
                     .SetParameter("LightMapSize", lightMapTexture.Size())
@@ -1377,6 +1363,10 @@ internal sealed class SmoothLighting
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
             float hiDefNormalMapStrength = background ? 0.44f : 0.9f;
             float hiDefNormalMapExp = background ? 1 / 3f : 1 / 2f;
+            if (doGamma)
+            {
+                hiDefNormalMapStrength *= 1.4f;
+            }
 
             shader
                 .SetParameter("NormalMapResolution", new Vector2(

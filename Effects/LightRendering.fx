@@ -54,7 +54,9 @@ float3 OverbrightLightAtHiDef(float2 coords)
 {
     float3 color = tex2D(LightSampler, coords).rgb;
     color *= (65535.0 / 16384);
-    return color * color * sqrt(sqrt(color)); // gamma of 2.25
+    color *= sqrt(color);
+    color *= sqrt(color); // gamma of 2.25
+    return color;
 }
 
 float3 Dither(float2 coords)
@@ -83,6 +85,8 @@ float2 Gradient(
     return gradient;
 }
 
+// Intentionally use sRGB values for simulating normal maps
+
 float2 QualityNormalsGradientBase(float2 coords, float2 worldTexCoords)
 {
     float4 left = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, 0));
@@ -93,32 +97,6 @@ float2 QualityNormalsGradientBase(float2 coords, float2 worldTexCoords)
     float3 downRight = tex2D(WorldSampler, worldTexCoords + NormalMapResolution).rgb;
     float3 upRight = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
     float3 downLeft = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
-
-    float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
-    float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
-
-    return Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
-}
-
-float2 QualityNormalsGradientBaseOverbrightHiDef(float2 coords, float2 worldTexCoords)
-{
-    float4 left = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, 0));
-    float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
-    float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
-    float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
-    float3 upLeft = tex2D(WorldSampler, worldTexCoords - NormalMapResolution).rgb;
-    float3 downRight = tex2D(WorldSampler, worldTexCoords + NormalMapResolution).rgb;
-    float3 upRight = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
-    float3 downLeft = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
-
-    left = SrgbToLinear(left);
-    right = SrgbToLinear(right);
-    up = SrgbToLinear(up);
-    down = SrgbToLinear(down);
-    upLeft = SrgbToLinear(upLeft);
-    downRight = SrgbToLinear(downRight);
-    upRight = SrgbToLinear(upRight);
-    downLeft = SrgbToLinear(downLeft);
 
     float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
     float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
@@ -157,7 +135,7 @@ float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
 
 float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
 {
-    float2 gradient = QualityNormalsGradientBaseOverbrightHiDef(coords, worldTexCoords);
+    float2 gradient = QualityNormalsGradientBase(coords, worldTexCoords);
     gradient *= NormalMapRadius;
 
     float3 originalColor = OverbrightLightAtHiDef(coords);
@@ -165,7 +143,7 @@ float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
 
     colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * pow(abs(colorDiff), HiDefNormalMapExp));
 
-    float3 color = SrgbToLinear(tex2D(WorldSampler, worldTexCoords).rgb);
+    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
     colorDiff *= multiplier * sqrt(originalColor);
 
@@ -178,29 +156,6 @@ float2 NormalsGradient(float2 coords, float2 worldTexCoords)
     float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
     float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
     float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
-
-    float3 horizontalColorDiff = left.rgb - right.rgb;
-    float3 verticalColorDiff = up.rgb - down.rgb;
-
-    float2 gradient = Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
-
-    float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
-    float multiplier = 1 - dot(color, 1.0 / 4);
-
-    return sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient))) * NormalMapRadius;
-}
-
-float2 NormalsGradientOverbrightHiDef(float2 coords, float2 worldTexCoords)
-{
-    float4 left = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, 0));
-    float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
-    float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
-    float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
-
-    left = SrgbToLinear(left);
-    right = SrgbToLinear(right);
-    up = SrgbToLinear(up);
-    down = SrgbToLinear(down);
 
     float3 horizontalColorDiff = left.rgb - right.rgb;
     float3 verticalColorDiff = up.rgb - down.rgb;
@@ -266,14 +221,14 @@ float4 NormalsOverbright(float2 coords : TEXCOORD0) : COLOR0
 
 float4 NormalsOverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 gradient = NormalsGradientOverbrightHiDef(coords, WORLD_TEX_COORDS);
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return SurfaceColorWithLighting(OverbrightLightAtHiDef(coords + gradient));
 }
 
 float4 NormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    float2 gradient = NormalsGradientOverbrightHiDef(coords, WORLD_TEX_COORDS);
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return float4(LinearToSrgb(OverbrightLightAtHiDef(coords + gradient)) + Dither(coords), 1);
 }
