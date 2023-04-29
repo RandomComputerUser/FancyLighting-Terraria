@@ -824,7 +824,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
-        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -876,7 +876,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false, true);
-        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
