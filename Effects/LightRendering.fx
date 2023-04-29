@@ -1,3 +1,5 @@
+sampler TextureSampler : register(s0);
+
 sampler LightSampler : register(s0);
 sampler WorldSampler : register(s1);
 sampler DitherSampler : register(s2);
@@ -258,6 +260,14 @@ float4 OverbrightMaxHiDef(float2 coords : TEXCOORD0) : COLOR0
     return SurfaceColorWithLighting(max(OverbrightLightAtHiDef(coords), 1));
 }
 
+float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
+{
+    return LinearToSrgb(
+        SrgbToLinear(color)
+        * SrgbToLinear(tex2D(TextureSampler, coords))
+    );
+}
+
 technique Technique1
 {
     pass QualityNormals
@@ -328,5 +338,10 @@ technique Technique1
     pass OverbrightMaxHiDef
     {
         PixelShader = compile ps_3_0 OverbrightMaxHiDef();
+    }
+
+    pass GammaCorrection
+    {
+        PixelShader = compile ps_3_0 GammaCorrection();
     }
 }

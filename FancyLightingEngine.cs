@@ -33,15 +33,19 @@ internal sealed class FancyLightingEngine
     private readonly float[] _lightHoneyDecay;
     private readonly float[] _lightShadowPaintDecay; // In vanilla shadow paint isn't a special case
     private float _brightnessCutoff;
-    private double _logSlowestDecay;
+    private float _logSlowestDecay;
 
     private float _lightLossExitingSolid;
+
+    private const float LOW_LIGHT_LEVEL = 0.03f;
+    private const float GLOBAL_ILLUMINATION_MULT = 0.55f;
 
     private readonly LightingSpread[] _precomputedLightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE_PLUS_ONE]);
     private readonly int[][] _circles;
 
     private Vector3[] _tmp;
+    private Vector3[] _tmp2;
     private float[][] _lightMask;
 
     internal Rectangle _lightMapArea;
@@ -63,9 +67,8 @@ internal sealed class FancyLightingEngine
             _lightSolidDecay[exponent] = 1f;
             _lightWaterDecay[exponent] = 1f;
             _lightHoneyDecay[exponent] = 1f;
-            _lightShadowPaintDecay[exponent] = (float)Math.Pow(0.0, exponent / (double)DISTANCE_TICKS);
+            _lightShadowPaintDecay[exponent] = 0f;
         }
-        _logSlowestDecay = Math.Log(0.91);
 
         _circles = new int[MAX_LIGHT_RANGE_PLUS_ONE][];
         _circles[0] = new int[] { 0 };
@@ -304,7 +307,8 @@ internal sealed class FancyLightingEngine
             ),
             MAX_DECAY_VALUE
         );
-        _logSlowestDecay = Math.Log(
+
+        _logSlowestDecay = MathF.Log(
             Math.Max(lightAirDecayBaseline,
             Math.Max(lightWaterDecayBaseline,
             Math.Max(lightHoneyDecayBaseline,
@@ -360,31 +364,22 @@ internal sealed class FancyLightingEngine
             new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
             (i) =>
             {
+                int x = i + _lightMapArea.X;
+                int y = _lightMapArea.Y;
                 int endIndex = height * (i + 1);
                 for (int j = height * i; j < endIndex; ++j)
                 {
-                    switch (lightDecay[j])
+                    _lightMask[j] = lightDecay[j] switch
                     {
-                    case LightMaskMode.None:
-                    default:
-                        _lightMask[j] = _lightAirDecay;
-                        break;
-                    case LightMaskMode.Solid:
-                        int x = j / height + _lightMapArea.X;
-                        int y = j % height + _lightMapArea.Y;
-                        // Check Shadow Paint
-                        _lightMask[j] =
-                            Main.tile[x, y].TileColor == PaintID.ShadowPaint
+                        LightMaskMode.Solid
+                            => Main.tile[x, y].TileColor == PaintID.ShadowPaint
                                 ? _lightShadowPaintDecay
-                                : _lightSolidDecay;
-                        break;
-                    case LightMaskMode.Water:
-                        _lightMask[j] = _lightWaterDecay;
-                        break;
-                    case LightMaskMode.Honey:
-                        _lightMask[j] = _lightHoneyDecay;
-                        break;
-                    }
+                                : _lightSolidDecay,
+                        LightMaskMode.Water => _lightWaterDecay,
+                        LightMaskMode.Honey => _lightHoneyDecay,
+                        _ => _lightAirDecay,
+                    };
+                    ++y;
                 }
             }
         );
@@ -396,15 +391,50 @@ internal sealed class FancyLightingEngine
             (i) => ProcessLight(i, colors, width, height)
         );
 
+        if (LightingConfig.Instance.SimulateGlobalIllumination)
+        {
+            if (_tmp2 is null || _tmp2.Length < length)
+            {
+                _tmp2 = new Vector3[length];
+            }
+
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (i) =>
+                {
+                    int endIndex = height * (i + 1);
+                    for (int j = height * i; j < endIndex; ++j)
+                    {
+                        Vector3.Multiply(ref _tmp[j], GLOBAL_ILLUMINATION_MULT, out _tmp2[j]);
+                    }
+                }
+            );
+
+            Parallel.For(
+                0,
+                length,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (i) =>
+                {
+                    if (_lightMask[i] == _lightSolidDecay || _lightMask[i] == _lightShadowPaintDecay)
+                    {
+                        return;
+                    }
+
+                    ProcessLight(i, _tmp2, width, height);
+                }
+            );
+        }
+
         Array.Copy(_tmp, colors, length);
     }
 
     private void ProcessLight(int index, Vector3[] colors, int width, int height)
     {
-        const float LOW_LIGHT = 0.03f;
-
         Vector3 color = colors[index];
-        if (color.X <= LOW_LIGHT && color.Y <= LOW_LIGHT && color.Z <= LOW_LIGHT)
+        if (color.X <= LOW_LIGHT_LEVEL && color.Y <= LOW_LIGHT_LEVEL && color.Z <= LOW_LIGHT_LEVEL)
         {
             return;
         }
@@ -497,7 +527,7 @@ internal sealed class FancyLightingEngine
         float initialDecay = _lightMask[index][DISTANCE_TICKS];
         int lightRange = Math.Clamp(
             (int)Math.Ceiling(
-                Math.Log(
+                MathF.Log(
                     _brightnessCutoff / (initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
                 ) / _logSlowestDecay
             ) + 1,
@@ -887,7 +917,7 @@ internal sealed class FancyLightingEngine
         {
             int baseWork = Math.Clamp(
                 (int)Math.Ceiling(
-                    Math.Log(
+                    MathF.Log(
                         0.04f / (initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
                     ) / _logSlowestDecay
                 ) + 1,

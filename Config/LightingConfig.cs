@@ -30,7 +30,7 @@ public sealed class LightingConfig : ModConfig
     internal bool HiDefFeaturesEnabled()
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
     internal bool UseGammaCorrection()
-        => DrawOverbright() && HiDefFeaturesEnabled();
+        => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
 
     // Presets
     [Header("Presets")]
@@ -324,6 +324,20 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineMakeBrighter;
 
+    [Label("Simulate Global Illumination")]
+    [Tooltip("Toggles whether to simulate global illumination\nWhen enabled, indirect lighting makes shadows brighter\nThe simulation is very approximate and not physically accurate")]
+    [DefaultValue(DefaultOptions.SimulateGlobalIllumination)]
+    public bool SimulateGlobalIllumination
+    {
+        get => _simulateGlobalIllumination;
+        set
+        {
+            _simulateGlobalIllumination = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private bool _simulateGlobalIllumination;
+
     [Label("Light Loss (%) Exiting Solid Blocks")]
     [Tooltip("Controls how much light is lost exiting a solid block into the air\nHigher values correspond to darker shadows")]
     [Range(0, 100)]
@@ -445,6 +459,7 @@ public sealed class LightingConfig : ModConfig
         _useFancyLightingEngine = options.UseFancyLightingEngine;
         _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
         _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
+        _simulateGlobalIllumination = options.SimulateGlobalIllumination;
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
         _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
 

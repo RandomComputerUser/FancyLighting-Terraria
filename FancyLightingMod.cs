@@ -2,8 +2,10 @@ using FancyLighting.Config;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Reflection;
 using Terraria;
+using Terraria.GameContent.Drawing;
 using Terraria.Graphics;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Light;
@@ -28,6 +30,19 @@ public sealed class FancyLightingMod : Mod
     internal FieldInfo field_workingProcessedArea;
     internal FieldInfo field_colors;
     internal FieldInfo field_mask;
+
+    private delegate void TileDrawingMethod(Terraria.GameContent.Drawing.TileDrawing self);
+
+    private TileDrawingMethod method_DrawMultiTileVines;
+    private TileDrawingMethod method_DrawMultiTileGrass;
+    private TileDrawingMethod method_DrawVoidLenses;
+    private TileDrawingMethod method_DrawTeleportationPylons;
+    private TileDrawingMethod method_DrawMasterTrophies;
+    private TileDrawingMethod method_DrawGrass;
+    private TileDrawingMethod method_DrawAnyDirectionalGrass;
+    private TileDrawingMethod method_DrawTrees;
+    private TileDrawingMethod method_DrawVines;
+    private TileDrawingMethod method_DrawReverseVines;
 
     private static RenderTarget2D _cameraModeTarget;
     internal static Rectangle _cameraModeArea;
@@ -105,6 +120,77 @@ public sealed class FancyLightingMod : Mod
             = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
         field_mask
             = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        method_DrawMultiTileVines
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawMultiTileVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawMultiTileGrass
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawMultiTileGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawVoidLenses
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawVoidLenses", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawTeleportationPylons
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawTeleportationPylons", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawMasterTrophies
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawMasterTrophies", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawGrass
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawAnyDirectionalGrass
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawAnyDirectionalGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawTrees
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawTrees", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawVines
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
+        method_DrawReverseVines
+            = (TileDrawingMethod)Delegate.CreateDelegate(
+                typeof(TileDrawingMethod),
+                typeof(TileDrawing).GetMethod(
+                    "DrawReverseVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                )
+            );
 
         AddHooks();
         SkyColors.AddSkyColorsHooks();
@@ -293,7 +379,7 @@ public sealed class FancyLightingMod : Mod
                 _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
             );
             Main.instance.GraphicsDevice.Clear(Color.Transparent);
-            orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+            _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
 
             _smoothLightingInstance.CalculateSmoothLighting(false, true);
             _smoothLightingInstance.DrawSmoothLightingCameraMode(
@@ -321,7 +407,7 @@ public sealed class FancyLightingMod : Mod
 
         Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget2);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
-        orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+        _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
 
         _smoothLightingInstance.CalculateSmoothLighting(false, false);
         _smoothLightingInstance.DrawSmoothLighting(_screenTarget2, false, true, target);
@@ -331,6 +417,48 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(_screenTarget1, Vector2.Zero, Color.White);
         Main.spriteBatch.Draw(_screenTarget2, Vector2.Zero, Color.White);
+        Main.spriteBatch.End();
+    }
+
+    private void _PostDrawTiles_inner(
+        Terraria.GameContent.Drawing.On_TileDrawing.orig_PostDrawTiles orig,
+        Terraria.GameContent.Drawing.TileDrawing self,
+        bool solidLayer,
+        bool forRenderTargets,
+        bool intoRenderTargets
+    )
+    {
+        if (solidLayer
+            || intoRenderTargets
+            || !LightingConfig.Instance.UseGammaCorrection())
+        {
+            orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+            return;
+        }
+
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Immediate,
+            BlendState.AlphaBlend,
+            Main.DefaultSamplerState,
+            DepthStencilState.None,
+            Main.Rasterizer,
+            null,
+            Main.Transform
+        );
+
+        _smoothLightingInstance.ApplyGammaCorrectionShader();
+
+        method_DrawMultiTileVines(self);
+        method_DrawMultiTileGrass(self);
+        method_DrawVoidLenses(self);
+        method_DrawTeleportationPylons(self);
+        method_DrawMasterTrophies(self);
+        method_DrawGrass(self);
+        method_DrawAnyDirectionalGrass(self);
+        method_DrawTrees(self);
+        method_DrawVines(self);
+        method_DrawReverseVines(self);
+
         Main.spriteBatch.End();
     }
 
@@ -427,7 +555,7 @@ public sealed class FancyLightingMod : Mod
         if (_inCameraMode)
         {
             _smoothLightingInstance.CalculateSmoothLighting(true, true);
-            OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+            OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
 
             Main.tileBatch.End();
             Main.spriteBatch.End();
@@ -657,7 +785,9 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(bg, true);
-        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+        OverrideLightingColor = bg
+            ? _smoothLightingInstance.DrawSmoothLightingBack
+            : _smoothLightingInstance.DrawSmoothLightingFore;
 
         Main.spriteBatch.End();
         Main.instance.GraphicsDevice.SetRenderTarget(
@@ -694,7 +824,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
-        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -746,7 +876,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false, true);
-        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
 
         Main.tileBatch.End();
         Main.spriteBatch.End();

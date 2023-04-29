@@ -70,6 +70,7 @@ internal sealed class SmoothLighting
     private Shader _overbrightShader;
     private Shader _overbrightLightOnlyHiDefShader;
     private Shader _overbrightMaxShader;
+    private Shader _gammaCorrectionShader;
 
     public SmoothLighting(FancyLightingMod mod)
     {
@@ -172,6 +173,11 @@ internal sealed class SmoothLighting
             "OverbrightMax",
             true
         );
+        _gammaCorrectionShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "GammaCorrection",
+            true
+        );
 
         _ditherMask = ModContent.Request<Texture2D>(
             "FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad
@@ -200,6 +206,7 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _overbrightShader);
         EffectLoader.UnloadEffect(ref _overbrightLightOnlyHiDefShader);
         EffectLoader.UnloadEffect(ref _overbrightMaxShader);
+        EffectLoader.UnloadEffect(ref _gammaCorrectionShader);
     }
 
     private void PrintException()
@@ -214,6 +221,8 @@ internal sealed class SmoothLighting
             Color.Orange
         );
     }
+
+    internal void ApplyGammaCorrectionShader() => _gammaCorrectionShader.Apply();
 
     internal void GetAndBlurLightMap(Vector3[] colors, int width, int height)
     {
@@ -258,7 +267,7 @@ internal sealed class SmoothLighting
                         {
                             try
                             {
-                                ConvertSrgbToLinear(ref colors[i]);
+                                SrgbConverter.SrgbToLinear(ref colors[i]);
                                 ++i;
                             }
                             catch (IndexOutOfRangeException)
@@ -410,7 +419,7 @@ internal sealed class SmoothLighting
                         {
                             try
                             {
-                                ConvertLinearToSrgb(ref _lights[i]);
+                                SrgbConverter.LinearToSrgb(ref _lights[i]);
                                 ++i;
                             }
                             catch (IndexOutOfRangeException)
@@ -556,32 +565,6 @@ internal sealed class SmoothLighting
         _lightMapRenderArea = new Rectangle(0, 0, _lightMapTileArea.Height, _lightMapTileArea.Width);
 
         _smoothLightingLightMapValid = true;
-    }
-
-    private static void ConvertSrgbToLinear(ref Vector3 color)
-    {
-        // Intentionally not the standard sRGB conversion
-        // The linear function for low values wouldn't make sense, I think
-
-        // Using MathF.Sqrt() instead of MathF.Pow() gives us
-        // better performance and a gamma of 2.25 (close to 2.2)]
-        color.X *= MathF.Sqrt(color.X);
-        color.X *= MathF.Sqrt(color.X);
-        color.Y *= MathF.Sqrt(color.Y);
-        color.Y *= MathF.Sqrt(color.Y);
-        color.Z *= MathF.Sqrt(color.Z);
-        color.Z *= MathF.Sqrt(color.Z);
-    }
-
-    private static void ConvertLinearToSrgb(ref Vector3 color)
-    {
-        // This function exists so that the game doesn't render dark areas
-        // as completely black, as that feature was adjusted for sRGB
-
-        // MathF.Exp() might be slightly faster than MathF.Pow()?
-        color.X = MathF.Exp(MathF.Log(color.X) * (1 / 2.25f));
-        color.Y = MathF.Exp(MathF.Log(color.Y) * (1 / 2.25f));
-        color.Z = MathF.Exp(MathF.Log(color.Z) * (1 / 2.25f));
     }
 
     private void GetColorsPosition(bool cameraMode)

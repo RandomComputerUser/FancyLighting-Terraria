@@ -11,9 +11,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Updated for Terraria 1.4.4.9
 - Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
+- Added a basic version of global illumination
 - Changed sky color profile 1
 - Made glowing effects slightly brighter
-- Tweaked some default settings for ambient occlusion and the fancy lighting engine
+- Tweaked some default settings for ambient occlusion
 - Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled

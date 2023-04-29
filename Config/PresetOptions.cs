@@ -23,6 +23,7 @@ internal record PresetOptions
     public bool UseFancyLightingEngine { get; init; } = DefaultOptions.UseFancyLightingEngine;
     public bool FancyLightingEngineUseTemporal { get; init; } = DefaultOptions.FancyLightingEngineUseTemporal;
     public bool FancyLightingEngineMakeBrighter { get; init; } = DefaultOptions.FancyLightingEngineMakeBrighter;
+    public bool SimulateGlobalIllumination { get; init; } = DefaultOptions.SimulateGlobalIllumination;
     public int FancyLightingEngineLightLoss { get; init; } = DefaultOptions.FancyLightingEngineLightLoss;
     public int FancyLightingEngineLightAbsorption { get; init; } = DefaultOptions.FancyLightingEngineLightAbsorption;
 
@@ -54,6 +55,7 @@ internal record PresetOptions
         UseFancyLightingEngine = config.UseFancyLightingEngine;
         FancyLightingEngineUseTemporal = config.FancyLightingEngineUseTemporal;
         FancyLightingEngineMakeBrighter = config.FancyLightingEngineMakeBrighter;
+        SimulateGlobalIllumination = config.SimulateGlobalIllumination;
         FancyLightingEngineLightLoss = config.FancyLightingEngineLightLoss;
         FancyLightingEngineLightAbsorption = config.FancyLightingEngineLightAbsorption;
 
@@ -78,7 +80,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
-        FancyLightingEngineLightLoss = 60,
+        SimulateGlobalIllumination = false,
         UseHiDefFeatures = false,
     };
 
@@ -94,7 +96,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = false,
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
-        FancyLightingEngineLightLoss = 60,
+        SimulateGlobalIllumination = false,
         UseHiDefFeatures = false,
     };
 
@@ -110,7 +112,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
-        FancyLightingEngineLightLoss = 40,
+        SimulateGlobalIllumination = true,
         UseHiDefFeatures = true,
     };
 
@@ -126,7 +128,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = false,
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
-        FancyLightingEngineLightLoss = 60,
+        SimulateGlobalIllumination = false,
         UseCustomSkyColors = false,
         UseHiDefFeatures = false,
     };
