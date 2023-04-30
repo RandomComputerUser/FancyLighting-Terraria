@@ -1,19 +1,20 @@
-This mod makes lighting fancier by adding smooth lighting, ambient occlusion, dynamic shadows, overbright rendering, simulated normal maps, and new sky colors.
+Fancy Lighting makes lighting look fancier. A variety of options and presets are available to configure the performance and quality of this mod.
 
-This mod will only take effect if lighting is set to color, and features can be toggled individually. There are a number of presets included to make this process easier.
+Features:
+- Smooth lighting
+- Ambient occlusion
+- Dynamic shadows
+- Overbright rendering
+- Simulated normal maps
+- New sky colors
 
-Presets (from fastest/lowest quality to slowest/highest quality):
-- Disable All
-- Fast
-- Default
-- Quality
-- Ultra
+This mod only takes effect when the lighting mode is set to color.
 
-Some features may significantly lower frame rates at resolutions above 1920x1200 if you don't have a powerful GPU. If you experience this issue, try lowering the in-game resolution.
+Some features may significantly lower frame rates at resolutions above 1920x1200 on machines with less powerful GPUs. If you are experiencing performance issues and are running the game at a resolution above 1920x1200, try lowering the resolution.
 
-Because smooth lighting overrides built-in tile light rendering, glowmasks and tiles that glow without being light sources must be re-implemented.
+Because smooth lighting overrides the built-in tile lighting, glow masks and other glowing effects must be re-implemented. Most effects from vanilla are supported, but modded effects may not work.
 
-Supported effects and glowing tiles:
+Supported Glowing Effects and Tiles:
 - Spelunker Potion
 - Dangersense Potion
 - Shimmer
@@ -23,9 +24,9 @@ Supported effects and glowing tiles:
 - Martian Conduit Plating (partial)
 - Lava Lamp
 
-Unsupported effects and glowing tiles (vanilla):
+Unsupported Glowing Effects and Tiles (vanilla):
 - Ash tree trunk
 
-Effects and glowing tiles not listed, especially those from other mods, will probably not work when smooth lighting is enabled.
+Glowing tile entities should work correctly. This mod also does not alter the lighting of NPCs and projectiles.
 
-Requires OpenGL 2.1 or later
+Minimum Graphics API: Direct3D 11 or OpenGL 3.0

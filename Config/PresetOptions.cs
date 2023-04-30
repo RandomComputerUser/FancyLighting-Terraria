@@ -66,9 +66,42 @@ internal record PresetOptions
         UseHiDefFeatures = config.UseHiDefFeatures;
     }
 
-    public static PresetOptions DefaultPresetOptions = new();
+    public static PresetOptions VanillaPresetOptions = new()
+    {
+        UseSmoothLighting = false,
+        UseBrighterBlurring = false,
+        LightMapRenderMode = RenderMode.Bilinear,
+        NormalMapsStrength = 0,
+        QualityNormalMaps = false,
+        UseAmbientOcclusion = false,
+        DoNonSolidAmbientOcclusion = false,
+        DoTileEntityAmbientOcclusion = false,
+        UseFancyLightingEngine = false,
+        FancyLightingEngineMakeBrighter = false,
+        SimulateGlobalIllumination = false,
+        UseCustomSkyColors = false,
+        UseHiDefFeatures = false,
+    };
 
-    public static PresetOptions QualityPresetOptions = new()
+    public static PresetOptions LowPresetOptions = new()
+    {
+        UseSmoothLighting = true,
+        UseBrighterBlurring = false,
+        LightMapRenderMode = RenderMode.Bilinear,
+        NormalMapsStrength = 0,
+        QualityNormalMaps = false,
+        UseAmbientOcclusion = false,
+        DoNonSolidAmbientOcclusion = false,
+        DoTileEntityAmbientOcclusion = false,
+        UseFancyLightingEngine = false,
+        FancyLightingEngineMakeBrighter = false,
+        SimulateGlobalIllumination = false,
+        UseHiDefFeatures = false,
+    };
+
+    public static PresetOptions MediumPresetOptions = new();
+
+    public static PresetOptions HighPresetOptions = new()
     {
         UseSmoothLighting = true,
         UseBrighterBlurring = true,
@@ -84,18 +117,18 @@ internal record PresetOptions
         UseHiDefFeatures = false,
     };
 
-    public static PresetOptions FastPresetOptions = new()
+    public static PresetOptions VeryHighPresetOptions = new()
     {
         UseSmoothLighting = true,
-        UseBrighterBlurring = false,
-        LightMapRenderMode = RenderMode.Bilinear,
-        NormalMapsStrength = 0,
-        QualityNormalMaps = false,
-        UseAmbientOcclusion = false,
-        DoNonSolidAmbientOcclusion = false,
-        DoTileEntityAmbientOcclusion = false,
-        UseFancyLightingEngine = false,
-        FancyLightingEngineMakeBrighter = false,
+        UseBrighterBlurring = true,
+        LightMapRenderMode = RenderMode.BicubicOverbright,
+        NormalMapsStrength = 100,
+        QualityNormalMaps = true,
+        UseAmbientOcclusion = true,
+        DoNonSolidAmbientOcclusion = true,
+        DoTileEntityAmbientOcclusion = true,
+        UseFancyLightingEngine = true,
+        FancyLightingEngineMakeBrighter = true,
         SimulateGlobalIllumination = false,
         UseHiDefFeatures = false,
     };
@@ -116,29 +149,13 @@ internal record PresetOptions
         UseHiDefFeatures = true,
     };
 
-    public static PresetOptions DisableAllPresetOptions = new()
-    {
-        UseSmoothLighting = false,
-        UseBrighterBlurring = false,
-        LightMapRenderMode = RenderMode.Bilinear,
-        NormalMapsStrength = 0,
-        QualityNormalMaps = false,
-        UseAmbientOcclusion = false,
-        DoNonSolidAmbientOcclusion = false,
-        DoTileEntityAmbientOcclusion = false,
-        UseFancyLightingEngine = false,
-        FancyLightingEngineMakeBrighter = false,
-        SimulateGlobalIllumination = false,
-        UseCustomSkyColors = false,
-        UseHiDefFeatures = false,
-    };
-
     public static Dictionary<PresetOptions, Preset> PresetLookup = new()
     {
-        [DisableAllPresetOptions] = Preset.DisableAllPreset,
-        [FastPresetOptions] = Preset.FastPreset,
-        [DefaultPresetOptions] = Preset.DefaultPreset,
-        [QualityPresetOptions] = Preset.QualityPreset,
+        [VanillaPresetOptions] = Preset.VanillaPreset,
+        [LowPresetOptions] = Preset.LowPreset,
+        [MediumPresetOptions] = Preset.MediumPreset,
+        [HighPresetOptions] = Preset.HighPreset,
+        [VeryHighPresetOptions] = Preset.VeryHighPreset,
         [UltraPresetOptions] = Preset.UltraPreset,
     };
 

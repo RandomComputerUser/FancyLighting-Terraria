@@ -4,7 +4,7 @@ namespace FancyLighting.Config;
 
 public static class DefaultOptions
 {
-    public const Preset ConfigPreset = Preset.DefaultPreset;
+    public const Preset ConfigPreset = Preset.MediumPreset;
 
     public const bool UseSmoothLighting = true;
     public const bool UseLightMapBlurring = true;

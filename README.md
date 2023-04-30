@@ -9,6 +9,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
+- Renamed and tweaked some presets and added a new preset
 - Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
@@ -25,3 +26,4 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
 - Fixed a camera mode bug where overbright lighting was not applied to tile entities
 - Fixed a bug that disabled dithering when using a specific combination of settings
+- Updated the description

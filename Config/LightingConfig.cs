@@ -38,7 +38,7 @@ public sealed class LightingConfig : ModConfig
     // Serialize this last
     [JsonProperty(Order = 1000)]
     [Label("Settings Preset")]
-    [Tooltip("A preset for the settings below may be chosen\nPresets ordered by quality (increasing) and performance (decreasing):\nDisable All -> Fast -> Default -> Quality -> Ultra")]
+    [Tooltip("A preset for the settings below may be chosen\nLower presets have better performance but lower quality")]
     [DefaultValue(DefaultOptions.ConfigPreset)]
     [DrawTicks]
     public Preset ConfigPreset
@@ -426,7 +426,7 @@ public sealed class LightingConfig : ModConfig
     private int _threadCount;
 
     [Label("Use Enhanced Shaders and Colors")]
-    [Tooltip("Toggles whether to use enhanced shaders and colors allowed by the HiDef graphics profile\nRequires roughly a DirectX 10-capable GPU to have any effect\nIf enabled, some visual effects are improved\nMay decrease rendering performance when enabled")]
+    [Tooltip("Toggles whether to use enhanced shaders and colors allowed by the HiDef profile\nWhen enabled, some visual effects are improved\nMay significantly decrease rendering performance if enabled")]
     [DefaultValue(DefaultOptions.UseHiDefFeatures)]
     public bool UseHiDefFeatures
     {
