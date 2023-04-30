@@ -22,5 +22,6 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Slightly improved the quality of the fancy lighting engine (probably not noticeable)
 - Made slight changes to the way smooth lighting is rendered
 - Made some minor optimizations
+- Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
 - Fixed a camera mode bug where overbright lighting was not applied to tile entities
 - Fixed a bug that disabled dithering when using a specific combination of settings

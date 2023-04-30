@@ -29,6 +29,7 @@ internal sealed class SmoothLighting
     private RenderTarget2D _drawTarget2;
 
     private Vector3[] _lights;
+    private byte[] _hasLight;
     private Color[] _finalLights;
     private Rgba64[] _finalLightsHiDef;
 
@@ -239,6 +240,10 @@ internal sealed class SmoothLighting
         {
             _whiteLights = new Vector3[height * width];
         }
+        if (_hasLight is null || _hasLight.Length < height * width)
+        {
+            _hasLight = new byte[height * width];
+        }
 
         if (width == 0 || height == 0)
         {
@@ -273,6 +278,7 @@ internal sealed class SmoothLighting
                             catch (IndexOutOfRangeException)
                             {
                                 Interlocked.Exchange(ref caughtException, 1);
+                                break;
                             }
                         }
                     }
@@ -321,6 +327,7 @@ internal sealed class SmoothLighting
                             catch (IndexOutOfRangeException)
                             {
                                 Interlocked.Exchange(ref caughtException, 1);
+                                break;
                             }
                         }
                     }
@@ -363,6 +370,7 @@ internal sealed class SmoothLighting
                             catch (IndexOutOfRangeException)
                             {
                                 Interlocked.Exchange(ref caughtException, 1);
+                                break;
                             }
                         }
                     }
@@ -419,12 +427,12 @@ internal sealed class SmoothLighting
                         {
                             try
                             {
-                                SrgbConverter.LinearToSrgb(ref _lights[i]);
-                                ++i;
+                                SrgbConverter.LinearToSrgb(ref _lights[i++]);
                             }
                             catch (IndexOutOfRangeException)
                             {
                                 Interlocked.Exchange(ref caughtException, 1);
+                                break;
                             }
                         }
                     }
@@ -444,7 +452,74 @@ internal sealed class SmoothLighting
             Array.Copy(colors, _lights, height * width);
         }
 
+        LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
+        Rectangle lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
+
+        _isDangersenseActive = Main.LocalPlayer.dangerSense;
+        _isSpelunkerActive = Main.LocalPlayer.findTreasure;
+
         const float LOW = 0.49f / 255f;
+
+        int ymax = lightMapTileArea.Y + lightMapTileArea.Height;
+        Parallel.For(
+            lightMapTileArea.X,
+            lightMapTileArea.X + lightMapTileArea.Width,
+            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+            (x) =>
+            {
+                bool isXInTilemap = x >= 0 && x < Main.tile.Width;
+                ushort tilemapHeight = Main.tile.Height;
+                int i = height * (x - lightMapTileArea.X);
+                for (int y = lightMapTileArea.Y; y < ymax; ++y)
+                {
+                    try
+                    {
+                        ref Vector3 color = ref _lights[i];
+                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        {
+                            _hasLight[i++] = 2;
+                            continue;
+                        }
+
+                        if (isXInTilemap && y >= 0 && y < tilemapHeight)
+                        {
+                            Tile tile = Main.tile[x, y];
+
+                            if (tile.IsTileFullbright // Illuminant Paint
+                                || tile.IsWallFullbright
+                                || tile.LiquidType == LiquidID.Shimmer // Shimmer
+                                || _glowingTiles[tile.TileType] // Glowing Tiles
+                                || (
+                                    _isDangersenseActive // Dangersense Potion
+                                    && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer)
+                                )
+                                || (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))) // Spelunker Potion
+                            {
+                                _hasLight[i++] = 2;
+                                continue;
+                            }
+                        }
+
+                        if (_hasLight[i] != 0)
+                        {
+                            --_hasLight[i];
+                        }
+                        ++i;
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        Interlocked.Exchange(ref caughtException, 1);
+                        break;
+                    }
+                }
+            }
+        );
+
+        if (caughtException == 1)
+        {
+            PrintException();
+            return;
+        }
 
         Parallel.For(
             1,
@@ -457,98 +532,33 @@ internal sealed class SmoothLighting
                 {
                     try
                     {
-                        ++i;
+                        ref Vector3 whiteLight = ref _whiteLights[++i];
 
-                        ref Vector3 whiteLight = ref _whiteLights[i];
-
-                        ref Vector3 color = ref _lights[i];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        if (_hasLight[i] != 0
+                            || _hasLight[i - 1] != 0
+                            || _hasLight[i + 1] != 0
+                            || _hasLight[i - height] != 0
+                            || _hasLight[i - height - 1] != 0
+                            || _hasLight[i - height + 1] != 0
+                            || _hasLight[i + height] != 0
+                            || _hasLight[i + height - 1] != 0
+                            || _hasLight[i + height + 1] != 0)
                         {
                             whiteLight.X = 1f;
                             whiteLight.Y = 1f;
                             whiteLight.Z = 1f;
-                            continue;
                         }
-
-                        color = ref _lights[i - 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        else
                         {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
+                            whiteLight.X = LOW;
+                            whiteLight.Y = LOW;
+                            whiteLight.Z = LOW;
                         }
-
-                        color = ref _lights[i + 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i - height];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i - height - 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i - height + 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i + height];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i + height - 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        color = ref _lights[i + height + 1];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
-                        {
-                            whiteLight.X = 1f;
-                            whiteLight.Y = 1f;
-                            whiteLight.Z = 1f;
-                            continue;
-                        }
-
-                        whiteLight.X = LOW;
-                        whiteLight.Y = LOW;
-                        whiteLight.Z = LOW;
                     }
                     catch (IndexOutOfRangeException)
                     {
                         Interlocked.Exchange(ref caughtException, 1);
+                        break;
                     }
                 }
             }
@@ -560,8 +570,7 @@ internal sealed class SmoothLighting
             return;
         }
 
-        LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
-        _lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
+        _lightMapTileArea = lightMapTileArea;
         _lightMapRenderArea = new Rectangle(0, 0, _lightMapTileArea.Height, _lightMapTileArea.Width);
 
         _smoothLightingLightMapValid = true;
