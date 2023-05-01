@@ -274,8 +274,10 @@ internal sealed class FancyLightingEngine
     )
     {
         _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
+
+        double temporalMult = LightingConfig.Instance.SimulateGlobalIllumination ? 0.25 : 1.0;
         _brightnessCutoff = LightingConfig.Instance.FancyLightingEngineUseTemporal
-            ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5) * 0.02, 0.02, 0.125)
+            ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5 * temporalMult) * 0.02, 0.02, 0.125)
             : 0.04f;
         _temporalData = 0;
 
