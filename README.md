@@ -9,7 +9,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
-- Renamed and tweaked some presets and added a new preset
+- Renamed some presets and added a new preset
 - Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
