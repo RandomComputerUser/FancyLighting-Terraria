@@ -1,4 +1,5 @@
 ﻿using FancyLighting.Config;
+using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using System;
 using System.Threading;
@@ -9,21 +10,22 @@ using Terraria.ID;
 
 namespace FancyLighting;
 
-internal readonly record struct LightingSpread(
-    float LightFromLeft,
-    float TopLightFromLeft,
-    float TopLightFromBottom,
-    int DistanceToTop,
-    float LightFromBottom,
-    float RightLightFromBottom,
-    float RightLightFromLeft,
-    int DistanceToRight
-);
 
-internal readonly record struct DistanceCache(double top, double right);
-
-internal sealed class FancyLightingEngine
+internal sealed class FancyLightingEngine : FancyLightingEngineBase
 {
+    private readonly record struct LightingSpread(
+        float LightFromLeft,
+        float TopLightFromLeft,
+        float TopLightFromBottom,
+        int DistanceToTop,
+        float LightFromBottom,
+        float RightLightFromBottom,
+        float RightLightFromLeft,
+        int DistanceToRight
+    );
+
+    private readonly record struct DistanceCache(double top, double right);
+
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
     private const int MAX_DISTANCE = 384;
@@ -42,19 +44,16 @@ internal sealed class FancyLightingEngine
 
     private readonly LightingSpread[] _precomputedLightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
-    private readonly int[][] _circles;
 
     private Vector3[] _tmp;
     private Vector3[] _tmp2;
     private float[][] _lightMask;
 
-    internal Rectangle _lightMapArea;
-
     private int _temporalData;
 
     public FancyLightingEngine()
     {
-        ComputeLightingSpread(ref _precomputedLightingSpread);
+        ComputeLightingSpread(out _precomputedLightingSpread);
 
         _lightAirDecay = new float[MAX_DISTANCE + 1];
         _lightSolidDecay = new float[MAX_DISTANCE + 1];
@@ -70,123 +69,15 @@ internal sealed class FancyLightingEngine
             _lightShadowPaintDecay[exponent] = 0f;
         }
 
-        _circles = new int[MAX_LIGHT_RANGE + 1][];
-        _circles[0] = new int[] { 0 };
-        for (int radius = 1; radius < MAX_LIGHT_RANGE + 1; ++radius)
-        {
-            _circles[radius] = new int[radius + 1];
-            _circles[radius][0] = radius;
-            double diagonal = radius / Math.Sqrt(2.0);
-            for (int x = 1; x <= radius; ++x)
-            {
-                _circles[radius][x] = x <= diagonal
-                    ? (int)Math.Ceiling(Math.Sqrt(radius * radius - x * x))
-                    : (int)Math.Floor(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
-            }
-        }
+        ComputeCircles(MAX_LIGHT_RANGE);
 
         _temporalData = 0;
     }
 
-    private void ComputeLightingSpread(ref LightingSpread[] values)
+    private void ComputeLightingSpread(out LightingSpread[] values)
     {
-        double Hypot(double x, double y) => Math.Sqrt(x * x + y * y);
-
-        int DoubleToIndex(double x) => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, MAX_DISTANCE);
-
-        double Integrate(Func<double, double> fun, double lowerBound, double upperBound, int steps = 64)
-        {
-            // Simpson's rule
-
-            if (steps <= 0)
-            {
-                steps = 64;
-            }
-
-            double sum = fun(lowerBound);
-
-            double middleOffset = (upperBound - lowerBound) * 0.5 / steps;
-            for (int i = 1; i < steps; ++i)
-            {
-                double t = (double)i / steps;
-                double x = (1 - t) * lowerBound + t * upperBound;
-                sum += 4.0 * fun(x - middleOffset) + 2.0 * fun(x);
-            }
-
-            sum += 4.0 * fun(upperBound - middleOffset) + fun(upperBound);
-            return (upperBound - lowerBound) * sum / (6.0 * steps);
-        }
-
-        void CalculateLeftStats(
-            int i,
-            int j,
-            out double spread,
-            out double adjacentFrom,
-            out double adjacentDistance
-        )
-        {
-            if (j == 0)
-            {
-                spread = 1.0;
-                adjacentFrom = 1.0;
-                adjacentDistance = Hypot(i, 1.0) - i;
-                return;
-            }
-            // i should never be 0
-
-            adjacentDistance = Hypot(i, j + 1) - Hypot(i, j);
-
-            double slope = (j - 0.5) / (i - 0.5);
-            double bottomLeftAngle = Math.Atan2(j - 0.5, i - 0.5);
-            double topRightAngle = Math.Atan2(j + 0.5, i + 0.5);
-            double topLeftAngle = Math.Atan2(j + 0.5, i - 0.5);
-            double bottomRightAngle = Math.Atan2(j - 0.5, i + 0.5);
-
-            adjacentFrom = slope <= 1.0
-                ? 1.0
-                : (topLeftAngle - Math.Atan2(j + 0.5, i - 0.5 + 1.0 / slope)) / (topLeftAngle - topRightAngle);
-
-            if (slope == 1.0)
-            {
-                spread = 0.5;
-                return;
-            }
-
-            double lightFromLeft = Integrate(
-                (double angle) =>
-                {
-                    double tanValue = Math.Tan(angle);
-
-                    double x = i + 0.5;
-                    double y = x * tanValue;
-                    if (y > j + 0.5)
-                    {
-                        y = j + 0.5;
-                        x = y / tanValue;
-                    }
-                    return Hypot(x - (i - 0.5), y - (i - 0.5) * tanValue);
-                },
-                bottomLeftAngle,
-                topLeftAngle);
-            double lightFromBottom = Integrate(
-                (double angle) =>
-                {
-                    double tanValue = Math.Tan(angle);
-
-                    double x = i + 0.5;
-                    double y = x * tanValue;
-                    if (y > j + 0.5)
-                    {
-                        y = j + 0.5;
-                        x = y / tanValue;
-                    }
-                    return Hypot(x - (j - 0.5) / tanValue, y - (j - 0.5));
-                },
-                bottomRightAngle,
-                bottomLeftAngle);
-
-            spread = lightFromLeft / (lightFromLeft + lightFromBottom);
-        }
+        static int DoubleToIndex(double x)
+            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, MAX_DISTANCE);
 
         values = new LightingSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
         DistanceCache[,] distances = new DistanceCache[MAX_LIGHT_RANGE + 1, MAX_LIGHT_RANGE + 1];
@@ -206,7 +97,9 @@ internal sealed class FancyLightingEngine
                 1f,
                 DoubleToIndex(1.0)
             );
-            distances[i, 0] = new DistanceCache((double)DISTANCE_TICKS * i + DoubleToIndex(distanceToTop), (double)DISTANCE_TICKS * (i + 1));
+            distances[i, 0] = new DistanceCache(
+                (double)DISTANCE_TICKS * i + DoubleToIndex(distanceToTop), (double)DISTANCE_TICKS * (i + 1)
+            );
         }
 
         for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
@@ -224,7 +117,9 @@ internal sealed class FancyLightingEngine
                 (float)(1.0 - rightLightFromBottom),
                 DoubleToIndex(distanceToRight)
             );
-            distances[0, j] = new DistanceCache((double)DISTANCE_TICKS * (j + 1), (double)DISTANCE_TICKS * j + DoubleToIndex(distanceToRight));
+            distances[0, j] = new DistanceCache(
+                (double)DISTANCE_TICKS * (j + 1), (double)DISTANCE_TICKS * j + DoubleToIndex(distanceToRight)
+            );
         }
 
         for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
@@ -239,8 +134,8 @@ internal sealed class FancyLightingEngine
                     out double lightFromBottom, out double rightLightFromBottom,
                     out double distanceToRight);
 
-                double leftError = distances[i - 1, j].right / DISTANCE_TICKS - Hypot(i, j);
-                double bottomError = distances[i, j - 1].top / DISTANCE_TICKS - Hypot(i, j);
+                double leftError = distances[i - 1, j].right / DISTANCE_TICKS - MathUtil.Hypot(i, j);
+                double bottomError = distances[i, j - 1].top / DISTANCE_TICKS - MathUtil.Hypot(i, j);
                 distanceToTop -= topLightFromLeft * leftError + (1.0 - topLightFromLeft) * bottomError;
                 distanceToRight -= rightLightFromBottom * bottomError + (1.0 - rightLightFromBottom) * leftError;
 
@@ -265,7 +160,80 @@ internal sealed class FancyLightingEngine
         }
     }
 
-    internal void SpreadLight(
+    private static void CalculateLeftStats(
+        int i,
+        int j,
+        out double spread,
+        out double adjacentFrom,
+        out double adjacentDistance
+    )
+    {
+        if (j == 0)
+        {
+            spread = 1.0;
+            adjacentFrom = 1.0;
+            adjacentDistance = MathUtil.Hypot(i, 1.0) - i;
+            return;
+        }
+        // i should never be 0
+
+        adjacentDistance = MathUtil.Hypot(i, j + 1) - MathUtil.Hypot(i, j);
+
+        double slope = (j - 0.5) / (i - 0.5);
+        double bottomLeftAngle = Math.Atan2(j - 0.5, i - 0.5);
+        double topRightAngle = Math.Atan2(j + 0.5, i + 0.5);
+        double topLeftAngle = Math.Atan2(j + 0.5, i - 0.5);
+        double bottomRightAngle = Math.Atan2(j - 0.5, i + 0.5);
+
+        adjacentFrom = slope <= 1.0
+            ? 1.0
+            : (topLeftAngle - Math.Atan2(j + 0.5, i - 0.5 + 1.0 / slope)) / (topLeftAngle - topRightAngle);
+
+        if (slope == 1.0)
+        {
+            spread = 0.5;
+            return;
+        }
+
+        double lightFromLeft = MathUtil.Integrate(
+            (double angle) =>
+            {
+                double tanValue = Math.Tan(angle);
+
+                double x = i + 0.5;
+                double y = x * tanValue;
+                if (y > j + 0.5)
+                {
+                    y = j + 0.5;
+                    x = y / tanValue;
+                }
+                return MathUtil.Hypot(x - (i - 0.5), y - (i - 0.5) * tanValue);
+            },
+            bottomLeftAngle,
+            topLeftAngle
+        );
+        double lightFromBottom = MathUtil.Integrate(
+            (double angle) =>
+            {
+                double tanValue = Math.Tan(angle);
+
+                double x = i + 0.5;
+                double y = x * tanValue;
+                if (y > j + 0.5)
+                {
+                    y = j + 0.5;
+                    x = y / tanValue;
+                }
+                return MathUtil.Hypot(x - (j - 0.5) / tanValue, y - (j - 0.5));
+            },
+            bottomRightAngle,
+            bottomLeftAngle
+        );
+
+        spread = lightFromLeft / (lightFromLeft + lightFromBottom);
+    }
+
+    public override void SpreadLight(
         LightMap lightMap,
         Vector3[] colors,
         LightMaskMode[] lightDecay,

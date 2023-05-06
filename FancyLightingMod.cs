@@ -23,7 +23,7 @@ public sealed class FancyLightingMod : Mod
 
     private SmoothLighting _smoothLightingInstance;
     private AmbientOcclusion _ambientOcclusionInstance;
-    private FancyLightingEngine _fancyLightingEngineInstance;
+    private FancyLightingEngineBase _fancyLightingEngineInstance;
 
     internal FieldInfo field_activeEngine;
     private FieldInfo field_activeLightMap;
@@ -723,7 +723,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        _fancyLightingEngineInstance._lightMapArea = (Rectangle)field_workingProcessedArea.GetValue(self);
+        _fancyLightingEngineInstance.SetLightMapArea((Rectangle)field_workingProcessedArea.GetValue(self));
         orig(self);
     }
 
