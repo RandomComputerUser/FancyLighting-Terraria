@@ -24,7 +24,7 @@ internal readonly record struct DistanceCache(double top, double right);
 
 internal sealed class FancyLightingEngine
 {
-    private const int MAX_LIGHT_RANGE_PLUS_ONE = 64 + 1;
+    private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
     private const int MAX_DISTANCE = 384;
     private readonly float[] _lightAirDecay;
@@ -41,7 +41,7 @@ internal sealed class FancyLightingEngine
     private const float GLOBAL_ILLUMINATION_MULT = 0.55f;
 
     private readonly LightingSpread[] _precomputedLightingSpread;
-    private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE_PLUS_ONE]);
+    private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
     private readonly int[][] _circles;
 
     private Vector3[] _tmp;
@@ -70,9 +70,9 @@ internal sealed class FancyLightingEngine
             _lightShadowPaintDecay[exponent] = 0f;
         }
 
-        _circles = new int[MAX_LIGHT_RANGE_PLUS_ONE][];
+        _circles = new int[MAX_LIGHT_RANGE + 1][];
         _circles[0] = new int[] { 0 };
-        for (int radius = 1; radius < MAX_LIGHT_RANGE_PLUS_ONE; ++radius)
+        for (int radius = 1; radius < MAX_LIGHT_RANGE + 1; ++radius)
         {
             _circles[radius] = new int[radius + 1];
             _circles[radius][0] = radius;
@@ -188,15 +188,15 @@ internal sealed class FancyLightingEngine
             spread = lightFromLeft / (lightFromLeft + lightFromBottom);
         }
 
-        values = new LightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * MAX_LIGHT_RANGE_PLUS_ONE];
-        DistanceCache[,] distances = new DistanceCache[MAX_LIGHT_RANGE_PLUS_ONE, MAX_LIGHT_RANGE_PLUS_ONE];
+        values = new LightingSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
+        DistanceCache[,] distances = new DistanceCache[MAX_LIGHT_RANGE + 1, MAX_LIGHT_RANGE + 1];
 
-        for (int i = 1; i < MAX_LIGHT_RANGE_PLUS_ONE; ++i)
+        for (int i = 1; i < MAX_LIGHT_RANGE + 1; ++i)
         {
             CalculateLeftStats(i, 0,
                 out double lightFromLeft, out double topLightFromLeft,
                 out double distanceToTop);
-            values[MAX_LIGHT_RANGE_PLUS_ONE * i] = new LightingSpread(
+            values[(MAX_LIGHT_RANGE + 1) * i] = new LightingSpread(
                 (float)lightFromLeft,
                 (float)topLightFromLeft,
                 (float)(1.0 - topLightFromLeft),
@@ -209,7 +209,7 @@ internal sealed class FancyLightingEngine
             distances[i, 0] = new DistanceCache((double)DISTANCE_TICKS * i + DoubleToIndex(distanceToTop), (double)DISTANCE_TICKS * (i + 1));
         }
 
-        for (int j = 1; j < MAX_LIGHT_RANGE_PLUS_ONE; ++j)
+        for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
         {
             CalculateLeftStats(j, 0,
                 out double lightFromBottom, out double rightLightFromBottom,
@@ -227,9 +227,9 @@ internal sealed class FancyLightingEngine
             distances[0, j] = new DistanceCache((double)DISTANCE_TICKS * (j + 1), (double)DISTANCE_TICKS * j + DoubleToIndex(distanceToRight));
         }
 
-        for (int j = 1; j < MAX_LIGHT_RANGE_PLUS_ONE; ++j)
+        for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
         {
-            for (int i = 1; i < MAX_LIGHT_RANGE_PLUS_ONE; ++i)
+            for (int i = 1; i < MAX_LIGHT_RANGE + 1; ++i)
             {
                 CalculateLeftStats(
                     i, j,
@@ -251,7 +251,7 @@ internal sealed class FancyLightingEngine
                         + (1.0 - rightLightFromBottom) * (DoubleToIndex(distanceToRight) + distances[i - 1, j].right)
                 );
 
-                values[MAX_LIGHT_RANGE_PLUS_ONE * i + j] = new LightingSpread(
+                values[(MAX_LIGHT_RANGE + 1) * i + j] = new LightingSpread(
                     (float)lightFromLeft,
                     (float)topLightFromLeft,
                     (float)(1.0 - topLightFromLeft),
@@ -287,7 +287,7 @@ internal sealed class FancyLightingEngine
         float lightAirDecayBaseline
             = decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_VALUE);
         float lightSolidDecayBaseline = decayMult * Math.Min(
-            (float)Math.Pow(
+            MathF.Pow(
                 lightMap.LightDecayThroughSolid,
                 LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
             ),
@@ -311,41 +311,47 @@ internal sealed class FancyLightingEngine
         );
 
         _logSlowestDecay = MathF.Log(
-            Math.Max(lightAirDecayBaseline,
-            Math.Max(lightWaterDecayBaseline,
-            Math.Max(lightHoneyDecayBaseline,
-            lightSolidDecayBaseline)))
+            Math.Max(
+                Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
+                Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
+            )
         );
+
+        const float exponentMult = 1f / DISTANCE_TICKS;
 
         if (lightAirDecayBaseline != _lightAirDecay[DISTANCE_TICKS])
         {
+            float logBaseline = MathF.Log(lightAirDecayBaseline);
             for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
             {
-                _lightAirDecay[exponent] = (float)Math.Pow(lightAirDecayBaseline, exponent / (double)DISTANCE_TICKS);
+                _lightAirDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
             }
             _lightAirDecay[DISTANCE_TICKS] = lightAirDecayBaseline;
         }
         if (lightSolidDecayBaseline != _lightSolidDecay[DISTANCE_TICKS])
         {
+            float logBaseline = MathF.Log(lightSolidDecayBaseline);
             for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
             {
-                _lightSolidDecay[exponent] = (float)Math.Pow(lightSolidDecayBaseline, exponent / (double)DISTANCE_TICKS);
+                _lightSolidDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
             }
             _lightSolidDecay[DISTANCE_TICKS] = lightSolidDecayBaseline;
         }
         if (lightWaterDecayBaseline != _lightWaterDecay[DISTANCE_TICKS])
         {
+            float logBaseline = MathF.Log(lightWaterDecayBaseline);
             for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
             {
-                _lightWaterDecay[exponent] = (float)Math.Pow(lightWaterDecayBaseline, exponent / (double)DISTANCE_TICKS);
+                _lightWaterDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
             }
             _lightWaterDecay[DISTANCE_TICKS] = lightWaterDecayBaseline;
         }
         if (lightHoneyDecayBaseline != _lightHoneyDecay[DISTANCE_TICKS])
         {
+            float logBaseline = MathF.Log(lightHoneyDecayBaseline);
             for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
             {
-                _lightHoneyDecay[exponent] = (float)Math.Pow(lightHoneyDecayBaseline, exponent / (double)DISTANCE_TICKS);
+                _lightHoneyDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
             }
             _lightHoneyDecay[DISTANCE_TICKS] = lightHoneyDecayBaseline;
         }
@@ -534,7 +540,7 @@ internal sealed class FancyLightingEngine
                 ) / _logSlowestDecay
             ) + 1,
             1,
-            MAX_LIGHT_RANGE_PLUS_ONE - 1
+            MAX_LIGHT_RANGE
         );
 
         // Up
@@ -674,7 +680,7 @@ internal sealed class FancyLightingEngine
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x].DistanceToTop];
+                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
@@ -701,7 +707,7 @@ internal sealed class FancyLightingEngine
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x + y];
+                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -740,7 +746,7 @@ internal sealed class FancyLightingEngine
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x].DistanceToTop];
+                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
@@ -767,7 +773,7 @@ internal sealed class FancyLightingEngine
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x + y];
+                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -806,7 +812,7 @@ internal sealed class FancyLightingEngine
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x].DistanceToTop];
+                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
@@ -833,7 +839,7 @@ internal sealed class FancyLightingEngine
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x + y];
+                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -872,7 +878,7 @@ internal sealed class FancyLightingEngine
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x].DistanceToTop];
+                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
@@ -899,7 +905,7 @@ internal sealed class FancyLightingEngine
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[MAX_LIGHT_RANGE_PLUS_ONE * x + y];
+                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -924,7 +930,7 @@ internal sealed class FancyLightingEngine
                     ) / _logSlowestDecay
                 ) + 1,
                 1,
-                MAX_LIGHT_RANGE_PLUS_ONE - 1
+                MAX_LIGHT_RANGE
             );
 
             int approximateWorkDone

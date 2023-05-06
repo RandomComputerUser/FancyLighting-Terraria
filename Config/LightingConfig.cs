@@ -25,7 +25,7 @@ public sealed class LightingConfig : ModConfig
     internal float AmbientOcclusionAlpha() => 1f - AmbientOcclusionIntensity / 100f;
     internal bool FancyLightingEngineEnabled() => UseFancyLightingEngine && Lighting.UsingNewLighting;
     internal float FancyLightingEngineExitMultiplier() => 1f - FancyLightingEngineLightLoss / 100f;
-    internal double FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100.0;
+    internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
