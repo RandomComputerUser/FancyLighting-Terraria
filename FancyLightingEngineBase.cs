@@ -4,7 +4,7 @@ using Terraria.Graphics.Light;
 
 namespace FancyLighting;
 
-internal abstract class FancyLightingEngineBase
+internal abstract class FancyLightingEngineBase : IFancyLightingEngine
 {
     protected int[][] _circles;
     protected Rectangle _lightMapArea;
@@ -24,6 +24,21 @@ internal abstract class FancyLightingEngineBase
                     ? (int)Math.Ceiling(Math.Sqrt(radius * radius - x * x))
                     : (int)Math.Floor(Math.Sqrt(radius * radius - (x - 1) * (x - 1)));
             }
+        }
+    }
+
+    protected void UpdateDecay(float[] decay, float baseline, int exponentDivisor)
+    {
+        if (baseline == decay[exponentDivisor])
+        {
+            return;
+        }
+
+        float logBaseline = MathF.Log(baseline);
+        float exponentMult = 1f / exponentDivisor;
+        for (int i = 0; i < decay.Length; ++i)
+        {
+            decay[i] = MathF.Exp(exponentMult * i * logBaseline);
         }
     }
 

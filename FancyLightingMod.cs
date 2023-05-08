@@ -23,7 +23,7 @@ public sealed class FancyLightingMod : Mod
 
     private SmoothLighting _smoothLightingInstance;
     private AmbientOcclusion _ambientOcclusionInstance;
-    private FancyLightingEngineBase _fancyLightingEngineInstance;
+    private IFancyLightingEngine _fancyLightingEngineInstance;
 
     internal FieldInfo field_activeEngine;
     private FieldInfo field_activeLightMap;

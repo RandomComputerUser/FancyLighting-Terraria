@@ -10,7 +10,6 @@ using Terraria.ID;
 
 namespace FancyLighting;
 
-
 internal sealed class FancyLightingEngine : FancyLightingEngineBase
 {
     private readonly record struct LightingSpread(
@@ -42,7 +41,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private const float LOW_LIGHT_LEVEL = 0.03f;
     private const float GLOBAL_ILLUMINATION_MULT = 0.55f;
 
-    private readonly LightingSpread[] _precomputedLightingSpread;
+    private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
@@ -53,7 +52,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
     public FancyLightingEngine()
     {
-        ComputeLightingSpread(out _precomputedLightingSpread);
+        ComputeLightingSpread(out _lightingSpread);
 
         _lightAirDecay = new float[MAX_DISTANCE + 1];
         _lightSolidDecay = new float[MAX_DISTANCE + 1];
@@ -86,7 +85,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         {
             CalculateLeftStats(i, 0,
                 out double lightFromLeft, out double topLightFromLeft,
-                out double distanceToTop);
+                out double distanceToTop
+            );
             values[(MAX_LIGHT_RANGE + 1) * i] = new LightingSpread(
                 (float)lightFromLeft,
                 (float)topLightFromLeft,
@@ -106,7 +106,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         {
             CalculateLeftStats(j, 0,
                 out double lightFromBottom, out double rightLightFromBottom,
-                out double distanceToRight);
+                out double distanceToRight
+            );
             values[j] = new LightingSpread(
                 0f,
                 0f,
@@ -129,10 +130,12 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 CalculateLeftStats(
                     i, j,
                     out double lightFromLeft, out double topLightFromLeft,
-                    out double distanceToTop);
+                    out double distanceToTop
+                );
                 CalculateLeftStats(j, i,
                     out double lightFromBottom, out double rightLightFromBottom,
-                    out double distanceToRight);
+                    out double distanceToRight
+                );
 
                 double leftError = distances[i - 1, j].right / DISTANCE_TICKS - MathUtil.Hypot(i, j);
                 double bottomError = distances[i, j - 1].top / DISTANCE_TICKS - MathUtil.Hypot(i, j);
@@ -285,44 +288,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             )
         );
 
-        const float exponentMult = 1f / DISTANCE_TICKS;
-
-        if (lightAirDecayBaseline != _lightAirDecay[DISTANCE_TICKS])
-        {
-            float logBaseline = MathF.Log(lightAirDecayBaseline);
-            for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
-            {
-                _lightAirDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
-            }
-            _lightAirDecay[DISTANCE_TICKS] = lightAirDecayBaseline;
-        }
-        if (lightSolidDecayBaseline != _lightSolidDecay[DISTANCE_TICKS])
-        {
-            float logBaseline = MathF.Log(lightSolidDecayBaseline);
-            for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
-            {
-                _lightSolidDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
-            }
-            _lightSolidDecay[DISTANCE_TICKS] = lightSolidDecayBaseline;
-        }
-        if (lightWaterDecayBaseline != _lightWaterDecay[DISTANCE_TICKS])
-        {
-            float logBaseline = MathF.Log(lightWaterDecayBaseline);
-            for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
-            {
-                _lightWaterDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
-            }
-            _lightWaterDecay[DISTANCE_TICKS] = lightWaterDecayBaseline;
-        }
-        if (lightHoneyDecayBaseline != _lightHoneyDecay[DISTANCE_TICKS])
-        {
-            float logBaseline = MathF.Log(lightHoneyDecayBaseline);
-            for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
-            {
-                _lightHoneyDecay[exponent] = MathF.Exp(exponentMult * exponent * logBaseline);
-            }
-            _lightHoneyDecay[DISTANCE_TICKS] = lightHoneyDecayBaseline;
-        }
+        UpdateDecay(_lightAirDecay, lightAirDecayBaseline, DISTANCE_TICKS);
+        UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline, DISTANCE_TICKS);
+        UpdateDecay(_lightWaterDecay, lightWaterDecayBaseline, DISTANCE_TICKS);
+        UpdateDecay(_lightHoneyDecay, lightHoneyDecayBaseline, DISTANCE_TICKS);
 
         int length = width * height;
 
@@ -639,7 +608,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                         value *= _lightLossExitingSolid;
                     }
 
-                    workingLights[y] = value * mask[_precomputedLightingSpread[y].DistanceToRight];
+                    workingLights[y] = value * mask[_lightingSpread[y].DistanceToRight];
                 }
                 for (int x = 1; x <= rightEdge; ++x)
                 {
@@ -648,7 +617,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
+                        * mask[_lightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
@@ -675,7 +644,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
+                            = ref _lightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -705,7 +674,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                         value *= _lightLossExitingSolid;
                     }
 
-                    workingLights[y] = value * mask[_precomputedLightingSpread[y].DistanceToRight];
+                    workingLights[y] = value * mask[_lightingSpread[y].DistanceToRight];
                 }
                 for (int x = 1; x <= leftEdge; ++x)
                 {
@@ -714,7 +683,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
+                        * mask[_lightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
@@ -741,7 +710,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
+                            = ref _lightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -771,7 +740,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                         value *= _lightLossExitingSolid;
                     }
 
-                    workingLights[y] = value * mask[_precomputedLightingSpread[y].DistanceToRight];
+                    workingLights[y] = value * mask[_lightingSpread[y].DistanceToRight];
                 }
                 for (int x = 1; x <= rightEdge; ++x)
                 {
@@ -780,7 +749,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
+                        * mask[_lightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
                     {
@@ -807,7 +776,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
+                            = ref _lightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
@@ -837,7 +806,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                         value *= _lightLossExitingSolid;
                     }
 
-                    workingLights[y] = value * mask[_precomputedLightingSpread[y].DistanceToRight];
+                    workingLights[y] = value * mask[_lightingSpread[y].DistanceToRight];
                 }
                 for (int x = 1; x <= leftEdge; ++x)
                 {
@@ -846,7 +815,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
                     float verticalLight
                         = workingLights[0]
-                        * mask[_precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
+                        * mask[_lightingSpread[(MAX_LIGHT_RANGE + 1) * x].DistanceToTop];
                     workingLights[0] *= mask[DISTANCE_TICKS];
                     if (x > 1 && mask == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
                     {
@@ -873,7 +842,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                             }
                         }
                         ref LightingSpread spread
-                            = ref _precomputedLightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
+                            = ref _lightingSpread[(MAX_LIGHT_RANGE + 1) * x + y];
                         SetLightMap(i,
                             spread.LightFromBottom * verticalLight
                             + spread.LightFromLeft * horizontalLight
