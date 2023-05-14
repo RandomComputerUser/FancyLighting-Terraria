@@ -505,14 +505,7 @@ public sealed class FancyLightingMod : Mod
         );
 
         _smoothLightingInstance.ApplyGammaCorrectionBGShader();
-        try
-        {
-            orig(self);
-        }
-        finally
-        {
-            _smoothLightingInstance.ApplyNoFilterShader();
-        }
+        orig(self);
     }
 
     private void _RenderWater(
