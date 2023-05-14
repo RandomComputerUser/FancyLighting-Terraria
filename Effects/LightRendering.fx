@@ -20,6 +20,16 @@ float2 DitherCoordMult;
 #define SurfaceColorWithLighting(lightLevel) \
     (LinearToSrgb(float4((lightLevel), 1) * SrgbToLinear(tex2D(WorldSampler, WORLD_TEX_COORDS))) + float4(Dither(coords), 0))
 
+float3 GammaToLinear(float3 color)
+{
+    return color * color;
+}
+
+float4 GammaToLinear(float4 color)
+{
+    return float4(GammaToLinear(color.rgb), color.a);
+}
+
 float3 SrgbToLinear(float3 color)
 {
     float3 lowPart = color / 12.92;
@@ -55,10 +65,7 @@ float3 OverbrightLightAt(float2 coords)
 float3 OverbrightLightAtHiDef(float2 coords)
 {
     float3 color = tex2D(LightSampler, coords).rgb;
-    color *= (65535.0 / 16384);
-    color *= sqrt(color);
-    color *= sqrt(color); // gamma of 2.25
-    return color;
+    return SrgbToLinear((65535.0 / 16384) * color);
 }
 
 float3 Dither(float2 coords)
@@ -268,6 +275,17 @@ float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR
     );
 }
 
+float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
+{
+    // Multiply by 1.125 to partly compensate for global brightness of 1.2
+    color.rgb *= 1.125;
+
+    return LinearToSrgb(
+        GammaToLinear(color)
+        * SrgbToLinear(tex2D(TextureSampler, coords))
+    );
+}
+
 technique Technique1
 {
     pass QualityNormals
@@ -343,5 +361,10 @@ technique Technique1
     pass GammaCorrection
     {
         PixelShader = compile ps_3_0 GammaCorrection();
+    }
+
+    pass GammaCorrectionBG
+    {
+        PixelShader = compile ps_3_0 GammaCorrectionBG();
     }
 }

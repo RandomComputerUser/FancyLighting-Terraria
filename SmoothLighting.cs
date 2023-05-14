@@ -72,6 +72,7 @@ internal sealed class SmoothLighting
     private Shader _overbrightLightOnlyHiDefShader;
     private Shader _overbrightMaxShader;
     private Shader _gammaCorrectionShader;
+    private Shader _gammaCorrectionBGShader;
 
     public SmoothLighting(FancyLightingMod mod)
     {
@@ -179,6 +180,11 @@ internal sealed class SmoothLighting
             "GammaCorrection",
             true
         );
+        _gammaCorrectionBGShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "GammaCorrectionBG",
+            true
+        );
 
         _ditherMask = ModContent.Request<Texture2D>(
             "FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad
@@ -208,6 +214,7 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _overbrightLightOnlyHiDefShader);
         EffectLoader.UnloadEffect(ref _overbrightMaxShader);
         EffectLoader.UnloadEffect(ref _gammaCorrectionShader);
+        EffectLoader.UnloadEffect(ref _gammaCorrectionBGShader);
     }
 
     private void PrintException()
@@ -224,6 +231,10 @@ internal sealed class SmoothLighting
     }
 
     internal void ApplyGammaCorrectionShader() => _gammaCorrectionShader.Apply();
+
+    internal void ApplyGammaCorrectionBGShader() => _gammaCorrectionBGShader.Apply();
+
+    internal void ApplyNoFilterShader() => _noFilterShader.Apply();
 
     internal void GetAndBlurLightMap(Vector3[] colors, int width, int height)
     {
@@ -256,41 +267,43 @@ internal sealed class SmoothLighting
         }
 
         int caughtException = 0;
+        bool doGammaCorrection = LightingConfig.Instance.UseGammaCorrection();
+        bool blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
 
-        if (LightingConfig.Instance.UseLightMapBlurring)
+        if (doGammaCorrection)
         {
-            if (LightingConfig.Instance.UseGammaCorrection())
-            {
-                Parallel.For(
-                    0,
-                    width,
-                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                    (x) =>
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (x) =>
+                {
+                    int i = height * x;
+                    for (int y = 0; y < height; ++y)
                     {
-                        int i = height * x;
-                        for (int y = 0; y < height; ++y)
+                        try
                         {
-                            try
-                            {
-                                SrgbConverter.SrgbToLinear(ref colors[i]);
-                                ++i;
-                            }
-                            catch (IndexOutOfRangeException)
-                            {
-                                Interlocked.Exchange(ref caughtException, 1);
-                                break;
-                            }
+                            GammaConverter.GammaToLinear(ref colors[i]);
+                            ++i;
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                            break;
                         }
                     }
-                );
-
-                if (caughtException == 1)
-                {
-                    PrintException();
-                    return;
                 }
-            }
+            );
 
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+        }
+
+        if (blurLightMap)
+        {
             if (LightingConfig.Instance.UseBrighterBlurring)
             {
                 Parallel.For(
@@ -306,6 +319,7 @@ internal sealed class SmoothLighting
 
                             try
                             {
+                                // Faster to do it separately for each component
                                 _lights[i].X = Math.Max(colors[i].X, (
                                       (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
                                     + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
@@ -413,38 +427,43 @@ internal sealed class SmoothLighting
                     return;
                 }
             }
+        }
 
-            if (LightingConfig.Instance.UseGammaCorrection())
-            {
-                Parallel.For(
-                    0,
-                    width,
-                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                    (x) =>
+        if (doGammaCorrection)
+        {
+            Vector3[] lightColors = blurLightMap ? _lights : colors;
+
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (x) =>
+                {
+                    int i = height * x;
+                    for (int y = 0; y < height; ++y)
                     {
-                        int i = height * x;
-                        for (int y = 0; y < height; ++y)
+                        try
                         {
-                            try
-                            {
-                                SrgbConverter.LinearToSrgb(ref _lights[i++]);
-                            }
-                            catch (IndexOutOfRangeException)
-                            {
-                                Interlocked.Exchange(ref caughtException, 1);
-                                break;
-                            }
+                            GammaConverter.LinearToSrgb(ref lightColors[i++]);
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                            break;
                         }
                     }
-                );
-
-                if (caughtException == 1)
-                {
-                    PrintException();
-                    return;
                 }
-            }
+            );
 
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+        }
+
+        if (blurLightMap)
+        {
             Array.Copy(_lights, colors, height * width);
         }
         else

@@ -223,6 +223,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray += _GetColor9Slice_int_int_refColorArray;
         Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray += _GetColor4Slice_int_int_refColorArray;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
+        Terraria.On_Main.DrawSurfaceBG += _DrawSurfaceBG;
         Terraria.On_Main.RenderWater += _RenderWater;
         Terraria.On_Main.DrawWaters += _DrawWaters;
         Terraria.On_Main.RenderBackground += _RenderBackground;
@@ -460,6 +461,58 @@ public sealed class FancyLightingMod : Mod
         method_DrawReverseVines(self);
 
         Main.spriteBatch.End();
+    }
+
+    private void _DrawSurfaceBG(
+        Terraria.On_Main.orig_DrawSurfaceBG orig,
+        Terraria.Main self
+    )
+    {
+        if (!LightingConfig.Instance.UseGammaCorrection() || LightingConfig.Instance.RenderOnlyLight)
+        {
+            orig(self);
+            return;
+        }
+
+        Matrix transform;
+        if (_inCameraMode)
+        {
+            transform = Main.Transform;
+        }
+        else
+        {
+            transform = Main.BackgroundViewMatrix.TransformationMatrix;
+            transform.Translation
+                -= Main.BackgroundViewMatrix.ZoomMatrix.Translation
+                * new Vector3(
+                    1f,
+                    Main.BackgroundViewMatrix.Effects.HasFlag(SpriteEffects.FlipVertically)
+                        ? -1f
+                        : 1f,
+                    1f
+                );
+        }
+
+        Main.spriteBatch.End();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Immediate,
+            BlendState.AlphaBlend,
+            SamplerState.AnisotropicClamp,
+            DepthStencilState.Default,
+            RasterizerState.CullNone,
+            null,
+            transform
+        );
+
+        _smoothLightingInstance.ApplyGammaCorrectionBGShader();
+        try
+        {
+            orig(self);
+        }
+        finally
+        {
+            _smoothLightingInstance.ApplyNoFilterShader();
+        }
     }
 
     private void _RenderWater(
