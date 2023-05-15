@@ -39,7 +39,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
-    private const float GLOBAL_ILLUMINATION_MULT = 0.55f;
+    private const float GI_MULT_BASE = 0f;
+    private const float GI_MULT_INCREMENT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
@@ -345,16 +346,53 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 _tmp2 = new Vector3[length];
             }
 
+            int xmin = _lightMapArea.X + 1;
+            int xmax = _lightMapArea.X + width - 2;
+            int ymin = _lightMapArea.Y + 1;
+            int ymax = _lightMapArea.Y + height - 2;
+
             Parallel.For(
                 0,
                 width,
                 new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (i) =>
                 {
+                    int x = i + _lightMapArea.X;
+                    int y = _lightMapArea.Y;
+                    bool notOnLeft = x > xmin;
+                    bool notOnRight = x < xmax;
                     int endIndex = height * (i + 1);
                     for (int j = height * i; j < endIndex; ++j)
                     {
-                        Vector3.Multiply(ref _tmp[j], GLOBAL_ILLUMINATION_MULT, out _tmp2[j]);
+                        float mult;
+                        if (lightDecay[j] is LightMaskMode.Solid)
+                        {
+                            mult = 0f;
+                        }
+                        else
+                        {
+                            mult = GI_MULT_BASE;
+
+                            Tile tile = Main.tile[x, y];
+
+                            if (tile.WallType != WallID.None)
+                            {
+                                mult = 0.5f * GI_MULT_INCREMENT + (1 - 0.5f * GI_MULT_INCREMENT) * mult;
+                            }
+
+                            if (
+                                (y > ymin && lightDecay[j - 1] is LightMaskMode.Solid)
+                                || (y < ymax && lightDecay[j + 1] is LightMaskMode.Solid)
+                                || (notOnLeft && lightDecay[j - height] is LightMaskMode.Solid)
+                                || (notOnRight && lightDecay[j + height] is LightMaskMode.Solid)
+                            )
+                            {
+                                mult = GI_MULT_INCREMENT + (1 - GI_MULT_INCREMENT) * mult;
+                            }
+                        }
+
+                        Vector3.Multiply(ref _tmp[j], mult, out _tmp2[j]);
+                        ++y;
                     }
                 }
             );
@@ -365,7 +403,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (i) =>
                 {
-                    if (_lightMask[i] == _lightSolidDecay || _lightMask[i] == _lightShadowPaintDecay)
+                    if (lightDecay[i] is LightMaskMode.Solid)
                     {
                         return;
                     }
