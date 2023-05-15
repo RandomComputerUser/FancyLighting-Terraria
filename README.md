@@ -20,7 +20,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Added a new option to increase the brightness of lighting when using light map blurring
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Improved temporal optimization for the fancy lighting engine
-- Slightly improved the quality of the fancy lighting engine (probably not noticeable)
+- Slightly improved the quality of the fancy lighting engine in camera mode
 - Made slight changes to the way smooth lighting is rendered
 - Made some minor optimizations
 - Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
