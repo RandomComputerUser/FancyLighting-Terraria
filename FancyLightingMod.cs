@@ -823,17 +823,14 @@ public sealed class FancyLightingMod : Mod
         bool drawSinglePassLiquids
     )
     {
-        if (!_inCameraMode || !LightingConfig.Instance.SmoothLightingEnabled()
-        )
+        if (!_inCameraMode || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self, bg, Style, Alpha, drawSinglePassLiquids);
             return;
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(bg, true);
-        OverrideLightingColor = bg
-            ? _smoothLightingInstance.DrawSmoothLightingBack
-            : _smoothLightingInstance.DrawSmoothLightingFore;
+        OverrideLightingColor = true;
 
         Main.spriteBatch.End();
         Main.instance.GraphicsDevice.SetRenderTarget(
