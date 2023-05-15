@@ -516,7 +516,7 @@ internal sealed class SmoothLighting
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
         _isSpelunkerActive = Main.LocalPlayer.findTreasure;
 
-        const float LOW = 0.49f / 255f;
+        const float LOW = 0.25f / 255f;
 
         int ymax = lightMapTileArea.Y + lightMapTileArea.Height;
         Parallel.For(
