@@ -15,6 +15,7 @@ float2 DitherCoordMult;
 // The light map uses linear RGB
 
 #define WORLD_TEX_COORDS (WorldCoordMult * coords)
+#define MIN_PREMULTIPLIER (0.5 / 255)
 
 // Macro with gamma correction
 #define SurfaceColorWithLighting(lightLevel) \
@@ -27,7 +28,8 @@ float3 GammaToLinear(float3 color)
 
 float4 GammaToLinear(float4 color)
 {
-    return float4(GammaToLinear(color.rgb), color.a);
+    color.a = max(color.a, MIN_PREMULTIPLIER);
+    return float4(GammaToLinear(color.rgb / color.a), color.a);
 }
 
 float3 SrgbToLinear(float3 color)
@@ -40,7 +42,8 @@ float3 SrgbToLinear(float3 color)
 
 float4 SrgbToLinear(float4 color)
 {
-    return float4(SrgbToLinear(color.rgb), color.a);
+    color.a = max(color.a, MIN_PREMULTIPLIER);
+    return float4(SrgbToLinear(color.rgb / color.a), color.a);
 }
 
 float3 LinearToSrgb(float3 color)
@@ -53,7 +56,7 @@ float3 LinearToSrgb(float3 color)
 
 float4 LinearToSrgb(float4 color)
 {
-    return float4(LinearToSrgb(color.rgb), color.a);
+    return float4(LinearToSrgb(color.rgb) * color.a, color.a);
 }
 
 float3 OverbrightLightAt(float2 coords)
