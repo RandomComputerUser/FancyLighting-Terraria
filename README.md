@@ -14,7 +14,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
 - Changed sky color profile 1
-- Made glowing effects slightly brighter
+- Tweaked glowing effects
 - Tweaked some default settings for ambient occlusion
 - Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring

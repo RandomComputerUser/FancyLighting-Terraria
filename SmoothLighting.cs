@@ -88,17 +88,33 @@ internal sealed class SmoothLighting
 
         _glowingTiles = new bool[ushort.MaxValue + 1];
         foreach (ushort id in new ushort[] {
-            TileID.Crystals,
+            TileID.Crystals, // Crystal Shards and Gelatin Crystal
+            TileID.AshGrass,
             TileID.LavaMoss,
             TileID.LavaMossBrick,
+            TileID.LavaMossBlock,
             TileID.ArgonMoss,
             TileID.ArgonMossBrick,
+            TileID.ArgonMossBlock,
             TileID.KryptonMoss,
             TileID.KryptonMossBrick,
+            TileID.KryptonMossBlock,
             TileID.XenonMoss,
             TileID.XenonMossBrick,
+            TileID.XenonMossBlock,
+            TileID.VioletMoss, // Neon Moss
+            TileID.VioletMossBrick,
+            TileID.VioletMossBlock,
+            TileID.RainbowMoss,
+            TileID.RainbowMossBrick,
+            TileID.RainbowMossBlock,
+            TileID.RainbowBrick,
             TileID.MeteoriteBrick,
             TileID.MartianConduitPlating,
+            TileID.LunarMonolith,
+            TileID.VoidMonolith,
+            TileID.ShimmerMonolith, // Aether Monolith
+            TileID.PixelBox,
             TileID.LavaLamp
         })
         {
@@ -108,14 +124,37 @@ internal sealed class SmoothLighting
         _glowingTileColors = new Color[_glowingTiles.Length];
 
         _glowingTileColors[TileID.Crystals] = Color.White;
+        _glowingTileColors[TileID.AshGrass] = new Color(153, 66, 23);
 
-        _glowingTileColors[TileID.LavaMoss] = _glowingTileColors[TileID.LavaMossBrick] = new Color(254, 122, 0);
-        _glowingTileColors[TileID.ArgonMoss] = _glowingTileColors[TileID.ArgonMossBrick] = new Color(254, 92, 186);
-        _glowingTileColors[TileID.KryptonMoss] = _glowingTileColors[TileID.KryptonMossBrick] = new Color(215, 255, 0);
-        _glowingTileColors[TileID.XenonMoss] = _glowingTileColors[TileID.XenonMossBrick] = new Color(0, 254, 242);
+        _glowingTileColors[TileID.LavaMoss]
+            = _glowingTileColors[TileID.LavaMossBrick]
+            = _glowingTileColors[TileID.LavaMossBlock]
+            = new Color(225, 61, 0);
+        _glowingTileColors[TileID.ArgonMoss]
+            = _glowingTileColors[TileID.ArgonMossBrick]
+            = _glowingTileColors[TileID.ArgonMossBlock]
+            = new Color(255, 13, 129);
+        _glowingTileColors[TileID.KryptonMoss]
+            = _glowingTileColors[TileID.KryptonMossBrick]
+            = _glowingTileColors[TileID.KryptonMossBlock]
+            = new Color(20, 255, 0);
+        _glowingTileColors[TileID.XenonMoss]
+            = _glowingTileColors[TileID.XenonMossBrick]
+            = _glowingTileColors[TileID.XenonMossBlock]
+            = new Color(0, 227, 255);
+        _glowingTileColors[TileID.VioletMoss] // Neon Moss
+            = _glowingTileColors[TileID.VioletMossBrick]
+            = _glowingTileColors[TileID.VioletMossBlock]
+            = new Color(152, 6, 255);
+        // Rainbow Moss and Bricks are handled separately
 
         _glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
         // Martian Conduit Plating is handled separately
+
+        _glowingTileColors[TileID.LunarMonolith] = new Color(192, 192, 192);
+        _glowingTileColors[TileID.VoidMonolith] = new Color(161, 255, 223);
+        _glowingTileColors[TileID.ShimmerMonolith] = new Color(213, 196, 252);
+        _glowingTileColors[TileID.PixelBox] = new Color(255, 255, 255);
         _glowingTileColors[TileID.LavaLamp] = new Color(255, 90, 2);
 
         _isDangersenseActive = false;
@@ -812,6 +851,12 @@ internal sealed class SmoothLighting
                 )
             ));
 
+            _glowingTileColors[TileID.RainbowMoss]
+                = _glowingTileColors[TileID.RainbowMossBrick]
+                = _glowingTileColors[TileID.RainbowMossBlock]
+                = _glowingTileColors[TileID.RainbowBrick]
+                = Main.DiscoColor;
+
             Parallel.For(
                 clampedStart,
                 clampedEnd,
@@ -1031,7 +1076,7 @@ internal sealed class SmoothLighting
 
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
-                            // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
+                            // Glowing Tiles
                             if (_glowingTiles[tile.TileType])
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];

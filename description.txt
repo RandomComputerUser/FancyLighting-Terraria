@@ -12,21 +12,25 @@ This mod only takes effect when the lighting mode is set to color.
 
 Some features may significantly lower frame rates at resolutions above 1920x1200 on machines with less powerful GPUs. If you are experiencing performance issues and are running the game at a resolution above 1920x1200, try lowering the resolution.
 
-Because smooth lighting overrides the built-in tile lighting, glow masks and other glowing effects must be re-implemented. Most effects from vanilla are supported, but modded effects may not work.
+Because smooth lighting overrides the built-in tile lighting, tile glow masks and other glowing effects must be re-implemented. Most, but not all, glowing effects and tiles from vanilla are supported. Modded glowing effects and tiles may not work. Tile glow masks from resource packs are not supported. Glowing effects and tiles may look significantly different from vanilla.
 
 Supported Glowing Effects and Tiles:
-- Spelunker Potion
-- Dangersense Potion
-- Shimmer
+- Aether Monolith
+- Ash Grass
 - Crystal Shard and Gelatin Crystal
+- Dangersense Potion
 - Glowing Moss
-- Meteorite Brick
-- Martian Conduit Plating (partial)
+- Glowing Moss Brick
 - Lava Lamp
+- Lunar Monoliths
+- Martian Conduit Plating
+- Meteorite Brick
+- Pixel Box
+- Rainbow Brick
+- Shimmer
+- Spelunker Potion
+- Void Monolith
 
-Unsupported Glowing Effects and Tiles (vanilla):
-- Ash tree trunk
-
-Glowing tile entities should work correctly. This mod also does not alter the lighting of NPCs and projectiles.
+Glowing tile entities should work correctly because smooth lighting is not applied to tile entities except for overbright lighting. This mod does not alter the lighting of NPCs and projectiles.
 
 Minimum Graphics API: Direct3D 11 or OpenGL 3.0
