@@ -652,7 +652,7 @@ internal sealed class SmoothLighting
         _smoothLightingPositionValid = !cameraMode;
     }
 
-    internal void CalculateSmoothLighting(bool background, bool cameraMode = false)
+    internal void CalculateSmoothLighting(bool background, bool cameraMode = false, bool force = false)
     {
         if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
@@ -662,6 +662,19 @@ internal sealed class SmoothLighting
         if (!_smoothLightingLightMapValid)
         {
             return;
+        }
+
+        if (!force)
+        {
+            if (background && !cameraMode && _smoothLightingBackComplete)
+            {
+                return;
+            }
+
+            if (!background && !cameraMode && _smoothLightingForeComplete)
+            {
+                return;
+            }
         }
 
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
@@ -786,7 +799,7 @@ internal sealed class SmoothLighting
             multFromOverbright = 1f;
         }
 
-        if (background && (!_smoothLightingBackComplete || cameraMode))
+        if (background)
         {
             Parallel.For(
                 clampedStart,
@@ -840,7 +853,7 @@ internal sealed class SmoothLighting
 
             _smoothLightingBackComplete = !cameraMode;
         }
-        else if (!background && (!_smoothLightingForeComplete || cameraMode))
+        else
         {
             _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
                 (float)(0.4 - 0.4 * Math.Cos(
@@ -981,7 +994,7 @@ internal sealed class SmoothLighting
             multFromOverbright = 1f;
         }
 
-        if (background && (!_smoothLightingBackComplete || cameraMode))
+        if (background)
         {
             Parallel.For(
                 clampedStart,
@@ -1035,7 +1048,7 @@ internal sealed class SmoothLighting
 
             _smoothLightingBackComplete = !cameraMode;
         }
-        else if (!background && (!_smoothLightingForeComplete || cameraMode))
+        else
         {
             _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
                 (float)(0.4 - 0.4 * Math.Cos(

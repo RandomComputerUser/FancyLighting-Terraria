@@ -214,6 +214,12 @@ public sealed class FancyLightingMod : Mod
         base.Unload();
     }
 
+    public void RecalculateSmoothLighting()
+    {
+        _smoothLightingInstance?.CalculateSmoothLighting(false, false, true);
+        _smoothLightingInstance?.CalculateSmoothLighting(true, false, true);
+    }
+
     private void AddHooks()
     {
         Terraria.On_Lighting.GetSubLight += _GetSubLight;

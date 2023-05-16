@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 using Terraria;
+using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 
 namespace FancyLighting.Config;
@@ -31,6 +32,40 @@ public sealed class LightingConfig : ModConfig
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
     internal bool UseGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
+
+    public override void OnChanged()
+        => ModContent.GetInstance<FancyLightingMod>()?.RecalculateSmoothLighting();
+
+    private void CopyFrom(PresetOptions options)
+    {
+        _useSmoothLighting = options.UseSmoothLighting;
+        _useLightMapBlurring = options.UseLightMapBlurring;
+        _useBrighterBlurring = options.UseBrighterBlurring;
+        _lightMapRenderMode = options.LightMapRenderMode;
+        _normalMapsStrength = options.NormalMapsStrength;
+        _useQualityNormalMaps = options.QualityNormalMaps;
+        _useFineNormalMaps = options.FineNormalMaps;
+        _renderOnlyLight = options.RenderOnlyLight;
+
+        _useAmbientOcclusion = options.UseAmbientOcclusion;
+        _doNonSolidAmbientOcclusion = options.DoNonSolidAmbientOcclusion;
+        _doTileEntityAmbientOcclusion = options.DoTileEntityAmbientOcclusion;
+        _ambientOcclusionRadius = options.AmbientOcclusionRadius;
+        _ambientOcclusionIntensity = options.AmbientOcclusionIntensity;
+
+        _useFancyLightingEngine = options.UseFancyLightingEngine;
+        _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
+        _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
+        _simulateGlobalIllumination = options.SimulateGlobalIllumination;
+        _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
+        _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
+
+        _useCustomSkyColors = options.UseCustomSkyColors;
+        _customSkyPreset = options.CustomSkyPreset;
+
+        _threadCount = options.ThreadCount;
+        _useHiDefFeatures = options.UseHiDefFeatures;
+    }
 
     // Presets
     [Header("Presets")]
@@ -438,35 +473,4 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private bool _useHiDefFeatures;
-
-    private void CopyFrom(PresetOptions options)
-    {
-        _useSmoothLighting = options.UseSmoothLighting;
-        _useLightMapBlurring = options.UseLightMapBlurring;
-        _useBrighterBlurring = options.UseBrighterBlurring;
-        _lightMapRenderMode = options.LightMapRenderMode;
-        _normalMapsStrength = options.NormalMapsStrength;
-        _useQualityNormalMaps = options.QualityNormalMaps;
-        _useFineNormalMaps = options.FineNormalMaps;
-        _renderOnlyLight = options.RenderOnlyLight;
-
-        _useAmbientOcclusion = options.UseAmbientOcclusion;
-        _doNonSolidAmbientOcclusion = options.DoNonSolidAmbientOcclusion;
-        _doTileEntityAmbientOcclusion = options.DoTileEntityAmbientOcclusion;
-        _ambientOcclusionRadius = options.AmbientOcclusionRadius;
-        _ambientOcclusionIntensity = options.AmbientOcclusionIntensity;
-
-        _useFancyLightingEngine = options.UseFancyLightingEngine;
-        _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
-        _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
-        _simulateGlobalIllumination = options.SimulateGlobalIllumination;
-        _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
-        _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
-
-        _useCustomSkyColors = options.UseCustomSkyColors;
-        _customSkyPreset = options.CustomSkyPreset;
-
-        _threadCount = options.ThreadCount;
-        _useHiDefFeatures = options.UseHiDefFeatures;
-    }
 }
