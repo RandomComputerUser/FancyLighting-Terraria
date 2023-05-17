@@ -377,19 +377,19 @@ internal sealed class SmoothLighting
                                       (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
                                     + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
                                     + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
-                                ) / 16f);
+                                ) * (1f / 16f));
 
                                 _lights[i].Y = Math.Max(colors[i].Y, (
                                       (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
                                     + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
                                     + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
-                                ) / 16f);
+                                ) * (1f / 16f));
 
                                 _lights[i].Z = Math.Max(colors[i].Z, (
                                       (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
                                     + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
                                     + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
-                                ) / 16f);
+                                ) * (1f / 16f));
                             }
                             catch (IndexOutOfRangeException)
                             {
@@ -420,19 +420,19 @@ internal sealed class SmoothLighting
                                       (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
                                     + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
                                     + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
-                                ) / 16f;
+                                ) * (1f / 16f);
 
                                 _lights[i].Y = (
                                       (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
                                     + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
                                     + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
-                                ) / 16f;
+                                ) * (1f / 16f);
 
                                 _lights[i].Z = (
                                       (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
                                     + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
                                     + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
-                                ) / 16f;
+                                ) * (1f / 16f);
                             }
                             catch (IndexOutOfRangeException)
                             {
