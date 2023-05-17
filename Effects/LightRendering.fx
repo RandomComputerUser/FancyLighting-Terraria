@@ -198,7 +198,7 @@ float4 QualityNormalsHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = QualityNormalsColorHiDef(coords, WORLD_TEX_COORDS);
 
-    return float4(color, 1);
+    return float4(color, 1) + float4(Dither(coords), 0);
 }
 
 float4 QualityNormalsOverbright(float2 coords : TEXCOORD0) : COLOR0
