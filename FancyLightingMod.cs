@@ -757,8 +757,20 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        _smoothLightingInstance.DrawSmoothLighting(Main.instance.wallTarget, true);
-        if (LightingConfig.Instance.AmbientOcclusionEnabled())
+        bool doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
+        bool doOverbright = LightingConfig.Instance.DrawOverbright();
+
+        RenderTarget2D ambientOcclusionTarget = null;
+        if (doAmbientOcclusion && doOverbright)
+        {
+            ambientOcclusionTarget = _ambientOcclusionInstance.ApplyAmbientOcclusion(false);
+        }
+
+        _smoothLightingInstance.DrawSmoothLighting(
+            Main.instance.wallTarget, true, ambientOcclusionTarget: ambientOcclusionTarget
+        );
+
+        if (doAmbientOcclusion && !doOverbright)
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusion();
         }
@@ -875,9 +887,11 @@ public sealed class FancyLightingMod : Mod
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
         OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
+        RenderTarget2D wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget);
+
         Main.tileBatch.End();
         Main.spriteBatch.End();
-        Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+        Main.instance.GraphicsDevice.SetRenderTarget(wallTarget);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
@@ -892,13 +906,27 @@ public sealed class FancyLightingMod : Mod
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
+        bool doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
+        bool doOverbright = LightingConfig.Instance.DrawOverbright()
+            && LightingConfig.Instance.SmoothLightingEnabled();
+
+        RenderTarget2D ambientOcclusionTarget = null;
+        if (doAmbientOcclusion && doOverbright)
+        {
+            ambientOcclusionTarget = _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
+                _cameraModeTarget, wallTarget, _cameraModeBiome, false
+            );
+        }
+
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
             _cameraModeTarget,
-            _smoothLightingInstance._cameraModeTarget1,
+            wallTarget,
             true,
-            LightingConfig.Instance.AmbientOcclusionEnabled()
+            doAmbientOcclusion && !doOverbright,
+            ambientOcclusionTarget: ambientOcclusionTarget
         );
-        if (LightingConfig.Instance.AmbientOcclusionEnabled())
+
+        if (doAmbientOcclusion && !doOverbright)
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
                 _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome

@@ -2,6 +2,7 @@
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using Terraria;
 using Terraria.Graphics.Capture;
 
@@ -67,11 +68,11 @@ internal sealed class AmbientOcclusion
         TextureMaker.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
     }
 
-    internal void ApplyAmbientOcclusion()
+    internal RenderTarget2D ApplyAmbientOcclusion(bool doDraw = true)
     {
         if (!LightingConfig.Instance.AmbientOcclusionEnabled())
         {
-            return;
+            return null;
         }
 
         InitSurfaces();
@@ -84,26 +85,35 @@ internal sealed class AmbientOcclusion
             Main.sceneTile2Pos - (Main.screenPosition - new Vector2(Main.offScreenRange)),
             _drawTarget1,
             _drawTarget2,
-            out bool useSurface2
+            doDraw,
+            out bool useTarget2
         );
 
-        Main.instance.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
-        Main.spriteBatch.Draw(
-            useSurface2 ? _drawTarget1 : _drawTarget2,
-            Vector2.Zero,
-            Color.White
-        );
-        Main.spriteBatch.End();
+        if (doDraw)
+        {
+            Main.instance.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.spriteBatch.Begin();
+            Main.spriteBatch.Draw(
+                useTarget2 ? _drawTarget1 : _drawTarget2,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
+        }
 
         Main.instance.GraphicsDevice.SetRenderTarget(null);
+
+        return doDraw
+            ? null
+            : useTarget2 ? _drawTarget1 : _drawTarget2;
     }
 
-    internal void ApplyAmbientOcclusionCameraMode(
+    internal RenderTarget2D ApplyAmbientOcclusionCameraMode(
         RenderTarget2D screenTarget,
         RenderTarget2D wallTarget,
-        CaptureBiome biome
+        CaptureBiome biome,
+        bool doDraw = true
     )
     {
         TextureMaker.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
@@ -161,33 +171,41 @@ internal sealed class AmbientOcclusion
             Vector2.Zero,
             _cameraModeTarget3,
             _cameraModeTarget2,
-            out bool useSurface2
+            doDraw,
+            out bool useTarget2
         );
 
-        Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
-        Main.spriteBatch.Draw(
-            screenTarget,
-            Vector2.Zero,
-            Color.White
-        );
-        Main.spriteBatch.End();
+        if (doDraw)
+        {
+            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.spriteBatch.Begin();
+            Main.spriteBatch.Draw(
+                screenTarget,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
 
-        Main.instance.GraphicsDevice.SetRenderTarget(screenTarget);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
-        Main.spriteBatch.Draw(
-            _cameraModeTarget1,
-            Vector2.Zero,
-            Color.White
-        );
-        Main.spriteBatch.Draw(
-            useSurface2 ? _cameraModeTarget3 : _cameraModeTarget2,
-            Vector2.Zero,
-            Color.White
-        );
-        Main.spriteBatch.End();
+            Main.instance.GraphicsDevice.SetRenderTarget(screenTarget);
+            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.spriteBatch.Begin();
+            Main.spriteBatch.Draw(
+                _cameraModeTarget1,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.Draw(
+                useTarget2 ? _cameraModeTarget3 : _cameraModeTarget2,
+                Vector2.Zero,
+                Color.White
+            );
+            Main.spriteBatch.End();
+        }
+
+        return doDraw
+            ? null
+            : useTarget2 ? _cameraModeTarget3 : _cameraModeTarget2;
     }
 
     private void ApplyAmbientOcclusionInner(
@@ -198,6 +216,7 @@ internal sealed class AmbientOcclusion
         Vector2 tile2TargetPosition,
         RenderTarget2D target1,
         RenderTarget2D target2,
+        bool doDraw,
         out bool useTarget2
     )
     {
@@ -332,45 +351,56 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.End();
         }
 
+        float alpha = LightingConfig.Instance.AmbientOcclusionAlpha();
+        if (LightingConfig.Instance.UseGammaCorrection())
+        {
+            alpha = MathF.Pow(alpha, 2.2f);
+        }
+
         // We need to switch between render targets
         useTarget2 = true;
         switch (LightingConfig.Instance.AmbientOcclusionRadius)
         {
         case 1:
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
         case 2:
             ApplyBlurPass(ref useTarget2, 1, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 1, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
         case 3:
             ApplyBlurPass(ref useTarget2, 2, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 2, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
         case 4:
-        default:
             ApplyBlurPass(ref useTarget2, 3, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 3, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
         case 5:
             ApplyBlurPass(ref useTarget2, 4, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 4, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
         case 6:
+        default:
             ApplyBlurPass(ref useTarget2, 5, 0, false);
             ApplyBlurPass(ref useTarget2, 0, 5, false);
             ApplyBlurPass(ref useTarget2, 1, 0, false);
-            ApplyBlurPass(ref useTarget2, 0, 1, true, LightingConfig.Instance.AmbientOcclusionAlpha());
+            ApplyBlurPass(ref useTarget2, 0, 1, true, alpha);
             break;
+        }
+
+        if (!doDraw)
+        {
+            return;
         }
 
         Main.spriteBatch.Begin(

@@ -3,6 +3,7 @@ sampler TextureSampler : register(s0);
 sampler LightSampler : register(s0);
 sampler WorldSampler : register(s1);
 sampler DitherSampler : register(s2);
+sampler AmbientOcclusionSampler : register(s3);
 
 float2 NormalMapResolution;
 float2 NormalMapRadius;
@@ -10,6 +11,7 @@ float HiDefNormalMapStrength;
 float HiDefNormalMapExp;
 float2 WorldCoordMult;
 float2 DitherCoordMult;
+float2 AmbientOcclusionCoordMult;
 
 // Gamma correction only applies when both overbright and HiDef are enabled
 // The light map uses linear RGB
@@ -74,6 +76,11 @@ float3 OverbrightLightAtHiDef(float2 coords)
 float3 Dither(float2 coords)
 {
     return (tex2D(DitherSampler, coords * DitherCoordMult).rgb - 128 / 255.0) * (0.5 / 128);
+}
+
+float3 AmbientOcclusion(float2 coords)
+{
+    return tex2D(AmbientOcclusionSampler, coords * AmbientOcclusionCoordMult).rgb;
 }
 
 float2 Gradient(
@@ -209,6 +216,22 @@ float4 QualityNormalsOverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
     return SurfaceColorWithLighting(color);
 }
 
+float4 QualityNormalsOverbrightAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
+
+    return float4(OverbrightLightAt(coords + gradient), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS)
+        * float4(AmbientOcclusion(coords), 1);
+}
+
+float4 QualityNormalsOverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
+
+    return SurfaceColorWithLighting(color * AmbientOcclusion(coords));
+}
+
 float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
@@ -253,6 +276,20 @@ float4 Overbright(float2 coords : TEXCOORD0) : COLOR0
 float4 OverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     return SurfaceColorWithLighting(OverbrightLightAtHiDef(coords));
+}
+
+float4 OverbrightAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
+{
+    return float4(OverbrightLightAt(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS)
+        * float4(AmbientOcclusion(coords), 1);
+}
+
+float4 OverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    return SurfaceColorWithLighting(
+        OverbrightLightAtHiDef(coords) * AmbientOcclusion(coords)
+    );
 }
 
 float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -311,6 +348,16 @@ technique Technique1
         PixelShader = compile ps_3_0 QualityNormalsOverbrightHiDef();
     }
 
+    pass QualityNormalsOverbrightAmbientOcclusion
+    {
+        PixelShader = compile ps_2_0 QualityNormalsOverbrightAmbientOcclusion();
+    }
+
+    pass QualityNormalsOverbrightAmbientOcclusionHiDef
+    {
+        PixelShader = compile ps_3_0 QualityNormalsOverbrightAmbientOcclusionHiDef();
+    }
+
     pass QualityNormalsOverbrightLightOnlyHiDef
     {
         PixelShader = compile ps_3_0 QualityNormalsOverbrightLightOnlyHiDef();
@@ -344,6 +391,16 @@ technique Technique1
     pass OverbrightHiDef
     {
         PixelShader = compile ps_3_0 OverbrightHiDef();
+    }
+
+    pass OverbrightAmbientOcclusion
+    {
+        PixelShader = compile ps_2_0 OverbrightAmbientOcclusion();
+    }
+
+    pass OverbrightAmbientOcclusionHiDef
+    {
+        PixelShader = compile ps_3_0 OverbrightAmbientOcclusionHiDef();
     }
 
     pass OverbrightLightOnlyHiDef
