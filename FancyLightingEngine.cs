@@ -33,8 +33,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private readonly float[] _lightWaterDecay;
     private readonly float[] _lightHoneyDecay;
     private readonly float[] _lightShadowPaintDecay; // In vanilla shadow paint isn't a special case
-    private float _brightnessCutoff;
-    private float _logSlowestDecay;
+    private float _logBrightnessCutoff;
+    private float _reciprocalLogSlowestDecay;
 
     private float _lightLossExitingSolid;
 
@@ -249,11 +249,12 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
 
         double temporalMult = LightingConfig.Instance.SimulateGlobalIllumination ? 0.25 : 1.0;
-        _brightnessCutoff = FancyLightingMod._inCameraMode
+        _logBrightnessCutoff = FancyLightingMod._inCameraMode
             ? 0.02f
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
                 ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5 * temporalMult) * 0.02, 0.02, 0.125)
                 : 0.04f;
+        _logBrightnessCutoff = MathF.Log(_logBrightnessCutoff);
         _temporalData = 0;
 
         const float MAX_DECAY_VALUE = 0.97f;
@@ -285,7 +286,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             MAX_DECAY_VALUE
         );
 
-        _logSlowestDecay = MathF.Log(
+        _reciprocalLogSlowestDecay = 1f / MathF.Log(
             Math.Max(
                 Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
                 Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
@@ -460,10 +461,11 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             while (Interlocked.CompareExchange(ref light.Z, newLight.Z, oldValue) != oldValue);
         }
 
-        float threshold = _lightMask[index][MAX_DISTANCE];
+        float reciprocalThreshold = 1f / _lightMask[index][MAX_DISTANCE];
         int length = width * height;
 
-        int topEdge = height * (index / height);
+        int midX = index / height;
+        int topEdge = height * midX;
         int bottomEdge = topEdge + (height - 1);
 
         bool skipUp, skipDown, skipLeft, skipRight;
@@ -474,7 +476,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - 1][DISTANCE_TICKS] / threshold * colors[index - 1];
+            Vector3 otherColor = _lightMask[index - 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index - 1];
             skipUp = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
         }
         if (index == bottomEdge)
@@ -483,7 +485,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + 1][DISTANCE_TICKS] / threshold * colors[index + 1];
+            Vector3 otherColor = _lightMask[index + 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index + 1];
             skipDown = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
         }
         if (index < height)
@@ -492,7 +494,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - height][DISTANCE_TICKS] / threshold * colors[index - height];
+            Vector3 otherColor = _lightMask[index - height][DISTANCE_TICKS] * reciprocalThreshold * colors[index - height];
             skipLeft = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
         }
         if (index + height >= length)
@@ -501,7 +503,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + height][DISTANCE_TICKS] / threshold * colors[index + height];
+            Vector3 otherColor = _lightMask[index + height][DISTANCE_TICKS] * reciprocalThreshold * colors[index + height];
             skipRight = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
         }
 
@@ -514,9 +516,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         float initialDecay = _lightMask[index][DISTANCE_TICKS];
         int lightRange = Math.Clamp(
             (int)Math.Ceiling(
-                MathF.Log(
-                    _brightnessCutoff / (initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
-                ) / _logSlowestDecay
+                (
+                    _logBrightnessCutoff
+                    - MathF.Log(initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
+                ) * _reciprocalLogSlowestDecay
             ) + 1,
             1,
             MAX_LIGHT_RANGE
@@ -616,8 +619,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         bool doUpperLeft = !(skipUp || skipLeft);
         bool doLowerRight = !(skipDown || skipRight);
         bool doLowerLeft = !(skipDown || skipLeft);
-
-        int midX = index / height;
 
         int leftEdge = Math.Min(midX, lightRange);
         int rightEdge = Math.Min(width - 1 - midX, lightRange);
@@ -902,11 +903,14 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         if (LightingConfig.Instance.FancyLightingEngineUseTemporal)
         {
+            const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
+
             int baseWork = Math.Clamp(
                 (int)Math.Ceiling(
-                    MathF.Log(
-                        0.04f / (initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
-                    ) / _logSlowestDecay
+                    (
+                        LOG_BASE_DECAY
+                        - MathF.Log(initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
+                    ) * _reciprocalLogSlowestDecay
                 ) + 1,
                 1,
                 MAX_LIGHT_RANGE
