@@ -39,8 +39,9 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
-    private const float GI_MULT_BASE = 0f;
-    private const float GI_MULT_INCREMENT = 0.55f;
+    private const float GI_MULT_BASE = 0.45f;
+    private const float GI_MULT_BACKGROUND = 0.55f;
+    private const float GI_MULT_FOREGROUND = 0.65f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
@@ -362,37 +363,38 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                     bool notOnLeft = x > xmin;
                     bool notOnRight = x < xmax;
                     int endIndex = height * (i + 1);
-                    for (int j = height * i; j < endIndex; ++j)
+                    for (int j = height * i; j < endIndex; ++j, ++y)
                     {
-                        float mult;
+                        ref Vector3 giLight = ref _tmp2[j];
+
                         if (lightDecay[j] is LightMaskMode.Solid)
                         {
-                            mult = 0f;
+                            giLight.X = 0f;
+                            giLight.Y = 0f;
+                            giLight.Z = 0f;
+                            continue;
+                        }
+
+                        float mult;
+                        if (
+                            (y > ymin && lightDecay[j - 1] is LightMaskMode.Solid)
+                            || (y < ymax && lightDecay[j + 1] is LightMaskMode.Solid)
+                            || (notOnLeft && lightDecay[j - height] is LightMaskMode.Solid)
+                            || (notOnRight && lightDecay[j + height] is LightMaskMode.Solid)
+                        )
+                        {
+                            mult = GI_MULT_FOREGROUND;
+                        }
+                        else if (Main.tile[x, y].WallType != WallID.None)
+                        {
+                            mult = GI_MULT_BACKGROUND;
                         }
                         else
                         {
                             mult = GI_MULT_BASE;
-
-                            Tile tile = Main.tile[x, y];
-
-                            if (tile.WallType != WallID.None)
-                            {
-                                mult = 0.5f * GI_MULT_INCREMENT + (1 - 0.5f * GI_MULT_INCREMENT) * mult;
-                            }
-
-                            if (
-                                (y > ymin && lightDecay[j - 1] is LightMaskMode.Solid)
-                                || (y < ymax && lightDecay[j + 1] is LightMaskMode.Solid)
-                                || (notOnLeft && lightDecay[j - height] is LightMaskMode.Solid)
-                                || (notOnRight && lightDecay[j + height] is LightMaskMode.Solid)
-                            )
-                            {
-                                mult = GI_MULT_INCREMENT + (1 - GI_MULT_INCREMENT) * mult;
-                            }
                         }
 
-                        Vector3.Multiply(ref _tmp[j], mult, out _tmp2[j]);
-                        ++y;
+                        Vector3.Multiply(ref _tmp[j], mult, out giLight);
                     }
                 }
             );
