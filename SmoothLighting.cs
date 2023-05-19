@@ -228,13 +228,11 @@ internal sealed class SmoothLighting
         );
         _gammaCorrectionShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "GammaCorrection",
-            true
+            "GammaCorrection"
         );
         _gammaCorrectionBGShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "GammaCorrectionBG",
-            true
+            "GammaCorrectionBG"
         );
 
         _ditherMask = ModContent.Request<Texture2D>(
