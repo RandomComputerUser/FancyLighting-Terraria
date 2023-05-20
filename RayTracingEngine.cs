@@ -143,9 +143,10 @@ internal sealed class RayTracingEngine : IFancyLightingEngine
                         && notOnVerticalEdge && y > _lightMapArea.Y && y < topEdgeY
                     )
                     {
+                        // Extremely basic denoising
                         color = Vector3.Max(
                             color,
-                            Vector3.Max(
+                            0.5f * Vector3.Max(
                                 Vector3.Max(colors[j - 1], colors[j + 1]),
                                 Vector3.Max(colors[j - height], colors[j + height])
                             )
