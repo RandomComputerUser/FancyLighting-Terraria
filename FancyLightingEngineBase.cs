@@ -9,6 +9,19 @@ internal abstract class FancyLightingEngineBase : IFancyLightingEngine
     protected int[][] _circles;
     protected Rectangle _lightMapArea;
 
+    public void Unload()
+    { }
+
+    public void SetLightMapArea(Rectangle value) => _lightMapArea = value;
+
+    public abstract void SpreadLight(
+        LightMap lightMap,
+        Vector3[] colors,
+        LightMaskMode[] lightDecay,
+        int width,
+        int height
+    );
+
     protected void ComputeCircles(int maxLightRange)
     {
         _circles = new int[maxLightRange + 1][];
@@ -41,14 +54,4 @@ internal abstract class FancyLightingEngineBase : IFancyLightingEngine
             decay[i] = MathF.Exp(exponentMult * i * logBaseline);
         }
     }
-
-    public void SetLightMapArea(Rectangle value) => _lightMapArea = value;
-
-    public abstract void SpreadLight(
-        LightMap lightMap,
-        Vector3[] colors,
-        LightMaskMode[] lightDecay,
-        int width,
-        int height
-    );
 }

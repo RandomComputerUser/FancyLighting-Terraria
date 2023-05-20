@@ -38,16 +38,19 @@ internal class Shader
         Effect.Parameters[parameterName].SetValue(value);
         return this;
     }
+
     public Shader SetParameter(string parameterName, Vector2 value)
     {
         Effect.Parameters[parameterName].SetValue(value);
         return this;
     }
+
     public Shader SetParameter(string parameterName, Vector3 value)
     {
         Effect.Parameters[parameterName].SetValue(value);
         return this;
     }
+
     public Shader SetParameter(string parameterName, Vector4 value)
     {
         Effect.Parameters[parameterName].SetValue(value);

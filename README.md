@@ -16,6 +16,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Improved ambient occlusion when using overbright rendering
 - Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring
+- Added an experimental ray tracing mode
 - Changed sky color profile 1
 - Tweaked glowing effects
 - Tweaked some default settings for ambient occlusion

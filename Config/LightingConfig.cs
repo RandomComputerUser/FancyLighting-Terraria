@@ -32,9 +32,10 @@ public sealed class LightingConfig : ModConfig
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
     internal bool UseGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
+    internal bool DoRayTracing() => HiDefFeaturesEnabled() && UseRayTracing;
 
     public override void OnChanged()
-        => ModContent.GetInstance<FancyLightingMod>()?.RecalculateSmoothLighting();
+        => ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
 
     private void CopyFrom(PresetOptions options)
     {
@@ -56,9 +57,10 @@ public sealed class LightingConfig : ModConfig
         _useFancyLightingEngine = options.UseFancyLightingEngine;
         _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
         _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
-        _simulateGlobalIllumination = options.SimulateGlobalIllumination;
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
         _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
+        _simulateGlobalIllumination = options.SimulateGlobalIllumination;
+        _useRayTracing = options.UseRayTracing;
 
         _useCustomSkyColors = options.UseCustomSkyColors;
         _customSkyPreset = options.CustomSkyPreset;
@@ -359,20 +361,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineMakeBrighter;
 
-    [Label("Simulate Global Illumination")]
-    [Tooltip("Toggles whether to simulate global illumination\nWhen enabled, indirect lighting makes shadows brighter\nThe simulation is very approximate and not physically accurate")]
-    [DefaultValue(DefaultOptions.SimulateGlobalIllumination)]
-    public bool SimulateGlobalIllumination
-    {
-        get => _simulateGlobalIllumination;
-        set
-        {
-            _simulateGlobalIllumination = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _simulateGlobalIllumination;
-
     [Label("Light Loss (%) Exiting Solid Blocks")]
     [Tooltip("Controls how much light is lost exiting a solid block into the air\nHigher values correspond to darker shadows")]
     [Range(0, 100)]
@@ -408,6 +396,34 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _fancyLightingEngineLightAbsorption;
+
+    [Label("Simulate Global Illumination")]
+    [Tooltip("Toggles whether to simulate a basic form of global illumination\nWhen enabled, indirect lighting makes shadows brighter")]
+    [DefaultValue(DefaultOptions.SimulateGlobalIllumination)]
+    public bool SimulateGlobalIllumination
+    {
+        get => _simulateGlobalIllumination;
+        set
+        {
+            _simulateGlobalIllumination = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private bool _simulateGlobalIllumination;
+
+    [Label("(Experimental) Use Ray Tracing")]
+    [Tooltip("Toggles whether to use a basic form of ray tracing\nMakes shadows more accurate\nRequires Use Enhanced Shaders and Colors to be enabled\nHas performance issues on slower GPUs\nDoes not currently support simulated global illumination")]
+    [DefaultValue(DefaultOptions.UseRayTracing)]
+    public bool UseRayTracing
+    {
+        get => _useRayTracing;
+        set
+        {
+            _useRayTracing = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private bool _useRayTracing;
 
     // Sky Color
     [Header("Sky Color")]

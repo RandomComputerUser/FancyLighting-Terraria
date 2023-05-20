@@ -24,4 +24,14 @@ public static class VectorToColor
 
         color.PackedValue = R | G << 16 | B << 32 | (ulong)ushort.MaxValue << 48;
     }
+
+    public static void Assign(ref Rgba64 color, float brightness, Vector3 rgb, float alpha)
+    {
+        ulong R = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.X, 0f, 1f) + 0.5f);
+        ulong G = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Y, 0f, 1f) + 0.5f);
+        ulong B = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Z, 0f, 1f) + 0.5f);
+        ulong A = (ulong)(65535f * MathHelper.Clamp(alpha, 0f, 1f) + 0.5f);
+
+        color.PackedValue = R | G << 16 | B << 32 | A << 48;
+    }
 }

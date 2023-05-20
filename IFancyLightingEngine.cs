@@ -5,6 +5,8 @@ namespace FancyLighting;
 
 internal interface IFancyLightingEngine
 {
+    public void Unload();
+
     public void SetLightMapArea(Rectangle value);
 
     public abstract void SpreadLight(

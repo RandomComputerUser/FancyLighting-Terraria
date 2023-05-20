@@ -108,7 +108,7 @@ public sealed class FancyLightingMod : Mod
 
         _smoothLightingInstance = new SmoothLighting(this);
         _ambientOcclusionInstance = new AmbientOcclusion();
-        _fancyLightingEngineInstance = new FancyLightingEngine();
+        SetFancyLightingEngineInstance();
 
         field_activeEngine
             = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
@@ -208,16 +208,40 @@ public sealed class FancyLightingMod : Mod
                 _cameraModeTarget = null;
                 _smoothLightingInstance?.Unload();
                 _ambientOcclusionInstance?.Unload();
+                _fancyLightingEngineInstance?.Unload();
             }
         );
 
         base.Unload();
     }
 
-    public void RecalculateSmoothLighting()
+    private void SetFancyLightingEngineInstance()
+    {
+        if (LightingConfig.Instance?.DoRayTracing() ?? false)
+        {
+            if (_fancyLightingEngineInstance is not RayTracingEngine)
+            {
+                _fancyLightingEngineInstance = new RayTracingEngine();
+            }
+        }
+        else
+        {
+            if (_fancyLightingEngineInstance is not FancyLightingEngine)
+            {
+                _fancyLightingEngineInstance = new FancyLightingEngine();
+            }
+        }
+    }
+
+    internal void OnConfigChange()
     {
         _smoothLightingInstance?.CalculateSmoothLighting(false, false, true);
         _smoothLightingInstance?.CalculateSmoothLighting(true, false, true);
+
+        if (_fancyLightingEngineInstance is not null)
+        {
+            SetFancyLightingEngineInstance();
+        }
     }
 
     private void AddHooks()
