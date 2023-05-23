@@ -221,6 +221,7 @@ public sealed class FancyLightingMod : Mod
         {
             if (_fancyLightingEngineInstance is not RayTracingEngine)
             {
+                _fancyLightingEngineInstance?.Unload();
                 _fancyLightingEngineInstance = new RayTracingEngine();
             }
         }
@@ -228,6 +229,7 @@ public sealed class FancyLightingMod : Mod
         {
             if (_fancyLightingEngineInstance is not FancyLightingEngine)
             {
+                _fancyLightingEngineInstance?.Unload();
                 _fancyLightingEngineInstance = new FancyLightingEngine();
             }
         }

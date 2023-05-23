@@ -52,7 +52,7 @@ internal sealed class RayTracingEngine : IFancyLightingEngine
         _lightSourceTexture?.Dispose();
         _lightDestinationTexture?.Dispose();
 
-        _rayTracingShader?.Unload();
+        EffectLoader.UnloadEffect(ref _rayTracingShader);
 
         _noiseTexture?.Dispose();
 
