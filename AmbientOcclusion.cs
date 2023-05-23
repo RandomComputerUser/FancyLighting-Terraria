@@ -2,7 +2,6 @@
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using Terraria;
 using Terraria.Graphics.Capture;
 
@@ -354,7 +353,7 @@ internal sealed class AmbientOcclusion
         float alpha = LightingConfig.Instance.AmbientOcclusionAlpha();
         if (LightingConfig.Instance.UseGammaCorrection())
         {
-            alpha = MathF.Pow(alpha, 2.2f);
+            alpha *= alpha;
         }
 
         // We need to switch between render targets
