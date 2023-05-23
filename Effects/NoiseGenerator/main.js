@@ -9,8 +9,8 @@ function main() {
     const canvas = document.querySelector("#output")
     const ctx = canvas.getContext("2d")
 
-    canvas.width = 256
-    canvas.height = 256
+    canvas.width = 128
+    canvas.height = 128
     const size = canvas.width * canvas.height
 
     const noise = []
