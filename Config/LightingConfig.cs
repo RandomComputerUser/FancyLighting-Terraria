@@ -32,7 +32,6 @@ public sealed class LightingConfig : ModConfig
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
     internal bool UseGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
-    internal bool DoRayTracing() => HiDefFeaturesEnabled() && UseRayTracing;
 
     public override void OnChanged()
         => ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
@@ -60,7 +59,7 @@ public sealed class LightingConfig : ModConfig
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
         _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
         _simulateGlobalIllumination = options.SimulateGlobalIllumination;
-        _useRayTracing = options.UseRayTracing;
+        _useEnhancedFancyLightingEngine = options.UseEnhancedFancyLightingEngine;
 
         _useCustomSkyColors = options.UseCustomSkyColors;
         _customSkyPreset = options.CustomSkyPreset;
@@ -411,19 +410,19 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _simulateGlobalIllumination;
 
-    [Label("(Experimental) Use Ray Tracing")]
-    [Tooltip("Toggles whether to use a basic form of ray tracing\nMakes shadows more accurate\nRequires Use Enhanced Shaders and Colors to be enabled\nHas performance issues on slower GPUs\nDoes not currently support simulated global illumination")]
-    [DefaultValue(DefaultOptions.UseRayTracing)]
-    public bool UseRayTracing
+    [Label("(Experimental) Use Enhanced Fancy Lighting Engine")]
+    [Tooltip("Toggles whether to use an enhanced version of the fancy lighting engine\nMakes shadows more accurate\nRequires more CPU power to run smoothly")]
+    [DefaultValue(DefaultOptions.UseEnhancedFancyLightingEngine)]
+    public bool UseEnhancedFancyLightingEngine
     {
-        get => _useRayTracing;
+        get => _useEnhancedFancyLightingEngine;
         set
         {
-            _useRayTracing = value;
+            _useEnhancedFancyLightingEngine = value;
             ConfigPreset = Preset.CustomPreset;
         }
     }
-    private bool _useRayTracing;
+    private bool _useEnhancedFancyLightingEngine;
 
     // Sky Color
     [Header("Sky Color")]

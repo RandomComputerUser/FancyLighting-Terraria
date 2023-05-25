@@ -1,9 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Terraria.Graphics.Light;
 
-namespace FancyLighting;
+namespace FancyLighting.LightingEngines;
 
-internal interface IFancyLightingEngine
+public interface ICustomLightingEngine
 {
     public void Unload();
 
@@ -12,7 +12,7 @@ internal interface IFancyLightingEngine
     public abstract void SpreadLight(
         LightMap lightMap,
         Vector3[] colors,
-        LightMaskMode[] lightDecay,
+        LightMaskMode[] lightMasks,
         int width,
         int height
     );

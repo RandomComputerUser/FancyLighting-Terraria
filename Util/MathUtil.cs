@@ -10,6 +10,11 @@ internal static class MathUtil
     {
         // Simpson's rule
 
+        if (lowerBound == upperBound)
+        {
+            return 0.0;
+        }
+
         if (steps <= 0)
         {
             steps = 64;

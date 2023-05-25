@@ -26,7 +26,7 @@ internal record PresetOptions
     public int FancyLightingEngineLightLoss { get; init; } = DefaultOptions.FancyLightingEngineLightLoss;
     public int FancyLightingEngineLightAbsorption { get; init; } = DefaultOptions.FancyLightingEngineLightAbsorption;
     public bool SimulateGlobalIllumination { get; init; } = DefaultOptions.SimulateGlobalIllumination;
-    public bool UseRayTracing { get; init; } = DefaultOptions.UseRayTracing;
+    public bool UseEnhancedFancyLightingEngine { get; init; } = DefaultOptions.UseEnhancedFancyLightingEngine;
 
     public bool UseCustomSkyColors { get; init; } = DefaultOptions.UseCustomSkyColors;
     public SkyColorPreset CustomSkyPreset { get; init; } = DefaultOptions.CustomSkyPreset;
@@ -59,7 +59,7 @@ internal record PresetOptions
         FancyLightingEngineLightLoss = config.FancyLightingEngineLightLoss;
         FancyLightingEngineLightAbsorption = config.FancyLightingEngineLightAbsorption;
         SimulateGlobalIllumination = config.SimulateGlobalIllumination;
-        UseRayTracing = config.UseRayTracing;
+        UseEnhancedFancyLightingEngine = config.UseEnhancedFancyLightingEngine;
 
         UseCustomSkyColors = config.UseCustomSkyColors;
         CustomSkyPreset = config.CustomSkyPreset;
@@ -81,7 +81,7 @@ internal record PresetOptions
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
         SimulateGlobalIllumination = false,
-        UseRayTracing = false,
+        UseEnhancedFancyLightingEngine = false,
         UseCustomSkyColors = false,
         UseHiDefFeatures = false,
     };
@@ -99,7 +99,7 @@ internal record PresetOptions
         UseFancyLightingEngine = false,
         FancyLightingEngineMakeBrighter = false,
         SimulateGlobalIllumination = false,
-        UseRayTracing = false,
+        UseEnhancedFancyLightingEngine = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -119,7 +119,7 @@ internal record PresetOptions
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
         SimulateGlobalIllumination = false,
-        UseRayTracing = false,
+        UseEnhancedFancyLightingEngine = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -137,7 +137,7 @@ internal record PresetOptions
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
         SimulateGlobalIllumination = false,
-        UseRayTracing = false,
+        UseEnhancedFancyLightingEngine = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -155,7 +155,7 @@ internal record PresetOptions
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
         SimulateGlobalIllumination = true,
-        UseRayTracing = false,
+        UseEnhancedFancyLightingEngine = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = true,
     };

@@ -8,7 +8,7 @@ using Terraria;
 using Terraria.Graphics.Light;
 using Terraria.ID;
 
-namespace FancyLighting;
+namespace FancyLighting.LightingEngines;
 
 internal sealed class FancyLightingEngine : FancyLightingEngineBase
 {
@@ -28,11 +28,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
     private const int MAX_DISTANCE = 384;
-    private readonly float[] _lightAirDecay;
-    private readonly float[] _lightSolidDecay;
-    private readonly float[] _lightWaterDecay;
-    private readonly float[] _lightHoneyDecay;
-    private readonly float[] _lightShadowPaintDecay; // In vanilla shadow paint isn't a special case
     private float _logBrightnessCutoff;
     private float _reciprocalLogSlowestDecay;
 
@@ -48,7 +43,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
     private Vector3[] _tmp;
     private Vector3[] _tmp2;
-    private float[][] _lightMask;
 
     private int _temporalData;
 
@@ -201,7 +195,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
 
         double lightFromLeft = MathUtil.Integrate(
-            (double angle) =>
+            (angle) =>
             {
                 double tanValue = Math.Tan(angle);
 
@@ -218,7 +212,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             topLeftAngle
         );
         double lightFromBottom = MathUtil.Integrate(
-            (double angle) =>
+            (angle) =>
             {
                 double tanValue = Math.Tan(angle);
 
@@ -241,7 +235,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     public override void SpreadLight(
         LightMap lightMap,
         Vector3[] colors,
-        LightMaskMode[] lightDecay,
+        LightMaskMode[] lightMasks,
         int width,
         int height
     )
@@ -258,45 +252,14 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         _temporalData = 0;
 
         const float MAX_DECAY_VALUE = 0.97f;
-
-        float decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
-        float lightAirDecayBaseline
-            = decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_VALUE);
-        float lightSolidDecayBaseline = decayMult * Math.Min(
-            MathF.Pow(
-                lightMap.LightDecayThroughSolid,
-                LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
-            ),
-            MAX_DECAY_VALUE
-        );
-        float lightWaterDecayBaseline = decayMult * Math.Min(
-            0.625f * lightMap.LightDecayThroughWater.Length() / Vector3.One.Length()
-            + 0.375f * Math.Max(
-                lightMap.LightDecayThroughWater.X,
-                Math.Max(lightMap.LightDecayThroughWater.Y, lightMap.LightDecayThroughWater.Z)
-            ),
-            MAX_DECAY_VALUE
-        );
-        float lightHoneyDecayBaseline = decayMult * Math.Min(
-            0.625f * lightMap.LightDecayThroughHoney.Length() / Vector3.One.Length()
-            + 0.375f * Math.Max(
-                lightMap.LightDecayThroughHoney.X,
-                Math.Max(lightMap.LightDecayThroughHoney.Y, lightMap.LightDecayThroughHoney.Z)
-            ),
-            MAX_DECAY_VALUE
-        );
+        UpdateDecays(lightMap, lightMasks, width, height, MAX_DECAY_VALUE, DISTANCE_TICKS);
 
         _reciprocalLogSlowestDecay = 1f / MathF.Log(
             Math.Max(
-                Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
-                Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
+                Math.Max(_lightAirDecay[DISTANCE_TICKS], _lightSolidDecay[DISTANCE_TICKS]),
+                Math.Max(_lightWaterDecay[DISTANCE_TICKS], _lightHoneyDecay[DISTANCE_TICKS])
             )
         );
-
-        UpdateDecay(_lightAirDecay, lightAirDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightWaterDecay, lightWaterDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightHoneyDecay, lightHoneyDecayBaseline, DISTANCE_TICKS);
 
         int length = width * height;
 
@@ -308,31 +271,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         Array.Copy(colors, _tmp, length);
 
-        Parallel.For(
-            0,
-            width,
-            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-            (i) =>
-            {
-                int x = i + _lightMapArea.X;
-                int y = _lightMapArea.Y;
-                int endIndex = height * (i + 1);
-                for (int j = height * i; j < endIndex; ++j)
-                {
-                    _lightMask[j] = lightDecay[j] switch
-                    {
-                        LightMaskMode.Solid
-                            => Main.tile[x, y].TileColor == PaintID.ShadowPaint
-                                ? _lightShadowPaintDecay
-                                : _lightSolidDecay,
-                        LightMaskMode.Water => _lightWaterDecay,
-                        LightMaskMode.Honey => _lightHoneyDecay,
-                        _ => _lightAirDecay,
-                    };
-                    ++y;
-                }
-            }
-        );
+        UpdateLightMasks(lightMasks, width, height);
 
         Parallel.For(
             0,
@@ -368,7 +307,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                     {
                         ref Vector3 giLight = ref _tmp2[j];
 
-                        if (lightDecay[j] is LightMaskMode.Solid)
+                        if (lightMasks[j] is LightMaskMode.Solid)
                         {
                             giLight.X = 0f;
                             giLight.Y = 0f;
@@ -378,10 +317,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
                         float mult;
                         if (
-                            (y > ymin && lightDecay[j - 1] is LightMaskMode.Solid)
-                            || (y < ymax && lightDecay[j + 1] is LightMaskMode.Solid)
-                            || (notOnLeft && lightDecay[j - height] is LightMaskMode.Solid)
-                            || (notOnRight && lightDecay[j + height] is LightMaskMode.Solid)
+                            y > ymin && lightMasks[j - 1] is LightMaskMode.Solid
+                            || y < ymax && lightMasks[j + 1] is LightMaskMode.Solid
+                            || notOnLeft && lightMasks[j - height] is LightMaskMode.Solid
+                            || notOnRight && lightMasks[j + height] is LightMaskMode.Solid
                         )
                         {
                             mult = GI_MULT_FOREGROUND;
@@ -406,7 +345,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (i) =>
                 {
-                    if (lightDecay[i] is LightMaskMode.Solid)
+                    if (lightMasks[i] is LightMaskMode.Solid)
                     {
                         return;
                     }
@@ -626,11 +565,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         bottomEdge = Math.Min(bottomEdge - index, lightRange);
 
         int[] circle = _circles[lightRange];
-
-        // precomputedLightingSpread[,]: 2D arrays in C# are row major (with the first index being the row)
-        // precomputedLightingSpread uses y as the second index,
-        // and Terraria's 1D arrays for lighting use height * x + y as the index
-        // So looping over y in the inner loop should be faster and simpler
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {

@@ -1,4 +1,5 @@
 using FancyLighting.Config;
+using FancyLighting.LightingEngines;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -23,7 +24,7 @@ public sealed class FancyLightingMod : Mod
 
     private SmoothLighting _smoothLightingInstance;
     private AmbientOcclusion _ambientOcclusionInstance;
-    private IFancyLightingEngine _fancyLightingEngineInstance;
+    private ICustomLightingEngine _fancyLightingEngineInstance;
 
     internal FieldInfo field_activeEngine;
     private FieldInfo field_activeLightMap;
@@ -217,12 +218,12 @@ public sealed class FancyLightingMod : Mod
 
     private void SetFancyLightingEngineInstance()
     {
-        if (LightingConfig.Instance?.DoRayTracing() ?? false)
+        if (LightingConfig.Instance?.UseEnhancedFancyLightingEngine ?? false)
         {
-            if (_fancyLightingEngineInstance is not RayTracingEngine)
+            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
             {
                 _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new RayTracingEngine();
+                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
             }
         }
         else
@@ -832,8 +833,8 @@ public sealed class FancyLightingMod : Mod
         }
 
         Vector3[] colors = (Vector3[])field_colors.GetValue(self);
-        LightMaskMode[] lightDecay = (LightMaskMode[])field_mask.GetValue(self);
-        if (colors is null || lightDecay is null)
+        LightMaskMode[] lightMasks = (LightMaskMode[])field_mask.GetValue(self);
+        if (colors is null || lightMasks is null)
         {
             orig(self);
             return;
@@ -842,7 +843,7 @@ public sealed class FancyLightingMod : Mod
         if (LightingConfig.Instance.FancyLightingEngineEnabled())
         {
             _fancyLightingEngineInstance.SpreadLight(
-                self, colors, lightDecay, self.Width, self.Height
+                self, colors, lightMasks, self.Width, self.Height
             );
         }
         else
