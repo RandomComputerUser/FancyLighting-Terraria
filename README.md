@@ -10,13 +10,14 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
 - Renamed some presets and added a new preset
+- Renamed the Use Higher-Quality Normal Maps option to Use Enhanced Simulated Normal Maps
 - Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
+- Added an enhanced fancy lighting engine
 - Improved ambient occlusion when using overbright rendering
 - Added an option to change the light absorption of solid blocks
 - Added a new option to increase the brightness of lighting when using light map blurring
-- Added an experimental ray tracing mode
 - Changed sky color profile 1
 - Tweaked glowing effects
 - Tweaked some default settings for ambient occlusion
