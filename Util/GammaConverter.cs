@@ -5,8 +5,6 @@ namespace FancyLighting.Util;
 
 internal static class GammaConverter
 {
-    // Uses a gamma of 2.25
-
     public static void GammaToLinear(ref Vector3 color)
     {
         color.X *= color.X;
