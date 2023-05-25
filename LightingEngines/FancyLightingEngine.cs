@@ -21,7 +21,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         int DistanceToRight
     );
 
-    private readonly record struct DistanceCache(double top, double right);
+    private readonly record struct DistanceCache(double Top, double Right);
 
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
@@ -79,7 +79,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 out double lightFromLeft, out double topLightFromLeft,
                 out double distanceToTop
             );
-            values[(MAX_LIGHT_RANGE + 1) * i] = new LightingSpread(
+            values[(MAX_LIGHT_RANGE + 1) * i] = new(
                 (float)lightFromLeft,
                 (float)topLightFromLeft,
                 (float)(1.0 - topLightFromLeft),
@@ -100,7 +100,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 out double lightFromBottom, out double rightLightFromBottom,
                 out double distanceToRight
             );
-            values[j] = new LightingSpread(
+            values[j] = new(
                 0f,
                 0f,
                 1f,
@@ -110,7 +110,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 (float)(1.0 - rightLightFromBottom),
                 DoubleToIndex(distanceToRight)
             );
-            distances[0, j] = new DistanceCache(
+            distances[0, j] = new(
                 (double)DISTANCE_TICKS * (j + 1), (double)DISTANCE_TICKS * j + DoubleToIndex(distanceToRight)
             );
         }
@@ -129,19 +129,19 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                     out double distanceToRight
                 );
 
-                double leftError = distances[i - 1, j].right / DISTANCE_TICKS - MathUtil.Hypot(i, j);
-                double bottomError = distances[i, j - 1].top / DISTANCE_TICKS - MathUtil.Hypot(i, j);
+                double leftError = distances[i - 1, j].Right / DISTANCE_TICKS - MathUtil.Hypot(i, j);
+                double bottomError = distances[i, j - 1].Top / DISTANCE_TICKS - MathUtil.Hypot(i, j);
                 distanceToTop -= topLightFromLeft * leftError + (1.0 - topLightFromLeft) * bottomError;
                 distanceToRight -= rightLightFromBottom * bottomError + (1.0 - rightLightFromBottom) * leftError;
 
                 distances[i, j] = new DistanceCache(
-                    topLightFromLeft * (DoubleToIndex(distanceToTop) + distances[i - 1, j].right)
-                        + (1.0 - topLightFromLeft) * (DoubleToIndex(distanceToTop) + distances[i, j - 1].top),
-                    rightLightFromBottom * (DoubleToIndex(distanceToRight) + distances[i, j - 1].top)
-                        + (1.0 - rightLightFromBottom) * (DoubleToIndex(distanceToRight) + distances[i - 1, j].right)
+                    topLightFromLeft * (DoubleToIndex(distanceToTop) + distances[i - 1, j].Right)
+                        + (1.0 - topLightFromLeft) * (DoubleToIndex(distanceToTop) + distances[i, j - 1].Top),
+                    rightLightFromBottom * (DoubleToIndex(distanceToRight) + distances[i, j - 1].Top)
+                        + (1.0 - rightLightFromBottom) * (DoubleToIndex(distanceToRight) + distances[i - 1, j].Right)
                 );
 
-                values[(MAX_LIGHT_RANGE + 1) * i + j] = new LightingSpread(
+                values[(MAX_LIGHT_RANGE + 1) * i + j] = new(
                     (float)lightFromLeft,
                     (float)topLightFromLeft,
                     (float)(1.0 - topLightFromLeft),

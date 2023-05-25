@@ -219,12 +219,11 @@ Mods: {
 				}
 
 				UseEnhancedFancyLightingEngine: {
-					Label: (Experimental) Use Enhanced Fancy Lighting Engine
+					Label: Use Enhanced Fancy Lighting Engine
 					Tooltip:
 						'''
-						Is planned to increase lighting quality (currently does not)
 						Toggles whether to use an enhanced version of the fancy lighting engine
-						Makes shadows more accurate (planned)
+						Makes shadows more accurate
 						Requires more CPU power to run smoothly
 						'''
 				}
