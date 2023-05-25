@@ -192,8 +192,8 @@ public sealed class LightingConfig : ModConfig
     }
     private int _normalMapsStrength;
 
-    [Label("Use Higher-Quality Normal Maps")]
-    [Tooltip("Toggles between regular and higher-quality simulated normal map shaders\nWhen enabled, uses a higher-quality normal map simulation\nMay reduce performance when enabled")]
+    [Label("Use Enhanced Simulated Normal Maps")]
+    [Tooltip("Toggles between regular and enhanced simulated normal map shaders\nWhen enabled, uses a higher-quality normal map simulation\nMay reduce performance when enabled")]
     [DefaultValue(DefaultOptions.QualityNormalMaps)]
     public bool QualityNormalMaps
     {
