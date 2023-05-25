@@ -4,9 +4,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Terraria;
 using Terraria.Graphics.Light;
-using Terraria.ID;
 
 namespace FancyLighting.LightingEngines;
 
@@ -34,9 +32,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
-    private const float GI_MULT_BASE = 0.45f;
-    private const float GI_MULT_BACKGROUND = 0.55f;
-    private const float GI_MULT_FOREGROUND = 0.65f;
+    private const float GI_MULT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
@@ -287,23 +283,14 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 _tmp2 = new Vector3[length];
             }
 
-            int xmin = _lightMapArea.X + 1;
-            int xmax = _lightMapArea.X + width - 2;
-            int ymin = _lightMapArea.Y + 1;
-            int ymax = _lightMapArea.Y + height - 2;
-
             Parallel.For(
                 0,
                 width,
                 new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (i) =>
                 {
-                    int x = i + _lightMapArea.X;
-                    int y = _lightMapArea.Y;
-                    bool notOnLeft = x > xmin;
-                    bool notOnRight = x < xmax;
                     int endIndex = height * (i + 1);
-                    for (int j = height * i; j < endIndex; ++j, ++y)
+                    for (int j = height * i; j < endIndex; ++j)
                     {
                         ref Vector3 giLight = ref _tmp2[j];
 
@@ -315,26 +302,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                             continue;
                         }
 
-                        float mult;
-                        if (
-                            y > ymin && lightMasks[j - 1] is LightMaskMode.Solid
-                            || y < ymax && lightMasks[j + 1] is LightMaskMode.Solid
-                            || notOnLeft && lightMasks[j - height] is LightMaskMode.Solid
-                            || notOnRight && lightMasks[j + height] is LightMaskMode.Solid
-                        )
-                        {
-                            mult = GI_MULT_FOREGROUND;
-                        }
-                        else if (Main.tile[x, y].WallType != WallID.None)
-                        {
-                            mult = GI_MULT_BACKGROUND;
-                        }
-                        else
-                        {
-                            mult = GI_MULT_BASE;
-                        }
-
-                        Vector3.Multiply(ref _tmp[j], mult, out giLight);
+                        Vector3.Multiply(ref _tmp[j], GI_MULT, out giLight);
                     }
                 }
             );
