@@ -78,48 +78,4 @@ internal static class TextureMaker
             );
         }
     }
-
-    public static void MakeAtLeastSizeColor(ref RenderTarget2D target, int width, int height)
-    {
-        if (target is null
-            || target.GraphicsDevice != Main.graphics.GraphicsDevice
-            || target.Width < width
-            || target.Height < height
-            || target.Format != SurfaceFormat.Color
-        )
-        {
-            target?.Dispose();
-            width = Math.Max(width, target?.Width ?? 0);
-            height = Math.Max(height, target?.Height ?? 0);
-            target = new RenderTarget2D(
-                Main.graphics.GraphicsDevice,
-                width,
-                height,
-                false,
-                SurfaceFormat.Color,
-                DepthFormat.None
-            );
-        }
-    }
-
-    public static void MakeSizeRgba64(ref Texture2D texture, int width, int height)
-    {
-        if (texture is null
-            || texture.GraphicsDevice != Main.graphics.GraphicsDevice
-            || texture.Width != width
-            || texture.Height != height
-            || texture.Format != SurfaceFormat.Rgba64
-        )
-        {
-            texture?.Dispose();
-            texture = new RenderTarget2D(
-                Main.graphics.GraphicsDevice,
-                width,
-                height,
-                false,
-                SurfaceFormat.Rgba64,
-                DepthFormat.None
-            );
-        }
-    }
 }
