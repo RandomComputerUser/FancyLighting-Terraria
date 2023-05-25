@@ -8,7 +8,6 @@ using Terraria.ModLoader.Config;
 
 namespace FancyLighting.Config;
 
-[Label("Fancy Lighting Settings")]
 public sealed class LightingConfig : ModConfig
 {
     public override ConfigScope Mode => ConfigScope.ClientSide;
@@ -73,8 +72,6 @@ public sealed class LightingConfig : ModConfig
 
     // Serialize this last
     [JsonProperty(Order = 1000)]
-    [Label("Settings Preset")]
-    [Tooltip("A preset for the settings below may be chosen\nLower presets have better performance but lower quality")]
     [DefaultValue(DefaultOptions.ConfigPreset)]
     [DrawTicks]
     public Preset ConfigPreset
@@ -115,10 +112,8 @@ public sealed class LightingConfig : ModConfig
     private Preset _preset;
 
     // Smooth Lighting, Normal Maps, Overbright
-    [Header("Smooth Lighting")]
+    [Header("SmoothLighting")]
 
-    [Label("Enable Smooth Lighting")]
-    [Tooltip("Toggles whether to use smooth lighting\nIf disabled, vanilla lighting visuals are used\nRequires lighting to be set to color")]
     [DefaultValue(DefaultOptions.UseSmoothLighting)]
     public bool UseSmoothLighting
     {
@@ -131,8 +126,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useSmoothLighting;
 
-    [Label("Blur Light Map")]
-    [Tooltip("Toggles whether to blur the light map\nApplies a per-tile blur to the light map before rendering\nSmooths sharp light transitions\nDisabling this setting may slightly increase performance")]
     [DefaultValue(DefaultOptions.UseLightMapBlurring)]
     public bool UseLightMapBlurring
     {
@@ -145,8 +138,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useLightMapBlurring;
 
-    [Label("Use Brighter Blurring")]
-    [Tooltip("Controls the blurring function used to blur the light map\nWhen enabled, light map blurring cannot darken a tile's lighting\nIncreases the brightness of highlights")]
     [DefaultValue(DefaultOptions.UseBrighterBlurring)]
     public bool UseBrighterBlurring
     {
@@ -159,8 +150,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useBrighterBlurring;
 
-    [Label("Light Map Render Mode")]
-    [Tooltip("Controls how the light map is rendered\nAffects the smoothness of lighting\nBicubic upscaling is smoother than bilinear upscaling\nOverbright rendering increases the maximum brightness of light")]
     [DefaultValue(DefaultOptions.LightMapRenderMode)]
     [DrawTicks]
     public RenderMode LightMapRenderMode
@@ -174,8 +163,6 @@ public sealed class LightingConfig : ModConfig
     }
     private RenderMode _lightMapRenderMode;
 
-    [Label("Simulated Normal Maps Strength")]
-    [Tooltip("Controls the strength of simulated normal maps\nWhen not 0, tiles have simulated normal maps and appear bumpy\nSet to 0 to disable")]
     [Range(0, 200)]
     [Increment(25)]
     [DefaultValue(DefaultOptions.NormalMapsStrength)]
@@ -192,8 +179,6 @@ public sealed class LightingConfig : ModConfig
     }
     private int _normalMapsStrength;
 
-    [Label("Use Enhanced Simulated Normal Maps")]
-    [Tooltip("Toggles between regular and enhanced simulated normal map shaders\nWhen enabled, uses a higher-quality normal map simulation\nMay reduce performance when enabled")]
     [DefaultValue(DefaultOptions.QualityNormalMaps)]
     public bool QualityNormalMaps
     {
@@ -206,8 +191,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useQualityNormalMaps;
 
-    [Label("Use Fine Normal Maps")]
-    [Tooltip("Toggles between coarse and fine simulated normal maps\nCoarse normal maps have 2x2 resolution, and fine 1x1\nRecommended to enable when using HD textures")]
     [DefaultValue(DefaultOptions.FineNormalMaps)]
     public bool FineNormalMaps
     {
@@ -220,8 +203,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useFineNormalMaps;
 
-    [Label("(Debug) Render Only Lighting")]
-    [Tooltip("When enabled, tile, wall, and background textures aren't rendered")]
     [DefaultValue(DefaultOptions.RenderOnlyLight)]
     public bool RenderOnlyLight
     {
@@ -235,10 +216,8 @@ public sealed class LightingConfig : ModConfig
     private bool _renderOnlyLight;
 
     // Ambient Occlusion
-    [Header("Ambient Occlusion")]
+    [Header("AmbientOcclusion")]
 
-    [Label("Enable Ambient Occlusion")]
-    [Tooltip("Toggles whether to use ambient occlusion\nIf enabled, tiles produce shadows in front of walls\nRequires lighting to be set to color")]
     [DefaultValue(DefaultOptions.UseAmbientOcclusion)]
     public bool UseAmbientOcclusion
     {
@@ -251,8 +230,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useAmbientOcclusion;
 
-    [Label("Enable Ambient Occlusion from Non-Solid Tiles")]
-    [Tooltip("Toggles whether non-solid blocks generate ambient occlusion\nNon-solid tiles generate weaker ambient occlusion\nPrimarily affects furniture and torches\nNot all non-solid tiles are affected")]
     [DefaultValue(DefaultOptions.DoNonSolidAmbientOcclusion)]
     public bool DoNonSolidAmbientOcclusion
     {
@@ -265,8 +242,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _doNonSolidAmbientOcclusion;
 
-    [Label("Enable Ambient Occlusion from Tile Entities")]
-    [Tooltip("Toggles whether tile entities generate ambient occlusion\nTile entities generate weaker ambient occlusion\nPrimarily affects moving, non-solid tiles (e.g., tiles affected by wind)")]
     [DefaultValue(DefaultOptions.DoTileEntityAmbientOcclusion)]
     public bool DoTileEntityAmbientOcclusion
     {
@@ -279,8 +254,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _doTileEntityAmbientOcclusion;
 
-    [Label("Ambient Occlusion Radius")]
-    [Tooltip("Controls the radius of blur used in ambient occlusion\nHigher values correspond to a larger blur radius\nHigher values may reduce performance")]
     [Range(1, 6)]
     [Increment(1)]
     [DefaultValue(DefaultOptions.AmbientOcclusionRadius)]
@@ -297,8 +270,6 @@ public sealed class LightingConfig : ModConfig
     }
     private int _ambientOcclusionRadius;
 
-    [Label("Ambient Occlusion Intensity")]
-    [Tooltip("Controls the intensity of shadows in ambient occlusion\nHigher values correspond to darker ambient occlusion shadows")]
     [Range(5, 100)]
     [Increment(5)]
     [DefaultValue(DefaultOptions.AmbientOcclusionIntensity)]
@@ -316,10 +287,8 @@ public sealed class LightingConfig : ModConfig
     private int _ambientOcclusionIntensity;
 
     // Fancy Lighting Engine
-    [Header("Lighting Engine")]
+    [Header("LightingEngine")]
 
-    [Label("Enable Fancy Lighting Engine")]
-    [Tooltip("Toggles whether to use a modified lighting engine\nWhen enabled, light is spread more accurately\nShadows should face away from light sources and be more noticeable\nPerformance is significantly reduced in areas with more light sources\nRequires lighting to be set to color")]
     [DefaultValue(DefaultOptions.UseFancyLightingEngine)]
     public bool UseFancyLightingEngine
     {
@@ -332,8 +301,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useFancyLightingEngine;
 
-    [Label("Temporal Optimization")]
-    [Tooltip("Toggles whether to use temporal optimization with the fancy lighting engine\nWhen enabled, uses data from the previous update to optimize lighting calculations\nMakes lighting quicker in more intensly lit areas\nMay sometimes cause lighting quality to be slightly reduced")]
     [DefaultValue(DefaultOptions.FancyLightingEngineUseTemporal)]
     public bool FancyLightingEngineUseTemporal
     {
@@ -346,8 +313,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineUseTemporal;
 
-    [Label("Brighter Lighting")]
-    [Tooltip("Toggles whether to make lighting slightly brighter\nWhen disabled, lighting is slightly darker than with vanilla lighting\nMay reduce performance when enabled")]
     [DefaultValue(DefaultOptions.FancyLightingEngineMakeBrighter)]
     public bool FancyLightingEngineMakeBrighter
     {
@@ -360,8 +325,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _fancyLightingEngineMakeBrighter;
 
-    [Label("Light Loss (%) Exiting Solid Blocks")]
-    [Tooltip("Controls how much light is lost exiting a solid block into the air\nHigher values correspond to darker shadows")]
     [Range(0, 100)]
     [Increment(5)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightLoss)]
@@ -378,8 +341,6 @@ public sealed class LightingConfig : ModConfig
     }
     private int _fancyLightingEngineLightLoss;
 
-    [Label("Light Absorption (relative %) of Solid Blocks")]
-    [Tooltip("Controls how much light is absorbed inside solid blocks\nLower values allow light to spread farther into solid blocks\nA value of 100% is equivalent to vanilla")]
     [Range(70, 200)]
     [Increment(10)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightAbsorption)]
@@ -396,8 +357,6 @@ public sealed class LightingConfig : ModConfig
     }
     private int _fancyLightingEngineLightAbsorption;
 
-    [Label("Simulate Global Illumination")]
-    [Tooltip("Toggles whether to simulate a basic form of global illumination\nWhen enabled, indirect lighting makes shadows brighter")]
     [DefaultValue(DefaultOptions.SimulateGlobalIllumination)]
     public bool SimulateGlobalIllumination
     {
@@ -410,8 +369,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _simulateGlobalIllumination;
 
-    [Label("(Experimental) Use Enhanced Fancy Lighting Engine")]
-    [Tooltip("Toggles whether to use an enhanced version of the fancy lighting engine\nMakes shadows more accurate\nRequires more CPU power to run smoothly")]
     [DefaultValue(DefaultOptions.UseEnhancedFancyLightingEngine)]
     public bool UseEnhancedFancyLightingEngine
     {
@@ -425,10 +382,8 @@ public sealed class LightingConfig : ModConfig
     private bool _useEnhancedFancyLightingEngine;
 
     // Sky Color
-    [Header("Sky Color")]
+    [Header("SkyColor")]
 
-    [Label("Enable Fancy Sky Colors")]
-    [Tooltip("Toggles whether to use modified sky colors\nIf disabled, vanilla sky colors are used instead")]
     [DefaultValue(DefaultOptions.UseCustomSkyColors)]
     public bool UseCustomSkyColors
     {
@@ -441,8 +396,6 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useCustomSkyColors;
 
-    [Label("Sky Color Profile")]
-    [Tooltip("Controls which set of sky colors is used")]
     [DefaultValue(DefaultOptions.CustomSkyPreset)]
     [DrawTicks]
     public SkyColorPreset CustomSkyPreset
@@ -459,8 +412,6 @@ public sealed class LightingConfig : ModConfig
     // Other Settings
     [Header("General")]
 
-    [Label("Thread Count")]
-    [Tooltip("Controls how many threads smooth lighting and the fancy lighting engine use\nThe default value should result in the best performance")]
     [Range(1, 24)]
     [Increment(1)]
     [DefaultValue(DefaultOptions.ThreadCount)]
@@ -475,8 +426,6 @@ public sealed class LightingConfig : ModConfig
     }
     private int _threadCount;
 
-    [Label("Use Enhanced Shaders and Colors")]
-    [Tooltip("Toggles whether to use enhanced shaders and colors allowed by the HiDef profile\nWhen enabled, some visual effects are improved\nMay significantly decrease rendering performance if enabled")]
     [DefaultValue(DefaultOptions.UseHiDefFeatures)]
     public bool UseHiDefFeatures
     {
