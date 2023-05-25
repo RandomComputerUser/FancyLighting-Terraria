@@ -69,9 +69,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
     protected void UpdateDecays(
         LightMap lightMap,
-        LightMaskMode[] lightMasks,
-        int width,
-        int height,
         float maxDecayMult,
         int exponentDivisor
     )

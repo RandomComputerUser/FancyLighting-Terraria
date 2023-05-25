@@ -265,43 +265,12 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         _temporalData = 0;
 
         const float MAX_DECAY_VALUE = 0.97f;
-
-        float decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
-        float lightAirDecayBaseline
-            = decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_VALUE);
-        float lightSolidDecayBaseline = decayMult * Math.Min(
-            MathF.Pow(
-                lightMap.LightDecayThroughSolid,
-                LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
-            ),
-            MAX_DECAY_VALUE
-        );
-        float lightWaterDecayBaseline = decayMult * Math.Min(
-            0.625f * lightMap.LightDecayThroughWater.Length() / Vector3.One.Length()
-            + 0.375f * Math.Max(
-                lightMap.LightDecayThroughWater.X,
-                Math.Max(lightMap.LightDecayThroughWater.Y, lightMap.LightDecayThroughWater.Z)
-            ),
-            MAX_DECAY_VALUE
-        );
-        float lightHoneyDecayBaseline = decayMult * Math.Min(
-            0.625f * lightMap.LightDecayThroughHoney.Length() / Vector3.One.Length()
-            + 0.375f * Math.Max(
-                lightMap.LightDecayThroughHoney.X,
-                Math.Max(lightMap.LightDecayThroughHoney.Y, lightMap.LightDecayThroughHoney.Z)
-            ),
-            MAX_DECAY_VALUE
-        );
-
-        UpdateDecay(_lightAirDecay, lightAirDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightWaterDecay, lightWaterDecayBaseline, DISTANCE_TICKS);
-        UpdateDecay(_lightHoneyDecay, lightHoneyDecayBaseline, DISTANCE_TICKS);
+        UpdateDecays(lightMap, MAX_DECAY_VALUE, DISTANCE_TICKS);
 
         _reciprocalLogSlowestDecay = 1f / MathF.Log(
             Math.Max(
-                Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
-                Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
+                Math.Max(_lightAirDecay[DISTANCE_TICKS], _lightSolidDecay[DISTANCE_TICKS]),
+                Math.Max(_lightWaterDecay[DISTANCE_TICKS], _lightHoneyDecay[DISTANCE_TICKS])
             )
         );
 

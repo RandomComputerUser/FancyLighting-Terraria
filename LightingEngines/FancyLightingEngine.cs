@@ -252,7 +252,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         _temporalData = 0;
 
         const float MAX_DECAY_VALUE = 0.97f;
-        UpdateDecays(lightMap, lightMasks, width, height, MAX_DECAY_VALUE, DISTANCE_TICKS);
+        UpdateDecays(lightMap, MAX_DECAY_VALUE, DISTANCE_TICKS);
 
         _reciprocalLogSlowestDecay = 1f / MathF.Log(
             Math.Max(
