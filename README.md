@@ -10,8 +10,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 **v0.7.0 (2023-??-??)**
 - Updated for Terraria 1.4.4.9
 - Renamed some presets and added a new preset
-- Renamed the Use Higher-Quality Normal Maps option to Use Enhanced Simulated Normal Maps
-- Renamed the Use HiDef Features option to Use Enhanced Shaders and Colors
+- Renamed some settings and updated some tooltips
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
 - Added an enhanced fancy lighting engine
