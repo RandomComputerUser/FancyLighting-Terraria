@@ -113,6 +113,7 @@ internal sealed class SmoothLighting
             TileID.RainbowBrick,
             TileID.MeteoriteBrick,
             TileID.MartianConduitPlating,
+            TileID.LihzahrdAltar,
             TileID.LunarMonolith,
             TileID.VoidMonolith,
             TileID.ShimmerMonolith, // Aether Monolith
@@ -126,38 +127,39 @@ internal sealed class SmoothLighting
         _glowingTileColors = new Color[_glowingTiles.Length];
 
         _glowingTileColors[TileID.Crystals] = Color.White;
-        _glowingTileColors[TileID.AshGrass] = new Color(153, 66, 23);
+        _glowingTileColors[TileID.AshGrass] = new(153, 66, 23);
 
         _glowingTileColors[TileID.LavaMoss]
             = _glowingTileColors[TileID.LavaMossBrick]
             = _glowingTileColors[TileID.LavaMossBlock]
-            = new Color(225, 61, 0);
+            = new(225, 61, 0);
         _glowingTileColors[TileID.ArgonMoss]
             = _glowingTileColors[TileID.ArgonMossBrick]
             = _glowingTileColors[TileID.ArgonMossBlock]
-            = new Color(255, 13, 129);
+            = new(255, 13, 129);
         _glowingTileColors[TileID.KryptonMoss]
             = _glowingTileColors[TileID.KryptonMossBrick]
             = _glowingTileColors[TileID.KryptonMossBlock]
-            = new Color(20, 255, 0);
+            = new(20, 255, 0);
         _glowingTileColors[TileID.XenonMoss]
             = _glowingTileColors[TileID.XenonMossBrick]
             = _glowingTileColors[TileID.XenonMossBlock]
-            = new Color(0, 227, 255);
+            = new(0, 227, 255);
         _glowingTileColors[TileID.VioletMoss] // Neon Moss
             = _glowingTileColors[TileID.VioletMossBrick]
             = _glowingTileColors[TileID.VioletMossBlock]
-            = new Color(152, 6, 255);
+            = new(152, 6, 255);
         // Rainbow Moss and Bricks are handled separately
 
-        _glowingTileColors[TileID.MeteoriteBrick] = new Color(219, 104, 19);
+        _glowingTileColors[TileID.MeteoriteBrick] = new(219, 104, 19);
         // Martian Conduit Plating is handled separately
 
-        _glowingTileColors[TileID.LunarMonolith] = new Color(192, 192, 192);
-        _glowingTileColors[TileID.VoidMonolith] = new Color(161, 255, 223);
-        _glowingTileColors[TileID.ShimmerMonolith] = new Color(213, 196, 252);
-        _glowingTileColors[TileID.PixelBox] = new Color(255, 255, 255);
-        _glowingTileColors[TileID.LavaLamp] = new Color(255, 90, 2);
+        _glowingTileColors[TileID.LihzahrdAltar] = new(138, 130, 22);
+        _glowingTileColors[TileID.LunarMonolith] = new(192, 192, 192);
+        _glowingTileColors[TileID.VoidMonolith] = new(161, 255, 223);
+        _glowingTileColors[TileID.ShimmerMonolith] = new(213, 196, 252);
+        _glowingTileColors[TileID.PixelBox] = new(255, 255, 255);
+        _glowingTileColors[TileID.LavaLamp] = new(255, 90, 2);
 
         _isDangersenseActive = false;
         _isSpelunkerActive = false;

@@ -18,7 +18,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Added an option to change the light absorption of solid blocks
 - Added an option to increase the brightness of lighting when using light map blurring
 - Changed sky color profile 1
-- Tweaked glowing effects
+- Added support for more glowing effects
+- Tweaked some pre-existing glowing effects
 - Tweaked some default settings for ambient occlusion
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Improved temporal optimization for the fancy lighting engine

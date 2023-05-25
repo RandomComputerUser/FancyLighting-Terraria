@@ -22,6 +22,7 @@ Supported Glowing Effects and Tiles:
 - Glowing Moss
 - Glowing Moss Brick
 - Lava Lamp
+- Lihzahrd Altar
 - Lunar Monoliths
 - Martian Conduit Plating
 - Meteorite Brick
