@@ -155,7 +155,7 @@ internal record PresetOptions
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
         SimulateGlobalIllumination = true,
-        UseEnhancedFancyLightingEngine = false,
+        UseEnhancedFancyLightingEngine = true,
         UseCustomSkyColors = true,
         UseHiDefFeatures = true,
     };
