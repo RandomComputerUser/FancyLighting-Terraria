@@ -39,9 +39,9 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
-    private const float GI_MULT_BASE = 0.45f;
-    private const float GI_MULT_BACKGROUND = 0.55f;
-    private const float GI_MULT_FOREGROUND = 0.65f;
+    private const float GI_MULT_BASE = 0f;
+    private const float GI_MULT_BACKGROUND = 0.4f;
+    private const float GI_MULT_FOREGROUND = 0.7f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<Vec2[]> _workingLights = new(() => new Vec2[MAX_LIGHT_RANGE + 1]);
