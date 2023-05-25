@@ -222,8 +222,9 @@ Mods: {
 					Label: (Experimental) Use Enhanced Fancy Lighting Engine
 					Tooltip:
 						'''
+						Is planned to increase lighting quality (currently does not)
 						Toggles whether to use an enhanced version of the fancy lighting engine
-						Makes shadows more accurate
+						Makes shadows more accurate (planned)
 						Requires more CPU power to run smoothly
 						'''
 				}
@@ -235,7 +236,7 @@ Mods: {
 					Tooltip:
 						'''
 						Toggles whether to use modified sky colors
-						When disabled, vanilla sky colors are used
+						If disabled, vanilla sky colors are used
 						'''
 				}
 
