@@ -40,14 +40,17 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
     private const float GI_MULT_BASE = 0f;
-    private const float GI_MULT_BACKGROUND = 0.4f;
-    private const float GI_MULT_FOREGROUND = 0.7f;
+    private const float GI_MULT_BACKGROUND = 3 * 0.4f;
+    private const float GI_MULT_FOREGROUND_CORNER = 3 * 0.5f;
+    private const float GI_MULT_FOREGROUND = 3 * 0.6f;
+    private const float GI_MULT_MAX = 0.6f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<Vec2[]> _workingLights = new(() => new Vec2[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
-    private Vector3[] _tmp2;
+    private float[] _tmp2;
+    private Vector3[] _tmp3;
 
     private int _temporalData;
 
@@ -317,7 +320,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         {
             if (_tmp2 is null || _tmp2.Length < length)
             {
-                _tmp2 = new Vector3[length];
+                _tmp2 = new float[length];
+                _tmp3 = new Vector3[length];
             }
 
             int xmin = _lightMapArea.X + 1;
@@ -338,7 +342,57 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                     int endIndex = height * (i + 1);
                     for (int j = height * i; j < endIndex; ++j, ++y)
                     {
-                        ref Vector3 giLight = ref _tmp2[j];
+                        ref float giMult = ref _tmp2[j];
+
+                        if (lightMasks[j] is LightMaskMode.Solid)
+                        {
+                            giMult = 0f;
+                            continue;
+                        }
+
+                        bool notOnTop = y > ymin;
+                        bool notOnBottom = y < ymax;
+                        if (
+                            notOnTop && lightMasks[j - 1] is LightMaskMode.Solid
+                            || notOnBottom && lightMasks[j + 1] is LightMaskMode.Solid
+                            || notOnLeft && lightMasks[j - height] is LightMaskMode.Solid
+                            || notOnRight && lightMasks[j + height] is LightMaskMode.Solid
+                        )
+                        {
+                            giMult = GI_MULT_FOREGROUND;
+                        }
+                        else if (
+                            notOnTop && notOnLeft && lightMasks[j - 1 - height] is LightMaskMode.Solid
+                            || notOnTop && notOnRight && lightMasks[j - 1 + height] is LightMaskMode.Solid
+                            || notOnBottom && notOnLeft && lightMasks[j + 1 - height] is LightMaskMode.Solid
+                            || notOnBottom && notOnRight && lightMasks[j + 1 + height] is LightMaskMode.Solid
+                        )
+                        {
+                            giMult = GI_MULT_FOREGROUND_CORNER;
+                        }
+                        else if (Main.tile[x, y].WallType != WallID.None)
+                        {
+                            giMult = GI_MULT_BACKGROUND;
+                        }
+                        else
+                        {
+                            giMult = GI_MULT_BASE;
+                        }
+                    }
+                }
+            );
+
+
+            Parallel.For(
+                1,
+                width - 1,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (i) =>
+                {
+                    int endIndex = height * (i + 1) - 1;
+                    for (int j = height * i + 1; j < endIndex; ++j)
+                    {
+                        ref Vector3 giLight = ref _tmp3[j];
 
                         if (lightMasks[j] is LightMaskMode.Solid)
                         {
@@ -348,26 +402,13 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                             continue;
                         }
 
-                        float mult;
-                        if (
-                            y > ymin && lightMasks[j - 1] is LightMaskMode.Solid
-                            || y < ymax && lightMasks[j + 1] is LightMaskMode.Solid
-                            || notOnLeft && lightMasks[j - height] is LightMaskMode.Solid
-                            || notOnRight && lightMasks[j + height] is LightMaskMode.Solid
-                        )
-                        {
-                            mult = GI_MULT_FOREGROUND;
-                        }
-                        else if (Main.tile[x, y].WallType != WallID.None)
-                        {
-                            mult = GI_MULT_BACKGROUND;
-                        }
-                        else
-                        {
-                            mult = GI_MULT_BASE;
-                        }
+                        float giMult = Math.Min((
+                              (_tmp2[j - height - 1] + _tmp2[j - height] + _tmp2[j - height + 1])
+                            + (_tmp2[j - 1] + _tmp2[j] + _tmp2[j + 1])
+                            + (_tmp2[j + height - 1] + _tmp2[j + height] + _tmp2[j + height + 1])
+                        ) * (1f / 9f), GI_MULT_MAX);
 
-                        Vector3.Multiply(ref _tmp[j], mult, out giLight);
+                        Vector3.Multiply(ref _tmp[j], giMult, out giLight);
                     }
                 }
             );
@@ -383,7 +424,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                         return;
                     }
 
-                    ProcessLight(i, _tmp2, width, height);
+                    ProcessLight(i, _tmp3, width, height);
                 }
             );
         }
