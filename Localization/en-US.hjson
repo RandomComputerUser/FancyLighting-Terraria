@@ -223,8 +223,8 @@ Mods: {
 					Tooltip:
 						'''
 						Toggles whether to use an enhanced version of the fancy lighting engine
-						Makes shadows more accurate
-						Requires more CPU power to run smoothly
+						Makes shadows even more accurate
+						May reduce performance when enabled
 						'''
 				}
 
