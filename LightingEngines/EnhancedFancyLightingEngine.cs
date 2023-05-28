@@ -4,9 +4,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Terraria;
 using Terraria.Graphics.Light;
-using Terraria.ID;
 using Vec2 = System.Numerics.Vector2;
 
 namespace FancyLighting.LightingEngines;
@@ -39,20 +37,17 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
-    private const float GI_MULT_BASE = 0f;
-    private const float GI_MULT_BACKGROUND = 3 * 0.4f;
-    private const float GI_MULT_FOREGROUND_CORNER = 3 * 0.5f;
-    private const float GI_MULT_FOREGROUND = 3 * 0.6f;
-    private const float GI_MULT_MAX = 0.6f;
+    private const float GI_MULT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
     private readonly ThreadLocal<Vec2[]> _workingLights = new(() => new Vec2[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
-    private float[] _tmp2;
-    private Vector3[] _tmp3;
+    private bool[] _skipGI;
 
     private int _temporalData;
+    private bool _countTemporal;
+    private bool _reduceCulling;
 
     public EnhancedFancyLightingEngine()
     {
@@ -278,11 +273,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     {
         _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
 
-        double temporalMult = LightingConfig.Instance.SimulateGlobalIllumination ? 0.25 : 1.0;
         _logBrightnessCutoff = FancyLightingMod._inCameraMode
             ? 0.02f
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
-                ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5 * temporalMult) * 0.02, 0.02, 0.125)
+                ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5) * 0.02, 0.02, 0.125)
                 : 0.04f;
         _logBrightnessCutoff = MathF.Log(_logBrightnessCutoff);
         _temporalData = 0;
@@ -309,6 +303,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
 
         UpdateLightMasks(lightMasks, width, height);
 
+        _countTemporal = true;
+        _reduceCulling = false;
         Parallel.For(
             0,
             length,
@@ -318,10 +314,9 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
 
         if (LightingConfig.Instance.SimulateGlobalIllumination)
         {
-            if (_tmp2 is null || _tmp2.Length < length)
+            if (_skipGI is null || _skipGI.Length < length)
             {
-                _tmp2 = new float[length];
-                _tmp3 = new Vector3[length];
+                _skipGI = new bool[length];
             }
 
             int xmin = _lightMapArea.X + 1;
@@ -342,89 +337,45 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                     int endIndex = height * (i + 1);
                     for (int j = height * i; j < endIndex; ++j, ++y)
                     {
-                        ref float giMult = ref _tmp2[j];
-
-                        if (lightMasks[j] is LightMaskMode.Solid)
-                        {
-                            giMult = 0f;
-                            continue;
-                        }
-
-                        bool notOnTop = y > ymin;
-                        bool notOnBottom = y < ymax;
-                        if (
-                            notOnTop && lightMasks[j - 1] is LightMaskMode.Solid
-                            || notOnBottom && lightMasks[j + 1] is LightMaskMode.Solid
-                            || notOnLeft && lightMasks[j - height] is LightMaskMode.Solid
-                            || notOnRight && lightMasks[j + height] is LightMaskMode.Solid
-                        )
-                        {
-                            giMult = GI_MULT_FOREGROUND;
-                        }
-                        else if (
-                            notOnTop && notOnLeft && lightMasks[j - 1 - height] is LightMaskMode.Solid
-                            || notOnTop && notOnRight && lightMasks[j - 1 + height] is LightMaskMode.Solid
-                            || notOnBottom && notOnLeft && lightMasks[j + 1 - height] is LightMaskMode.Solid
-                            || notOnBottom && notOnRight && lightMasks[j + 1 + height] is LightMaskMode.Solid
-                        )
-                        {
-                            giMult = GI_MULT_FOREGROUND_CORNER;
-                        }
-                        else if (Main.tile[x, y].WallType != WallID.None)
-                        {
-                            giMult = GI_MULT_BACKGROUND;
-                        }
-                        else
-                        {
-                            giMult = GI_MULT_BASE;
-                        }
-                    }
-                }
-            );
-
-
-            Parallel.For(
-                1,
-                width - 1,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (i) =>
-                {
-                    int endIndex = height * (i + 1) - 1;
-                    for (int j = height * i + 1; j < endIndex; ++j)
-                    {
-                        ref Vector3 giLight = ref _tmp3[j];
+                        ref Vector3 giLight = ref colors[j];
 
                         if (lightMasks[j] is LightMaskMode.Solid)
                         {
                             giLight.X = 0f;
                             giLight.Y = 0f;
                             giLight.Z = 0f;
+                            _skipGI[j] = true;
                             continue;
                         }
 
-                        float giMult = Math.Min((
-                              (_tmp2[j - height - 1] + _tmp2[j - height] + _tmp2[j - height + 1])
-                            + (_tmp2[j - 1] + _tmp2[j] + _tmp2[j + 1])
-                            + (_tmp2[j + height - 1] + _tmp2[j + height] + _tmp2[j + height + 1])
-                        ) * (1f / 9f), GI_MULT_MAX);
+                        Vector3 origLight = giLight;
+                        ref Vector3 light = ref _tmp[j];
+                        giLight.X = GI_MULT * light.X;
+                        giLight.Y = GI_MULT * light.Y;
+                        giLight.Z = GI_MULT * light.Z;
 
-                        Vector3.Multiply(ref _tmp[j], giMult, out giLight);
+                        _skipGI[j]
+                            = giLight.X <= origLight.X
+                            && giLight.Y <= origLight.Y
+                            && giLight.Z <= origLight.Z;
                     }
                 }
             );
 
+            _countTemporal = false;
+            _reduceCulling = true;
             Parallel.For(
                 0,
                 length,
                 new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
                 (i) =>
                 {
-                    if (lightMasks[i] is LightMaskMode.Solid)
+                    if (_skipGI[i])
                     {
                         return;
                     }
 
-                    ProcessLight(i, _tmp3, width, height);
+                    ProcessLight(i, colors, width, height);
                 }
             );
         }
@@ -443,35 +394,41 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         void SetLightMap(int i, float value)
         {
             ref Vector3 light = ref _tmp[i];
-            Vector3.Multiply(ref color, value, out Vector3 newLight);
             float oldValue;
+            float newValue;
+
+            newValue = color.X * value;
             do
             {
                 oldValue = light.X;
-                if (oldValue >= newLight.X)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.X, newLight.X, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.X, newValue, oldValue) != oldValue);
+
+            newValue = color.Y * value;
             do
             {
                 oldValue = light.Y;
-                if (oldValue >= newLight.Y)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.Y, newLight.Y, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.Y, newValue, oldValue) != oldValue);
+
+            newValue = color.Z * value;
             do
             {
                 oldValue = light.Z;
-                if (oldValue >= newLight.Z)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.Z, newLight.Z, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.Z, newValue, oldValue) != oldValue);
         }
 
         float reciprocalThreshold = 1f / (_lightMask[index][MAX_DISTANCE] * _lightMask[index][MAX_DISTANCE / 2]);
@@ -627,11 +584,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         }
 
         // Using || instead of && for culling is sometimes inaccurate, but much faster
-
-        bool doUpperRight = !(skipUp || skipRight);
-        bool doUpperLeft = !(skipUp || skipLeft);
-        bool doLowerRight = !(skipDown || skipRight);
-        bool doLowerLeft = !(skipDown || skipLeft);
+        bool doUpperRight = _reduceCulling ? !(skipUp && skipRight) : !(skipUp || skipRight);
+        bool doUpperLeft = _reduceCulling ? !(skipUp && skipLeft) : !(skipUp || skipLeft);
+        bool doLowerRight = _reduceCulling ? !(skipDown && skipRight) : !(skipDown || skipRight);
+        bool doLowerLeft = _reduceCulling ? !(skipDown && skipLeft) : !(skipDown || skipLeft);
 
         int leftEdge = Math.Min(midX, lightRange);
         int rightEdge = Math.Min(width - 1 - midX, lightRange);
@@ -739,7 +695,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             }
         }
 
-        if (LightingConfig.Instance.FancyLightingEngineUseTemporal)
+        if (_countTemporal)
         {
             const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
 
@@ -760,10 +716,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 + (!skipDown ? baseWork : 0)
                 + (!skipLeft ? baseWork : 0)
                 + (!skipRight ? baseWork : 0)
-                + (doUpperRight ? baseWork * baseWork : 0)
-                + (doUpperLeft ? baseWork * baseWork : 0)
-                + (doLowerRight ? baseWork * baseWork : 0)
-                + (doLowerLeft ? baseWork * baseWork : 0);
+                + (!(skipUp || skipRight) ? baseWork * baseWork : 0)
+                + (!(skipUp || skipLeft) ? baseWork * baseWork : 0)
+                + (!(skipDown || skipRight) ? baseWork * baseWork : 0)
+                + (!(skipDown || skipLeft) ? baseWork * baseWork : 0);
 
             Interlocked.Add(ref _temporalData, approximateWorkDone);
         }

@@ -158,7 +158,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
-        FancyLightingEngineLightLoss = 75,
+        FancyLightingEngineLightLoss = 60,
         SimulateGlobalIllumination = true,
         UseEnhancedFancyLightingEngine = true,
         UseCustomSkyColors = true,

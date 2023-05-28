@@ -38,9 +38,9 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
-    private Vector3[] _tmp2;
 
     private int _temporalData;
+    private bool _countTemporal;
 
     public FancyLightingEngine()
     {
@@ -238,11 +238,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     {
         _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
 
-        double temporalMult = LightingConfig.Instance.SimulateGlobalIllumination ? 0.25 : 1.0;
         _logBrightnessCutoff = FancyLightingMod._inCameraMode
             ? 0.02f
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
-                ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5 * temporalMult) * 0.02, 0.02, 0.125)
+                ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5) * 0.02, 0.02, 0.125)
                 : 0.04f;
         _logBrightnessCutoff = MathF.Log(_logBrightnessCutoff);
         _temporalData = 0;
@@ -269,6 +268,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         UpdateLightMasks(lightMasks, width, height);
 
+        _countTemporal = true;
         Parallel.For(
             0,
             length,
@@ -278,11 +278,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         if (LightingConfig.Instance.SimulateGlobalIllumination)
         {
-            if (_tmp2 is null || _tmp2.Length < length)
-            {
-                _tmp2 = new Vector3[length];
-            }
-
             Parallel.For(
                 0,
                 width,
@@ -292,7 +287,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                     int endIndex = height * (i + 1);
                     for (int j = height * i; j < endIndex; ++j)
                     {
-                        ref Vector3 giLight = ref _tmp2[j];
+                        ref Vector3 giLight = ref colors[j];
 
                         if (lightMasks[j] is LightMaskMode.Solid)
                         {
@@ -307,6 +302,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 }
             );
 
+            _countTemporal = false;
             Parallel.For(
                 0,
                 length,
@@ -318,7 +314,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                         return;
                     }
 
-                    ProcessLight(i, _tmp2, width, height);
+                    ProcessLight(i, colors, width, height);
                 }
             );
         }
@@ -337,35 +333,41 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         void SetLightMap(int i, float value)
         {
             ref Vector3 light = ref _tmp[i];
-            Vector3.Multiply(ref color, value, out Vector3 newLight);
             float oldValue;
+            float newValue;
+
+            newValue = color.X * value;
             do
             {
                 oldValue = light.X;
-                if (oldValue >= newLight.X)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.X, newLight.X, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.X, newValue, oldValue) != oldValue);
+
+            newValue = color.Y * value;
             do
             {
                 oldValue = light.Y;
-                if (oldValue >= newLight.Y)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.Y, newLight.Y, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.Y, newValue, oldValue) != oldValue);
+
+            newValue = color.Z * value;
             do
             {
                 oldValue = light.Z;
-                if (oldValue >= newLight.Z)
+                if (oldValue >= newValue)
                 {
                     break;
                 }
             }
-            while (Interlocked.CompareExchange(ref light.Z, newLight.Z, oldValue) != oldValue);
+            while (Interlocked.CompareExchange(ref light.Z, newValue, oldValue) != oldValue);
         }
 
         float reciprocalThreshold = 1f / _lightMask[index][MAX_DISTANCE];
@@ -521,7 +523,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         }
 
         // Using || instead of && for culling is sometimes inaccurate, but much faster
-
         bool doUpperRight = !(skipUp || skipRight);
         bool doUpperLeft = !(skipUp || skipLeft);
         bool doLowerRight = !(skipDown || skipRight);
@@ -803,7 +804,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             }
         }
 
-        if (LightingConfig.Instance.FancyLightingEngineUseTemporal)
+        if (_countTemporal)
         {
             const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
 
@@ -820,14 +821,18 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
             int approximateWorkDone
                 = 1
-                + (!skipUp ? baseWork : 0)
-                + (!skipDown ? baseWork : 0)
-                + (!skipLeft ? baseWork : 0)
-                + (!skipRight ? baseWork : 0)
-                + (doUpperRight ? baseWork * baseWork : 0)
-                + (doUpperLeft ? baseWork * baseWork : 0)
-                + (doLowerRight ? baseWork * baseWork : 0)
-                + (doLowerLeft ? baseWork * baseWork : 0);
+                + (
+                    (!skipUp ? 1 : 0)
+                    + (!skipDown ? 1 : 0)
+                    + (!skipLeft ? 1 : 0)
+                    + (!skipRight ? 1 : 0)
+                ) * baseWork
+                + (
+                    (doUpperRight ? 1 : 0)
+                    + (doUpperLeft ? 1 : 0)
+                    + (doLowerRight ? 1 : 0)
+                    + (doLowerLeft ? 1 : 0)
+                ) * (baseWork * baseWork);
 
             Interlocked.Add(ref _temporalData, approximateWorkDone);
         }
