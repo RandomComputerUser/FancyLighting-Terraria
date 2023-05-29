@@ -650,17 +650,25 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                         );
                         workingLights[y]
                             = (
-                                horizontalLight.X * spread.RightFromLeftX
-                                + horizontalLight.Y * spread.RightFromLeftY
-                                + verticalLight.X * spread.RightFromBottomX
-                                + verticalLight.Y * spread.RightFromBottomY
+                                (
+                                    horizontalLight.X * spread.RightFromLeftX
+                                    + horizontalLight.Y * spread.RightFromLeftY
+                                )
+                                + (
+                                    verticalLight.X * spread.RightFromBottomX
+                                    + verticalLight.Y * spread.RightFromBottomY
+                                )
                             ) * mask[spread.DistanceToRight];
                         verticalLight
                             = (
-                                horizontalLight.X * spread.TopFromLeftX
-                                + horizontalLight.Y * spread.TopFromLeftY
-                                + verticalLight.X * spread.TopFromBottomX
-                                + verticalLight.Y * spread.TopFromBottomY
+                                (
+                                    horizontalLight.X * spread.TopFromLeftX
+                                    + horizontalLight.Y * spread.TopFromLeftY
+                                )
+                                + (
+                                    verticalLight.X * spread.TopFromBottomX
+                                    + verticalLight.Y * spread.TopFromBottomY
+                                )
                             ) * mask[spread.DistanceToTop];
                     }
                 }
