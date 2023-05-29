@@ -57,7 +57,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         }
     }
 
-    protected void UpdateDecay(float[] decay, float baseline, int exponentDivisor)
+    protected static void UpdateDecay(float[] decay, float baseline, int exponentDivisor)
     {
         if (baseline == decay[exponentDivisor])
         {
