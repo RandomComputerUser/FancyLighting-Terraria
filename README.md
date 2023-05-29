@@ -8,9 +8,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 ### Latest Version
 
 **v0.7.0 (2023-??-??)**
+Multiple features have been added to the Ultra preset, decreasing performance. The new Very High preset is roughly equivalent to the old Ultra preset.
 - Updated for Terraria 1.4.4.9
 - Renamed some presets and added a new preset
-- Renamed some settings and updated some tooltips
+- Renamed some options and updated some tooltips
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
 - Added an option to change the internal resolution of the fancy lighting engine

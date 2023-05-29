@@ -32,6 +32,7 @@ Mods: {
 						'''
 						Toggles whether to use smooth lighting
 						If disabled, vanilla lighting visuals are used
+						Performance is affected primarily by the GPU
 						Requires lighting to be set to color
 						'''
 				}
@@ -65,6 +66,7 @@ Mods: {
 						Affects the smoothness of lighting
 						Bicubic upscaling is smoother than bilinear upscaling
 						Overbright rendering increases the maximum brightness of light
+						Settings farther to the right may reduce performance
 						'''
 				}
 
@@ -75,6 +77,7 @@ Mods: {
 						Controls the strength of simulated normal maps
 						When not 0, tiles have simulated normal maps and appear bumpy
 						Set to 0 to disable
+						May reduce performance when enabled
 						'''
 				}
 
@@ -100,7 +103,7 @@ Mods: {
 
 				RenderOnlyLight: {
 					Label: (Debug) Render Only Lighting
-					Tooltip: When enabled, tile, wall, and background textures aren't rendered
+					Tooltip: When enabled, tile, wall, and background textures are not rendered
 				}
 
 				# Ambient Occlusion
@@ -111,6 +114,7 @@ Mods: {
 						'''
 						Toggles whether to use ambient occlusion
 						If enabled, tiles produce shadows in front of walls
+						Performance is affected primarily by the GPU
 						Requires lighting to be set to color
 						'''
 				}
@@ -123,6 +127,7 @@ Mods: {
 						Non-solid tiles generate weaker ambient occlusion
 						Primarily affects furniture and torches
 						Not all non-solid tiles are affected
+						May reduce performance when enabled
 						'''
 				}
 
@@ -133,6 +138,7 @@ Mods: {
 						Toggles whether tile entities generate ambient occlusion
 						Tile entities generate weaker ambient occlusion
 						Primarily affects moving, non-solid tiles (e.g., tiles affected by wind)
+						Reduces performance more than the setting directly above
 						'''
 				}
 
@@ -142,7 +148,7 @@ Mods: {
 						'''
 						Controls the radius of blur used in ambient occlusion
 						Higher values correspond to a larger blur radius
-						Higher values may reduce performance
+						Values greater than 1 may reduce performance
 						'''
 				}
 
@@ -162,9 +168,9 @@ Mods: {
 					Tooltip:
 						'''
 						Toggles whether to use a modified lighting engine
-						When enabled, light is spread more accurately
-						Shadows should face away from light sources and be more noticeable
+						When enabled, light is spread more accurately with noticeable shadows
 						Performance is significantly reduced in areas with more light sources
+						Performance is affected primarily by the CPU; the GPU is not used
 						Requires lighting to be set to color
 						'''
 				}
@@ -215,7 +221,7 @@ Mods: {
 						'''
 						Controls the internal resolution of the fancy lighting engine
 						Does not affect the final resolution of the light map
-						Higher values increase the accuracy of shadows but decrease performance
+						Higher values increase the accuracy of shadows but reduce performance
 						'''
 				}
 
@@ -225,6 +231,7 @@ Mods: {
 						'''
 						Toggles whether to simulate a basic form of global illumination
 						When enabled, indirect lighting makes shadows brighter
+						May cause a large decrease in performance when enabled
 						'''
 				}
 
