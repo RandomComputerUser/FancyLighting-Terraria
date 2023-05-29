@@ -41,7 +41,6 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
     private const float GI_MULT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
-    private readonly ThreadLocal<Vec2[]> _workingLights = new(() => new Vec2[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
     private bool[] _skipGI;
