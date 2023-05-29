@@ -6,9 +6,12 @@ Features:
 - Dynamic shadows
 - Overbright rendering
 - Simulated normal maps
+- Simulated global illumination
 - New sky colors
 
 This mod only takes effect when the lighting mode is set to color.
+
+It is recommended to test performance by pressing F7 while in-game to help select a preset. The Total Render time is increased by smooth lighting and ambient occlusion, and the Total Lighting time is increased by the fancy lighting engine.
 
 Some features may significantly lower frame rates at resolutions above 1920x1200 on machines with less powerful GPUs. If you are experiencing performance issues and are running the game at a resolution above 1920x1200, try lowering the resolution.
 
