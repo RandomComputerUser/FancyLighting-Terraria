@@ -209,22 +209,22 @@ Mods: {
 						'''
 				}
 
+				FancyLightingEngineMode: {
+					Label: Fancy Lighting Engine Resolution
+					Tooltip:
+						'''
+						Controls the internal resolution of the fancy lighting engine
+						Does not affect the final resolution of the light map
+						Higher values increase the accuracy of shadows but decrease performance
+						'''
+				}
+
 				SimulateGlobalIllumination: {
 					Label: Simulate Global Illumination
 					Tooltip:
 						'''
 						Toggles whether to simulate a basic form of global illumination
 						When enabled, indirect lighting makes shadows brighter
-						'''
-				}
-
-				UseEnhancedFancyLightingEngine: {
-					Label: Use Enhanced Fancy Lighting Engine
-					Tooltip:
-						'''
-						Toggles whether to use an enhanced version of the fancy lighting engine
-						Makes shadows even more accurate
-						May reduce performance when enabled
 						'''
 				}
 
@@ -264,6 +264,13 @@ Mods: {
 						May significantly decrease rendering performance if enabled
 						'''
 				}
+			}
+
+			LightingEngineMode: {
+				Tooltip: ""
+				One.Label: 1x
+				Two.Label: 2x
+				Four.Label: 4x
 			}
 
 			Preset: {

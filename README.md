@@ -13,10 +13,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 - Renamed some settings and updated some tooltips
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
-- Added an enhanced fancy lighting engine
+- Added an option to change the internal resolution of the fancy lighting engine
+- Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Optimized the fancy lighting engine
 - Improved ambient occlusion when using overbright rendering
-- Added an option to change the light absorption of solid blocks
 - Added an option to increase the brightness of lighting when using light map blurring
 - Changed sky color profile 1
 - Added support for more glowing effects

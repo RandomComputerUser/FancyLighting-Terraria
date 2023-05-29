@@ -57,8 +57,8 @@ public sealed class LightingConfig : ModConfig
         _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
         _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
         _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
+        _fancyLightingEngineMode = options.FancyLightingEngineMode;
         _simulateGlobalIllumination = options.SimulateGlobalIllumination;
-        _useEnhancedFancyLightingEngine = options.UseEnhancedFancyLightingEngine;
 
         _useCustomSkyColors = options.UseCustomSkyColors;
         _customSkyPreset = options.CustomSkyPreset;
@@ -357,6 +357,19 @@ public sealed class LightingConfig : ModConfig
     }
     private int _fancyLightingEngineLightAbsorption;
 
+    [DefaultValue(DefaultOptions.FancyLightingEngineMode)]
+    [DrawTicks]
+    public LightingEngineMode FancyLightingEngineMode
+    {
+        get => _fancyLightingEngineMode;
+        set
+        {
+            _fancyLightingEngineMode = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private LightingEngineMode _fancyLightingEngineMode;
+
     [DefaultValue(DefaultOptions.SimulateGlobalIllumination)]
     public bool SimulateGlobalIllumination
     {
@@ -368,18 +381,6 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private bool _simulateGlobalIllumination;
-
-    [DefaultValue(DefaultOptions.UseEnhancedFancyLightingEngine)]
-    public bool UseEnhancedFancyLightingEngine
-    {
-        get => _useEnhancedFancyLightingEngine;
-        set
-        {
-            _useEnhancedFancyLightingEngine = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useEnhancedFancyLightingEngine;
 
     // Sky Color
     [Header("SkyColor")]

@@ -218,12 +218,22 @@ public sealed class FancyLightingMod : Mod
 
     private void SetFancyLightingEngineInstance()
     {
-        if (LightingConfig.Instance?.UseEnhancedFancyLightingEngine ?? false)
+        LightingEngineMode mode = LightingConfig.Instance?.FancyLightingEngineMode ?? LightingEngineMode.One;
+
+        if (mode is LightingEngineMode.Four)
         {
             if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
             {
                 _fancyLightingEngineInstance?.Unload();
                 _fancyLightingEngineInstance = new UltraFancyLightingEngine();
+            }
+        }
+        else if (mode is LightingEngineMode.Two)
+        {
+            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
+            {
+                _fancyLightingEngineInstance?.Unload();
+                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
             }
         }
         else
