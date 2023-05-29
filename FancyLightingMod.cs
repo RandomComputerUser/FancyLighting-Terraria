@@ -220,10 +220,10 @@ public sealed class FancyLightingMod : Mod
     {
         if (LightingConfig.Instance?.UseEnhancedFancyLightingEngine ?? false)
         {
-            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
+            if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
             {
                 _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
+                _fancyLightingEngineInstance = new UltraFancyLightingEngine();
             }
         }
         else

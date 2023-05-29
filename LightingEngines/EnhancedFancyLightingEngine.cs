@@ -244,11 +244,11 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         }
 
         distanceToTop
-            -= (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5]) * leftDistanceError
-            + (lightFrom[8] + lightFrom[9] + lightFrom[12] + lightFrom[13]) * bottomDistanceError;
+            -= (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5]) / 2.0 * leftDistanceError
+            + (lightFrom[8] + lightFrom[9] + lightFrom[12] + lightFrom[13]) / 2.0 * bottomDistanceError;
         distanceToRight
-            -= (lightFrom[2] + lightFrom[3] + lightFrom[6] + lightFrom[7]) * leftDistanceError
-            + (lightFrom[10] + lightFrom[11] + lightFrom[14] + lightFrom[15]) * bottomDistanceError;
+            -= (lightFrom[2] + lightFrom[3] + lightFrom[6] + lightFrom[7]) / 2.0 * leftDistanceError
+            + (lightFrom[10] + lightFrom[11] + lightFrom[14] + lightFrom[15]) / 2.0 * bottomDistanceError;
 
         return new(
             DoubleToIndex(distanceToTop),
