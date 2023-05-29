@@ -133,6 +133,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
+                // The values below are unused, but are accurate should they be used
                 Vec2.Zero,
                 Vec2.Zero,
                 Vec2.Zero,
@@ -151,10 +152,11 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
+                // The values below are unused, but are accurate should they be used
                 new(0.5f, 0.5f),
                 Vec2.Zero,
-                Vec2.One,
                 Vec2.Zero,
+                Vec2.One,
                 Vec2.Zero,
                 Vec2.Zero,
                 Vec2.UnitX,
@@ -169,6 +171,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
+                // The values below are unused, but are accurate should they be used
                 Vec2.Zero,
                 new(0.5f, 0.5f),
                 Vec2.Zero,
