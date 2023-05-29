@@ -2,13 +2,14 @@
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria.Graphics.Light;
 
 namespace FancyLighting.LightingEngines;
 
-internal sealed class FancyLightingEngine : FancyLightingEngineBase
+internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 {
     private readonly record struct LightingSpread(
         float LightFromLeft,
@@ -35,7 +36,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
     private const float GI_MULT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
-    private readonly ThreadLocal<float[]> _workingLights = new(() => new float[MAX_LIGHT_RANGE + 1]);
 
     private Vector3[] _tmp;
 
@@ -268,15 +268,20 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         UpdateLightMasks(lightMasks, width, height);
 
+        InitializeTaskVariables(length, MAX_LIGHT_RANGE);
+
+        bool doGI = LightingConfig.Instance.SimulateGlobalIllumination;
+
         _countTemporal = true;
-        Parallel.For(
-            0,
+        RunLightingPass(
+            colors,
+            doGI ? _tmp : colors,
             length,
-            new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-            (i) => ProcessLight(i, colors, width, height)
+            (workingLightMap, workingLights, i)
+                => ProcessLight(workingLightMap, workingLights, i, colors, width, height)
         );
 
-        if (LightingConfig.Instance.SimulateGlobalIllumination)
+        if (doGI)
         {
             Parallel.For(
                 0,
@@ -303,26 +308,26 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             );
 
             _countTemporal = false;
-            Parallel.For(
-                0,
+            RunLightingPass(
+                _tmp,
+                colors,
                 length,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (i) =>
+                (workingLightMap, workingLights, i) =>
                 {
                     if (lightMasks[i] is LightMaskMode.Solid)
                     {
                         return;
                     }
 
-                    ProcessLight(i, colors, width, height);
+                    ProcessLight(workingLightMap, workingLights, i, colors, width, height);
                 }
             );
         }
-
-        Array.Copy(_tmp, colors, length);
     }
 
-    private void ProcessLight(int index, Vector3[] colors, int width, int height)
+    private void ProcessLight(
+        Vector3[] workingLightMap, float[] workingLights, int index, Vector3[] colors, int width, int height
+    )
     {
         Vector3 color = colors[index];
         if (color.X <= LOW_LIGHT_LEVEL && color.Y <= LOW_LIGHT_LEVEL && color.Z <= LOW_LIGHT_LEVEL)
@@ -330,44 +335,32 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             return;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SetLightMap(int i, float value)
         {
-            ref Vector3 light = ref _tmp[i];
-            float oldValue;
+            ref Vector3 vec = ref workingLightMap[i];
+
+            // Potentially faster than Math.Max, which checks for NaN and signed zero
+
             float newValue;
 
-            newValue = color.X * value;
-            do
+            newValue = value * color.X;
+            if (newValue > vec.X)
             {
-                oldValue = light.X;
-                if (oldValue >= newValue)
-                {
-                    break;
-                }
+                vec.X = newValue;
             }
-            while (Interlocked.CompareExchange(ref light.X, newValue, oldValue) != oldValue);
 
-            newValue = color.Y * value;
-            do
+            newValue = value * color.Y;
+            if (newValue > vec.Y)
             {
-                oldValue = light.Y;
-                if (oldValue >= newValue)
-                {
-                    break;
-                }
+                vec.Y = newValue;
             }
-            while (Interlocked.CompareExchange(ref light.Y, newValue, oldValue) != oldValue);
 
-            newValue = color.Z * value;
-            do
+            newValue = value * color.Z;
+            if (newValue > vec.Z)
             {
-                oldValue = light.Z;
-                if (oldValue >= newValue)
-                {
-                    break;
-                }
+                vec.Z = newValue;
             }
-            while (Interlocked.CompareExchange(ref light.Z, newValue, oldValue) != oldValue);
         }
 
         float reciprocalThreshold = 1f / _lightMask[index][MAX_DISTANCE];
@@ -537,8 +530,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
-            float[] workingLights = _workingLights.Value;
-
             // Upper Right
             if (doUpperRight)
             {
