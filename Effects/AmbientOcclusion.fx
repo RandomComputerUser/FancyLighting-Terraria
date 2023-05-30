@@ -11,13 +11,14 @@ float BlurBrightness(float2 coords)
 
     for (int i = 1; i <= 8; ++i)
     {
+        float2 offset = i * BlurSize;
         brightness += BlurWeight[i] * (
-            tex2D(OccluderSampler, coords - i * BlurSize)
-            + tex2D(OccluderSampler, coords + i * BlurSize)
+            tex2D(OccluderSampler, coords - offset)
+            + tex2D(OccluderSampler, coords + offset)
         );
     }
 
-    return brightness / 65536;
+    return brightness * (1 / 65536.0);
 }
 
 float4 AlphaToGrayscale(float2 coords : TEXCOORD0) : COLOR0
@@ -28,7 +29,7 @@ float4 AlphaToGrayscale(float2 coords : TEXCOORD0) : COLOR0
 
 float4 AlphaToLighterGrayscale(float2 coords : TEXCOORD0) : COLOR0
 {
-    float brightness = 1 - 0.5 * tex2D(OccluderSampler, coords).a;
+    float brightness = -0.5 * tex2D(OccluderSampler, coords).a + 1;
     return float4(brightness.xxx, 1);
 }
 
@@ -44,7 +45,7 @@ float4 FinalBlur(float2 coords : TEXCOORD0) : COLOR0
     float brightness = BlurBrightness(coords);
 
     brightness *= brightness * brightness;
-    brightness = BrightnessIncrease + (1 - BrightnessIncrease) * brightness;
+    brightness = (1 - BrightnessIncrease) * brightness + BrightnessIncrease;
 
     return float4(brightness, brightness, brightness, 1);
 }

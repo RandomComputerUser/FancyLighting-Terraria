@@ -14,14 +14,18 @@ float2 DitherCoordMult;
 float2 AmbientOcclusionCoordMult;
 
 // Gamma correction only applies when both overbright and HiDef are enabled
-// The light map uses linear RGB
+
+// Possible addition: tonemapping
+// None of the tonemapping functions I tried looked good
 
 #define WORLD_TEX_COORDS (WorldCoordMult * coords)
 #define MIN_PREMULTIPLIER (0.5 / 255)
 
-// Macro with gamma correction
+// Macros with gamma correction
+#define SurfaceColor(color) \
+    LinearToSrgb(color)
 #define SurfaceColorWithLighting(lightLevel) \
-    (LinearToSrgb(float4((lightLevel), 1) * SrgbToLinear(tex2D(WorldSampler, WORLD_TEX_COORDS))) + float4(Dither(coords), 0))
+    (SurfaceColor(float4((lightLevel), 1) * SrgbToLinear(tex2D(WorldSampler, WORLD_TEX_COORDS))) + float4(Dither(coords), 0))
 
 float3 GammaToLinear(float3 color)
 {
@@ -31,13 +35,14 @@ float3 GammaToLinear(float3 color)
 float4 GammaToLinear(float4 color)
 {
     color.a = max(color.a, MIN_PREMULTIPLIER);
-    return float4(GammaToLinear(color.rgb / color.a), color.a);
+    float mult = 1 / color.a;
+    return float4(GammaToLinear(color.rgb * mult), color.a);
 }
 
 float3 SrgbToLinear(float3 color)
 {
-    float3 lowPart = color / 12.92;
-    float3 highPart = pow((color + 0.055) / 1.055, 2.4);
+    float3 lowPart = color * (1 / 12.92);
+    float3 highPart = pow((color + 0.055) * (1 / 1.055), 2.4);
     float3 selector = step(color, 0.04045);
     return lerp(highPart, lowPart, selector);
 }
@@ -45,7 +50,8 @@ float3 SrgbToLinear(float3 color)
 float4 SrgbToLinear(float4 color)
 {
     color.a = max(color.a, MIN_PREMULTIPLIER);
-    return float4(SrgbToLinear(color.rgb / color.a), color.a);
+    float mult = 1 / color.a;
+    return float4(SrgbToLinear(color.rgb * mult), color.a);
 }
 
 float3 LinearToSrgb(float3 color)
@@ -97,8 +103,8 @@ float2 Gradient(
     float2 gradient = float2(horizontal, vertical);
 
     gradient *= float2(
-        (leftAlpha * rightAlpha >= 1) / (2.0 * 3),
-        (upAlpha * downAlpha >= 1) / (2.0 * 3)
+        (leftAlpha * rightAlpha >= 1) * (1 / (2.0 * 3)),
+        (upAlpha * downAlpha >= 1) * (1 / (2.0 * 3))
     );
 
     return gradient;
@@ -117,8 +123,8 @@ float2 QualityNormalsGradientBase(float2 coords, float2 worldTexCoords)
     float3 upRight = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
     float3 downLeft = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
 
-    float3 horizontalColorDiff = (left.rgb - right.rgb) + ((upLeft - downRight) + (downLeft - upRight)) / 2;
-    float3 verticalColorDiff = (up.rgb - down.rgb) + ((upLeft - downRight) - (downLeft - upRight)) / 2;
+    float3 horizontalColorDiff = 0.5 * ((upLeft - downRight) + (downLeft - upRight)) + (left.rgb - right.rgb);
+    float3 verticalColorDiff = 0.5 * ((upLeft - downRight) - (downLeft - upRight)) + (up.rgb - down.rgb);
 
     return Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
 }
@@ -236,7 +242,7 @@ float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR
 {
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
-    return float4(LinearToSrgb(color) + Dither(coords), 1);
+    return float4(SurfaceColor(color) + Dither(coords), 1);
 }
 
 float4 Normals(float2 coords : TEXCOORD0) : COLOR0
@@ -265,7 +271,7 @@ float4 NormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(LinearToSrgb(OverbrightLightAtHiDef(coords + gradient)) + Dither(coords), 1);
+    return float4(SurfaceColor(OverbrightLightAtHiDef(coords + gradient)) + Dither(coords), 1);
 }
 
 float4 Overbright(float2 coords : TEXCOORD0) : COLOR0
@@ -294,7 +300,7 @@ float4 OverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
-    return float4(LinearToSrgb(OverbrightLightAtHiDef(coords)) + Dither(coords), 1);
+    return float4(SurfaceColor(OverbrightLightAtHiDef(coords)) + Dither(coords), 1);
 }
 
 float4 OverbrightMax(float2 coords : TEXCOORD0) : COLOR0
@@ -309,7 +315,7 @@ float4 OverbrightMaxHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
 {
-    return LinearToSrgb(
+    return SurfaceColor(
         SrgbToLinear(color)
         * SrgbToLinear(tex2D(TextureSampler, coords))
     );
@@ -320,7 +326,7 @@ float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COL
     // Multiply by 1.125 to partly compensate for global brightness of 1.2
     color.rgb *= 1.125;
 
-    return LinearToSrgb(
+    return SurfaceColor(
         GammaToLinear(color)
         * SrgbToLinear(tex2D(TextureSampler, coords))
     );
