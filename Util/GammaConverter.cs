@@ -1,10 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace FancyLighting.Util;
 
 internal static class GammaConverter
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void GammaToLinear(ref Vector3 color)
     {
         color.X *= color.X;
@@ -12,6 +14,7 @@ internal static class GammaConverter
         color.Z *= color.Z;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void LinearToSrgb(ref Vector3 color)
     {
         color.X = color.X <= 0.0031308f
