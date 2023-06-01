@@ -22,7 +22,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Changed sky color profile 1
 - Added support for more glowing effects
 - Tweaked some pre-existing glowing effects
-- Tweaked some default settings for ambient occlusion
+- Increased the default ambient occlusion radius
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine in camera mode
