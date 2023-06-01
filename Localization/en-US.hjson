@@ -32,7 +32,7 @@ Mods: {
 						'''
 						Toggles whether to use smooth lighting
 						If disabled, vanilla lighting visuals are used
-						Performance is affected primarily by the GPU
+						Rendering performance is affected primarily by the GPU
 						Requires lighting to be set to color
 						'''
 				}
@@ -114,7 +114,7 @@ Mods: {
 						'''
 						Toggles whether to use ambient occlusion
 						If enabled, tiles produce shadows in front of walls
-						Performance is affected primarily by the GPU
+						Rendering performance is affected primarily by the GPU
 						Requires lighting to be set to color
 						'''
 				}
@@ -169,8 +169,8 @@ Mods: {
 						'''
 						Toggles whether to use a modified lighting engine
 						When enabled, light is spread more accurately with noticeable shadows
-						Performance is significantly reduced in areas with more light sources
-						Performance is affected primarily by the CPU; the GPU is not used
+						Performance is affected by the number of light sources in the scene
+						Lighting performance is affected primarily by the CPU; the GPU is not used
 						Requires lighting to be set to color
 						'''
 				}
