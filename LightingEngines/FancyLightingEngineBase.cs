@@ -224,8 +224,10 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             return;
         }
 
+        const int INDEX_INCREMENT = 32;
+
         int taskIndex = -1;
-        int lightIndex = -1;
+        int lightIndex = -INDEX_INCREMENT;
         for (int i = 0; i < taskCount; ++i)
         {
             _tasks[i] = Task.Factory.StartNew(
@@ -240,13 +242,16 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
 
                     while (true)
                     {
-                        int i = Interlocked.Increment(ref lightIndex);
+                        int i = Interlocked.Add(ref lightIndex, INDEX_INCREMENT);
                         if (i >= lightMapSize)
                         {
                             break;
                         }
 
-                        lightingAction(workingLightMap, workingLights, i);
+                        for (int end = Math.Min(lightMapSize, i + INDEX_INCREMENT); i < end; ++i)
+                        {
+                            lightingAction(workingLightMap, workingLights, i);
+                        }
                     }
                 }
             );

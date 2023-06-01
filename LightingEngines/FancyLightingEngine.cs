@@ -363,6 +363,9 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
             }
         }
 
+        // Performance optimization
+        float[][] _lightMask = this._lightMask;
+
         float reciprocalThreshold = 1f / _lightMask[index][MAX_DISTANCE];
         int length = width * height;
 
@@ -414,6 +417,11 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
         {
             return;
         }
+
+        // Performance optimization
+        float[] _lightAirDecay = this._lightAirDecay;
+        float[] _lightSolidDecay = this._lightSolidDecay;
+        float _lightLossExitingSolid = this._lightLossExitingSolid;
 
         float initialDecay = _lightMask[index][DISTANCE_TICKS];
         int lightRange = Math.Clamp(
@@ -530,6 +538,9 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
+            // Performance optimization
+            LightingSpread[] _lightingSpread = this._lightingSpread;
+
             // Upper Right
             if (doUpperRight)
             {

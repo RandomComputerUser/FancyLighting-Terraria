@@ -596,6 +596,13 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         {
             void ProcessQuadrant(int edgeY, int edgeX, int indexVerticalChange, int indexHorizontalChange)
             {
+                // Performance optimization
+                float[][] _lightMask = this._lightMask;
+                float[] _lightAirDecay = this._lightAirDecay;
+                float[] _lightSolidDecay = this._lightSolidDecay;
+                float _lightLossExitingSolid = this._lightLossExitingSolid;
+                LightingSpread[] _lightingSpread = this._lightingSpread;
+
                 workingLights[0] = new(initialDecay);
                 float value = 1f;
                 for (int i = index, y = 1; y <= edgeY; ++y)
