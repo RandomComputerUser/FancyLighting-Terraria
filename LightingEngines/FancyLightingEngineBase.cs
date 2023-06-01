@@ -259,9 +259,9 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
 
         Task.WaitAll(_tasks);
 
-        static void MaxArraysIntoFirst(Vector3[] arr1, Vector3[] arr2, int length)
+        static void MaxArraysIntoFirst(Vector3[] arr1, Vector3[] arr2, int begin, int end)
         {
-            for (int i = 0; i < length; ++i)
+            for (int i = begin; i < end; ++i)
             {
                 ref Vector3 vec1 = ref arr1[i];
                 ref Vector3 vec2 = ref arr2[i];
@@ -285,9 +285,9 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             }
         }
 
-        static void MaxArrays(Vector3[] arr1, Vector3[] arr2, Vector3[] result, int length)
+        static void MaxArrays(Vector3[] arr1, Vector3[] arr2, Vector3[] result, int begin, int end)
         {
-            for (int i = 0; i < length; ++i)
+            for (int i = begin; i < end; ++i)
             {
                 ref Vector3 vec1 = ref arr1[i];
                 ref Vector3 vec2 = ref arr2[i];
@@ -300,31 +300,23 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             }
         }
 
-        for (int increment = 1; ; increment *= 2)
-        {
-            int iterationCount = taskCount / (2 * increment);
-            if (taskCount % (2 * increment) > increment)
-            {
-                ++iterationCount;
-            }
+        const int CHUNK_SIZE = 64;
 
-            if (iterationCount == 1)
+        Parallel.For(
+            0,
+            (lightMapSize - 1) / CHUNK_SIZE + 1,
+            new ParallelOptions { MaxDegreeOfParallelism = taskCount },
+            (i) =>
             {
-                MaxArrays(_workingLightMap[0], _workingLightMap[increment], destination, lightMapSize);
-                return;
-            }
+                int begin = CHUNK_SIZE * i;
+                int end = Math.Min(lightMapSize, begin + CHUNK_SIZE);
 
-            Parallel.For(
-                0,
-                iterationCount,
-                new ParallelOptions { MaxDegreeOfParallelism = taskCount },
-                (i) =>
-                    MaxArraysIntoFirst(
-                        _workingLightMap[increment * (2 * i)],
-                        _workingLightMap[increment * (2 * i + 1)],
-                        lightMapSize
-                    )
-            );
-        }
+                MaxArrays(_workingLightMap[0], _workingLightMap[1], destination, begin, end);
+                for (int j = 2; j < _workingLightMap.Length; ++j)
+                {
+                    MaxArraysIntoFirst(destination, _workingLightMap[j], begin, end);
+                }
+            }
+        );
     }
 }
