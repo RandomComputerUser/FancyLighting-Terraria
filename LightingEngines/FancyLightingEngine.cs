@@ -26,7 +26,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
-    private const int MAX_DISTANCE = 384;
+    private const int MAX_DISTANCE = DISTANCE_TICKS;
     private float _logBrightnessCutoff;
     private float _reciprocalLogSlowestDecay;
 
@@ -38,6 +38,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
     private readonly LightingSpread[] _lightingSpread;
 
     private Vector3[] _tmp;
+    private bool[] _skipGI;
 
     private int _temporalData;
     private bool _countTemporal;
@@ -283,6 +284,11 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 
         if (doGI)
         {
+            if (_skipGI is null || _skipGI.Length < length)
+            {
+                _skipGI = new bool[length];
+            }
+
             Parallel.For(
                 0,
                 width,
@@ -299,10 +305,20 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                             giLight.X = 0f;
                             giLight.Y = 0f;
                             giLight.Z = 0f;
+                            _skipGI[j] = true;
                             continue;
                         }
 
-                        Vector3.Multiply(ref _tmp[j], GI_MULT, out giLight);
+                        Vector3 origLight = giLight;
+                        ref Vector3 light = ref _tmp[j];
+                        giLight.X = GI_MULT * light.X;
+                        giLight.Y = GI_MULT * light.Y;
+                        giLight.Z = GI_MULT * light.Z;
+
+                        _skipGI[j]
+                            = giLight.X <= origLight.X
+                            && giLight.Y <= origLight.Y
+                            && giLight.Z <= origLight.Z;
                     }
                 }
             );
@@ -314,7 +330,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                 length,
                 (workingLightMap, workingLights, i) =>
                 {
-                    if (lightMasks[i] is LightMaskMode.Solid)
+                    if (_skipGI[i])
                     {
                         return;
                     }
@@ -366,7 +382,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
         // Performance optimization
         float[][] _lightMask = this._lightMask;
 
-        float reciprocalThreshold = 1f / _lightMask[index][MAX_DISTANCE];
         int length = width * height;
 
         int midX = index / height;
@@ -375,14 +390,20 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 
         bool skipUp, skipDown, skipLeft, skipRight;
 
+        Vector3.Multiply(
+            ref color,
+            _lightMask[index][DISTANCE_TICKS] * _lightMask[index][DISTANCE_TICKS / 2],
+            out Vector3 threshold
+        );
+
         if (index == topEdge)
         {
             skipUp = true;
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index - 1];
-            skipUp = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index - 1], _lightMask[index - 1][DISTANCE_TICKS], out Vector3 otherColor);
+            skipUp = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index == bottomEdge)
         {
@@ -390,8 +411,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index + 1];
-            skipDown = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index + 1], _lightMask[index + 1][DISTANCE_TICKS], out Vector3 otherColor);
+            skipDown = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index < height)
         {
@@ -399,8 +420,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - height][DISTANCE_TICKS] * reciprocalThreshold * colors[index - height];
-            skipLeft = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index - height], _lightMask[index - height][DISTANCE_TICKS], out Vector3 otherColor);
+            skipLeft = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index + height >= length)
         {
@@ -408,8 +429,8 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + height][DISTANCE_TICKS] * reciprocalThreshold * colors[index + height];
-            skipRight = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index + height], _lightMask[index + height][DISTANCE_TICKS], out Vector3 otherColor);
+            skipRight = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
 
         // We blend by taking the max of each component, so this is a valid check to skip

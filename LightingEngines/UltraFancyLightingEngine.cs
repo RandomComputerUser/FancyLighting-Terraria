@@ -55,7 +55,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
 
     private int _temporalData;
     private bool _countTemporal;
-    private bool _reduceCulling;
 
     public UltraFancyLightingEngine()
     {
@@ -375,7 +374,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         bool doGI = LightingConfig.Instance.SimulateGlobalIllumination;
 
         _countTemporal = true;
-        _reduceCulling = false;
         RunLightingPass(
             colors,
             doGI ? _tmp : colors,
@@ -391,11 +389,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 _skipGI = new bool[length];
             }
 
-            int xmin = _lightMapArea.X + 1;
-            int xmax = _lightMapArea.X + width - 2;
-            int ymin = _lightMapArea.Y + 1;
-            int ymax = _lightMapArea.Y + height - 2;
-
             Parallel.For(
                 0,
                 width,
@@ -404,8 +397,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 {
                     int x = i + _lightMapArea.X;
                     int y = _lightMapArea.Y;
-                    bool notOnLeft = x > xmin;
-                    bool notOnRight = x < xmax;
                     int endIndex = height * (i + 1);
                     for (int j = height * i; j < endIndex; ++j, ++y)
                     {
@@ -435,14 +426,13 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
             );
 
             _countTemporal = false;
-            _reduceCulling = true;
             RunLightingPass(
                 _tmp,
                 colors,
                 length,
                 (workingLightMap, workingLights, i) =>
                 {
-                    if (lightMasks[i] is LightMaskMode.Solid)
+                    if (_skipGI[i])
                     {
                         return;
                     }
@@ -491,7 +481,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
             }
         }
 
-        float reciprocalThreshold = 1f / (_lightMask[index][MAX_DISTANCE] * _lightMask[index][MAX_DISTANCE / 2]);
         int length = width * height;
 
         int midX = index / height;
@@ -500,14 +489,20 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
 
         bool skipUp, skipDown, skipLeft, skipRight;
 
+        Vector3.Multiply(
+            ref color,
+            _lightMask[index][DISTANCE_TICKS] * _lightMask[index][DISTANCE_TICKS / 2],
+            out Vector3 threshold
+        );
+
         if (index == topEdge)
         {
             skipUp = true;
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index - 1];
-            skipUp = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index - 1], _lightMask[index - 1][DISTANCE_TICKS], out Vector3 otherColor);
+            skipUp = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index == bottomEdge)
         {
@@ -515,8 +510,8 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + 1][DISTANCE_TICKS] * reciprocalThreshold * colors[index + 1];
-            skipDown = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index + 1], _lightMask[index + 1][DISTANCE_TICKS], out Vector3 otherColor);
+            skipDown = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index < height)
         {
@@ -524,8 +519,8 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index - height][DISTANCE_TICKS] * reciprocalThreshold * colors[index - height];
-            skipLeft = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index - height], _lightMask[index - height][DISTANCE_TICKS], out Vector3 otherColor);
+            skipLeft = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
         if (index + height >= length)
         {
@@ -533,8 +528,8 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         }
         else
         {
-            Vector3 otherColor = _lightMask[index + height][DISTANCE_TICKS] * reciprocalThreshold * colors[index + height];
-            skipRight = otherColor.X >= color.X && otherColor.Y >= color.Y && otherColor.Z >= color.Z;
+            Vector3.Multiply(ref colors[index + height], _lightMask[index + height][DISTANCE_TICKS], out Vector3 otherColor);
+            skipRight = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
         }
 
         // We blend by taking the max of each component, so this is a valid check to skip
@@ -644,10 +639,10 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         }
 
         // Using || instead of && for culling is sometimes inaccurate, but much faster
-        bool doUpperRight = _reduceCulling ? !(skipUp && skipRight) : !(skipUp || skipRight);
-        bool doUpperLeft = _reduceCulling ? !(skipUp && skipLeft) : !(skipUp || skipLeft);
-        bool doLowerRight = _reduceCulling ? !(skipDown && skipRight) : !(skipDown || skipRight);
-        bool doLowerLeft = _reduceCulling ? !(skipDown && skipLeft) : !(skipDown || skipLeft);
+        bool doUpperRight = !(skipUp || skipRight);
+        bool doUpperLeft = !(skipUp || skipLeft);
+        bool doLowerRight = !(skipDown || skipRight);
+        bool doLowerLeft = !(skipDown || skipLeft);
 
         int leftEdge = Math.Min(midX, lightRange);
         int rightEdge = Math.Min(width - 1 - midX, lightRange);
