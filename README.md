@@ -16,14 +16,14 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added a basic version of global illumination
 - Added an option to change the internal resolution of the fancy lighting engine
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
-- Optimized the fancy lighting engine
 - Improved ambient occlusion when using overbright rendering
-- Added an option to increase the brightness of lighting when using light map blurring
+- Added an option to use enhanced light map blurring
 - Changed sky color profile 1
 - Added support for more glowing effects
 - Tweaked some pre-existing glowing effects
 - Increased the default ambient occlusion radius
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
+- Optimized the fancy lighting engine
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine in camera mode
 - Reduced visual disruption after updating settings

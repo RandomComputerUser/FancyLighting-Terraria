@@ -289,7 +289,7 @@ internal sealed class SmoothLighting
 
     internal void ApplyNoFilterShader() => _noFilterShader.Apply();
 
-    internal void GetAndBlurLightMap(Vector3[] colors, int width, int height)
+    internal void GetAndBlurLightMap(Vector3[] colors, LightMaskMode[] lightMasks, int width, int height)
     {
         _smoothLightingLightMapValid = false;
         _smoothLightingPositionValid = false;
@@ -357,7 +357,7 @@ internal sealed class SmoothLighting
 
         if (blurLightMap)
         {
-            if (LightingConfig.Instance.UseBrighterBlurring)
+            if (LightingConfig.Instance.UseEnhancedBlurring)
             {
                 Parallel.For(
                     1,
@@ -372,26 +372,54 @@ internal sealed class SmoothLighting
 
                             try
                             {
+                                LightMaskMode mask = lightMasks[i];
+
+                                float upperLeftMult = lightMasks[i - height - 1] == mask ? 1f : 0f;
+                                float leftMult = lightMasks[i - height] == mask ? 2f : 0f;
+                                float lowerLeftMult = lightMasks[i - height + 1] == mask ? 1f : 0f;
+                                float upperMult = lightMasks[i - 1] == mask ? 2f : 0f;
+                                float middleMult = mask is LightMaskMode.Solid ? 24f : 4f;
+                                float lowerMult = lightMasks[i + 1] == mask ? 2f : 0f;
+                                float upperRightMult = lightMasks[i + height - 1] == mask ? 1f : 0f;
+                                float rightMult = lightMasks[i + height] == mask ? 2f : 0f;
+                                float lowerRightMult = lightMasks[i + height + 1] == mask ? 1f : 0f;
+
+                                float mult = 1f / (
+                                    (upperLeftMult + leftMult + lowerLeftMult)
+                                    + (upperMult + middleMult + lowerMult)
+                                    + (upperRightMult + rightMult + lowerRightMult)
+                                );
+
                                 ref Vector3 light = ref _lights[i];
 
+                                ref Vector3 upperLeft = ref colors[i - height - 1];
+                                ref Vector3 left = ref colors[i - height];
+                                ref Vector3 lowerLeft = ref colors[i - height + 1];
+                                ref Vector3 upper = ref colors[i - 1];
+                                ref Vector3 middle = ref colors[i];
+                                ref Vector3 lower = ref colors[i + 1];
+                                ref Vector3 upperRight = ref colors[i + height - 1];
+                                ref Vector3 right = ref colors[i + height];
+                                ref Vector3 lowerRight = ref colors[i + height + 1];
+
                                 // Faster to do it separately for each component
-                                light.X = Math.Max(colors[i].X, (
-                                      (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
-                                    + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
-                                    + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
-                                ) * (1f / 16f));
+                                light.X = (
+                                    (upperLeftMult * upperLeft.X + leftMult * left.X + lowerLeftMult * lowerLeft.X)
+                                    + (upperMult * upper.X + middleMult * middle.X + lowerMult * lower.X)
+                                    + (upperRightMult * upperRight.X + rightMult * right.X + lowerRightMult * lowerRight.X)
+                                ) * mult;
 
-                                light.Y = Math.Max(colors[i].Y, (
-                                      (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
-                                    + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
-                                    + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
-                                ) * (1f / 16f));
+                                light.Y = (
+                                    (upperLeftMult * upperLeft.Y + leftMult * left.Y + lowerLeftMult * lowerLeft.Y)
+                                    + (upperMult * upper.Y + middleMult * middle.Y + lowerMult * lower.Y)
+                                    + (upperRightMult * upperRight.Y + rightMult * right.Y + lowerRightMult * lowerRight.Y)
+                                ) * mult;
 
-                                light.Z = Math.Max(colors[i].Z, (
-                                      (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
-                                    + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
-                                    + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
-                                ) * (1f / 16f));
+                                light.Z = (
+                                    (upperLeftMult * upperLeft.Z + leftMult * left.Z + lowerLeftMult * lowerLeft.Z)
+                                    + (upperMult * upper.Z + middleMult * middle.Z + lowerMult * lower.Z)
+                                    + (upperRightMult * upperRight.Z + rightMult * right.Z + lowerRightMult * lowerRight.Z)
+                                ) * mult;
                             }
                             catch (IndexOutOfRangeException)
                             {
@@ -419,23 +447,33 @@ internal sealed class SmoothLighting
                             {
                                 ref Vector3 light = ref _lights[i];
 
+                                ref Vector3 upperLeft = ref colors[i - height - 1];
+                                ref Vector3 left = ref colors[i - height];
+                                ref Vector3 lowerLeft = ref colors[i - height + 1];
+                                ref Vector3 upper = ref colors[i - 1];
+                                ref Vector3 middle = ref colors[i];
+                                ref Vector3 lower = ref colors[i + 1];
+                                ref Vector3 upperRight = ref colors[i + height - 1];
+                                ref Vector3 right = ref colors[i + height];
+                                ref Vector3 lowerRight = ref colors[i + height + 1];
+
                                 // Faster to do it separately for each component
                                 light.X = (
-                                      (colors[i - height - 1].X + 2f * colors[i - height].X + colors[i - height + 1].X)
-                                    + 2f * (colors[i - 1].X + 2f * colors[i].X + colors[i + 1].X)
-                                    + (colors[i + height - 1].X + 2f * colors[i + height].X + colors[i + height + 1].X)
+                                      (upperLeft.X + 2f * left.X + lowerLeft.X)
+                                    + 2f * (upper.X + 2f * middle.X + lower.X)
+                                    + (upperRight.X + 2f * right.X + lowerRight.X)
                                 ) * (1f / 16f);
 
                                 light.Y = (
-                                      (colors[i - height - 1].Y + 2f * colors[i - height].Y + colors[i - height + 1].Y)
-                                    + 2f * (colors[i - 1].Y + 2f * colors[i].Y + colors[i + 1].Y)
-                                    + (colors[i + height - 1].Y + 2f * colors[i + height].Y + colors[i + height + 1].Y)
+                                      (upperLeft.Y + 2f * left.Y + lowerLeft.Y)
+                                    + 2f * (upper.Y + 2f * middle.Y + lower.Y)
+                                    + (upperRight.Y + 2f * right.Y + lowerRight.Y)
                                 ) * (1f / 16f);
 
                                 light.Z = (
-                                      (colors[i - height - 1].Z + 2f * colors[i - height].Z + colors[i - height + 1].Z)
-                                    + 2f * (colors[i - 1].Z + 2f * colors[i].Z + colors[i + 1].Z)
-                                    + (colors[i + height - 1].Z + 2f * colors[i + height].Z + colors[i + height + 1].Z)
+                                      (upperLeft.Z + 2f * left.Z + lowerLeft.Z)
+                                    + 2f * (upper.Z + 2f * middle.Z + lower.Z)
+                                    + (upperRight.Z + 2f * right.Z + lowerRight.Z)
                                 ) * (1f / 16f);
                             }
                             catch (IndexOutOfRangeException)

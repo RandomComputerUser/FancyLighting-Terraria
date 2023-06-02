@@ -39,7 +39,7 @@ public sealed class LightingConfig : ModConfig
     {
         _useSmoothLighting = options.UseSmoothLighting;
         _useLightMapBlurring = options.UseLightMapBlurring;
-        _useBrighterBlurring = options.UseBrighterBlurring;
+        _useEnhancedBlurring = options.UseEnhancedBlurring;
         _lightMapRenderMode = options.LightMapRenderMode;
         _normalMapsStrength = options.NormalMapsStrength;
         _useQualityNormalMaps = options.QualityNormalMaps;
@@ -138,17 +138,17 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _useLightMapBlurring;
 
-    [DefaultValue(DefaultOptions.UseBrighterBlurring)]
-    public bool UseBrighterBlurring
+    [DefaultValue(DefaultOptions.UseEnhancedBlurring)]
+    public bool UseEnhancedBlurring
     {
-        get => _useBrighterBlurring;
+        get => _useEnhancedBlurring;
         set
         {
-            _useBrighterBlurring = value;
+            _useEnhancedBlurring = value;
             ConfigPreset = Preset.CustomPreset;
         }
     }
-    private bool _useBrighterBlurring;
+    private bool _useEnhancedBlurring;
 
     [DefaultValue(DefaultOptions.LightMapRenderMode)]
     [DrawTicks]

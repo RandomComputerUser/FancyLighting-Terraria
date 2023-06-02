@@ -44,17 +44,17 @@ Mods: {
 						Toggles whether to blur the light map
 						Applies a per-tile blur to the light map before rendering
 						Smooths sharp light transitions
-						Disabling this setting may slightly increase performance
+						May slightly reduce performance when enabled
 						'''
 				}
 
-				UseBrighterBlurring: {
-					Label: Use Brighter Blurring
+				UseEnhancedBlurring: {
+					Label: Use Enhanced Light Map Blurring
 					Tooltip:
 						'''
 						Controls the blurring function used to blur the light map
-						When enabled, light map blurring cannot darken a tile's lighting
-						Increases the brightness of highlights
+						When enabled, uses improved blurring affected by light absorption
+						May slightly reduce performance when enabled
 						'''
 				}
 

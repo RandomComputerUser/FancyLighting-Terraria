@@ -8,7 +8,7 @@ public static class DefaultOptions
 
     public const bool UseSmoothLighting = true;
     public const bool UseLightMapBlurring = true;
-    public const bool UseBrighterBlurring = false;
+    public const bool UseEnhancedBlurring = false;
     public const RenderMode LightMapRenderMode = RenderMode.Bilinear;
     public const int NormalMapsStrength = 0;
     public const bool QualityNormalMaps = false;

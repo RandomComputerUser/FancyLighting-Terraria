@@ -7,7 +7,7 @@ internal record PresetOptions
 {
     public bool UseSmoothLighting { get; init; } = DefaultOptions.UseSmoothLighting;
     public bool UseLightMapBlurring { get; init; } = DefaultOptions.UseLightMapBlurring;
-    public bool UseBrighterBlurring { get; init; } = DefaultOptions.UseBrighterBlurring;
+    public bool UseEnhancedBlurring { get; init; } = DefaultOptions.UseEnhancedBlurring;
     public RenderMode LightMapRenderMode { get; init; } = DefaultOptions.LightMapRenderMode;
     public int NormalMapsStrength { get; init; } = DefaultOptions.NormalMapsStrength;
     public bool QualityNormalMaps { get; init; } = DefaultOptions.QualityNormalMaps;
@@ -40,7 +40,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = config.UseSmoothLighting;
         UseLightMapBlurring = config.UseLightMapBlurring;
-        UseBrighterBlurring = config.UseBrighterBlurring;
+        UseEnhancedBlurring = config.UseEnhancedBlurring;
         LightMapRenderMode = config.LightMapRenderMode;
         NormalMapsStrength = config.NormalMapsStrength;
         QualityNormalMaps = config.QualityNormalMaps;
@@ -71,7 +71,7 @@ internal record PresetOptions
     public static PresetOptions VanillaPresetOptions = new()
     {
         UseSmoothLighting = false,
-        UseBrighterBlurring = false,
+        UseEnhancedBlurring = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
         QualityNormalMaps = false,
@@ -90,7 +90,7 @@ internal record PresetOptions
     public static PresetOptions LowPresetOptions = new()
     {
         UseSmoothLighting = true,
-        UseBrighterBlurring = false,
+        UseEnhancedBlurring = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
         QualityNormalMaps = false,
@@ -111,7 +111,7 @@ internal record PresetOptions
     public static PresetOptions HighPresetOptions = new()
     {
         UseSmoothLighting = true,
-        UseBrighterBlurring = true,
+        UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.Bicubic,
         NormalMapsStrength = 0,
         QualityNormalMaps = false,
@@ -130,7 +130,7 @@ internal record PresetOptions
     public static PresetOptions VeryHighPresetOptions = new()
     {
         UseSmoothLighting = true,
-        UseBrighterBlurring = true,
+        UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
         QualityNormalMaps = true,
@@ -149,7 +149,7 @@ internal record PresetOptions
     public static PresetOptions UltraPresetOptions = new()
     {
         UseSmoothLighting = true,
-        UseBrighterBlurring = true,
+        UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
         QualityNormalMaps = true,

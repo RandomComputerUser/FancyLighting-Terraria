@@ -863,7 +863,7 @@ public sealed class FancyLightingMod : Mod
 
         if (LightingConfig.Instance.SmoothLightingEnabled())
         {
-            _smoothLightingInstance.GetAndBlurLightMap(colors, self.Width, self.Height);
+            _smoothLightingInstance.GetAndBlurLightMap(colors, lightMasks, self.Width, self.Height);
         }
     }
 
