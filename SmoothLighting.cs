@@ -320,10 +320,10 @@ internal sealed class SmoothLighting
         }
 
         int caughtException = 0;
-        bool doGammaCorrection = LightingConfig.Instance.UseGammaCorrection();
+        bool doGammaCorrection = LightingConfig.Instance.DoGammaCorrection();
         bool blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
 
-        if (doGammaCorrection)
+        if (doGammaCorrection && !LightingConfig.Instance.FancyLightingEngineEnabled())
         {
             Parallel.For(
                 0,
@@ -1385,7 +1385,7 @@ internal sealed class SmoothLighting
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
         bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
-        bool doGamma = LightingConfig.Instance.UseGammaCorrection();
+        bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
 
         Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);

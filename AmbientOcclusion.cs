@@ -351,7 +351,7 @@ internal sealed class AmbientOcclusion
         }
 
         float alpha = LightingConfig.Instance.AmbientOcclusionAlpha();
-        if (LightingConfig.Instance.UseGammaCorrection())
+        if (LightingConfig.Instance.DoGammaCorrection())
         {
             alpha *= alpha;
         }

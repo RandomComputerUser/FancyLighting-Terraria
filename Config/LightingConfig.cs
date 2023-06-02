@@ -29,7 +29,7 @@ public sealed class LightingConfig : ModConfig
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
         => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
-    internal bool UseGammaCorrection()
+    internal bool DoGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
 
     public override void OnChanged()

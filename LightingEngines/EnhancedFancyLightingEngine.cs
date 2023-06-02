@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Terraria.Graphics.Light;
 using Vec2 = System.Numerics.Vector2;
 
@@ -31,11 +30,6 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
 
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
-    private const int MAX_DISTANCE = DISTANCE_TICKS;
-    private float _logBrightnessCutoff;
-    private float _reciprocalLogSlowestDecay;
-
-    private float _lightLossExitingSolid;
 
     private const float LOW_LIGHT_LEVEL = 0.03f;
     private const float GI_MULT = 0.55f;
@@ -45,19 +39,18 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
     private Vector3[] _tmp;
     private bool[] _skipGI;
 
-    private int _temporalData;
     private bool _countTemporal;
 
     public EnhancedFancyLightingEngine()
     {
         ComputeLightingSpread(out _lightingSpread);
 
-        _lightAirDecay = new float[MAX_DISTANCE + 1];
-        _lightSolidDecay = new float[MAX_DISTANCE + 1];
-        _lightWaterDecay = new float[MAX_DISTANCE + 1];
-        _lightHoneyDecay = new float[MAX_DISTANCE + 1];
-        _lightShadowPaintDecay = new float[MAX_DISTANCE + 1];
-        for (int exponent = 0; exponent <= MAX_DISTANCE; ++exponent)
+        _lightAirDecay = new float[DISTANCE_TICKS + 1];
+        _lightSolidDecay = new float[DISTANCE_TICKS + 1];
+        _lightWaterDecay = new float[DISTANCE_TICKS + 1];
+        _lightHoneyDecay = new float[DISTANCE_TICKS + 1];
+        _lightShadowPaintDecay = new float[DISTANCE_TICKS + 1];
+        for (int exponent = 0; exponent <= DISTANCE_TICKS; ++exponent)
         {
             _lightAirDecay[exponent] = 1f;
             _lightSolidDecay[exponent] = 1f;
@@ -121,7 +114,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
     )
     {
         static int DoubleToIndex(double x)
-            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, MAX_DISTANCE);
+            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
 
         double distance = MathUtil.Hypot(col, row);
         double distanceToTop = MathUtil.Hypot(col, row + 1) - distance;
@@ -273,25 +266,14 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         int height
     )
     {
-        _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
+        UpdateBrightnessCutoff();
 
-        _logBrightnessCutoff = FancyLightingMod._inCameraMode
-            ? 0.02f
-            : LightingConfig.Instance.FancyLightingEngineUseTemporal
-                ? (float)Math.Clamp(Math.Sqrt(_temporalData / 55555.5) * 0.02, 0.02, 0.125)
-                : 0.04f;
-        _logBrightnessCutoff = MathF.Log(_logBrightnessCutoff);
-        _temporalData = 0;
+        UpdateDecays(lightMap, DISTANCE_TICKS);
 
-        const float MAX_DECAY_VALUE = 0.97f;
-        UpdateDecays(lightMap, MAX_DECAY_VALUE, DISTANCE_TICKS);
-
-        _reciprocalLogSlowestDecay = 1f / MathF.Log(
-            Math.Max(
-                Math.Max(_lightAirDecay[DISTANCE_TICKS], _lightSolidDecay[DISTANCE_TICKS]),
-                Math.Max(_lightWaterDecay[DISTANCE_TICKS], _lightHoneyDecay[DISTANCE_TICKS])
-            )
-        );
+        if (LightingConfig.Instance.DoGammaCorrection())
+        {
+            ConvertLightColorsToLinear(colors, width, height);
+        }
 
         int length = width * height;
 
@@ -325,40 +307,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 _skipGI = new bool[length];
             }
 
-            Parallel.For(
-                0,
-                width,
-                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
-                (i) =>
-                {
-                    int x = i + _lightMapArea.X;
-                    int y = _lightMapArea.Y;
-                    int endIndex = height * (i + 1);
-                    for (int j = height * i; j < endIndex; ++j, ++y)
-                    {
-                        ref Vector3 giLight = ref colors[j];
-
-                        if (lightMasks[j] is LightMaskMode.Solid)
-                        {
-                            giLight.X = 0f;
-                            giLight.Y = 0f;
-                            giLight.Z = 0f;
-                            _skipGI[j] = true;
-                            continue;
-                        }
-
-                        Vector3 origLight = giLight;
-                        ref Vector3 light = ref _tmp[j];
-                        giLight.X = GI_MULT * light.X;
-                        giLight.Y = GI_MULT * light.Y;
-                        giLight.Z = GI_MULT * light.Z;
-
-                        _skipGI[j]
-                            = giLight.X <= origLight.X
-                            && giLight.Y <= origLight.Y
-                            && giLight.Z <= origLight.Z;
-                    }
-                }
+            GetLightsForGlobalIllumination(
+                _tmp, colors, colors, _skipGI, lightMasks, width, height, GI_MULT
             );
 
             _countTemporal = false;

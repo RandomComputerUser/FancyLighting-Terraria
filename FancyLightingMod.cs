@@ -474,7 +474,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (solidLayer
             || intoRenderTargets
-            || !LightingConfig.Instance.UseGammaCorrection())
+            || !LightingConfig.Instance.DoGammaCorrection())
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets);
             return;
@@ -511,7 +511,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!LightingConfig.Instance.UseGammaCorrection() || LightingConfig.Instance.RenderOnlyLight)
+        if (!LightingConfig.Instance.DoGammaCorrection() || LightingConfig.Instance.RenderOnlyLight)
         {
             orig(self);
             return;
