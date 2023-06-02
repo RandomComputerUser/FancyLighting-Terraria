@@ -801,10 +801,10 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 + (!skipDown ? baseWork : 0)
                 + (!skipLeft ? baseWork : 0)
                 + (!skipRight ? baseWork : 0)
-                + (!(skipUp || skipRight) ? baseWork * baseWork : 0)
-                + (!(skipUp || skipLeft) ? baseWork * baseWork : 0)
-                + (!(skipDown || skipRight) ? baseWork * baseWork : 0)
-                + (!(skipDown || skipLeft) ? baseWork * baseWork : 0);
+                + (doUpperRight ? baseWork * baseWork : 0)
+                + (doUpperLeft ? baseWork * baseWork : 0)
+                + (doLowerRight ? baseWork * baseWork : 0)
+                + (doLowerLeft ? baseWork * baseWork : 0);
 
             Interlocked.Add(ref _temporalData, approximateWorkDone);
         }
