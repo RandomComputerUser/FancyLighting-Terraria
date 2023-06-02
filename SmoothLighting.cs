@@ -378,7 +378,7 @@ internal sealed class SmoothLighting
                                 float leftMult = lightMasks[i - height] == mask ? 2f : 0f;
                                 float lowerLeftMult = lightMasks[i - height + 1] == mask ? 1f : 0f;
                                 float upperMult = lightMasks[i - 1] == mask ? 2f : 0f;
-                                float middleMult = mask is LightMaskMode.Solid ? 24f : 4f;
+                                float middleMult = mask is LightMaskMode.Solid ? 12f : 4f;
                                 float lowerMult = lightMasks[i + 1] == mask ? 2f : 0f;
                                 float upperRightMult = lightMasks[i + height - 1] == mask ? 1f : 0f;
                                 float rightMult = lightMasks[i + height] == mask ? 2f : 0f;
