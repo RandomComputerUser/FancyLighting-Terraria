@@ -15,8 +15,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
     private readonly record struct LightingSpread(
         int DistanceToTop,
         int DistanceToRight,
-        Vec2 LightFromLeft,
-        Vec2 LightFromBottom,
+        Vec4 LightFrom,
         Vec4 FromLeftX,
         Vec4 FromLeftY,
         Vec4 FromBottomX,
@@ -123,7 +122,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
-                Vec2.Zero, Vec2.Zero,
+                Vec4.Zero,
                 Vec4.Zero, Vec4.Zero,
                 Vec4.Zero, Vec4.Zero
             );
@@ -135,7 +134,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
-                Vec2.Zero, Vec2.Zero,
+                Vec4.Zero,
                 Vec4.Zero, Vec4.Zero,
                 Vec4.Zero, Vec4.Zero
             );
@@ -147,7 +146,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
-                Vec2.Zero, Vec2.Zero,
+                Vec4.Zero,
                 Vec4.Zero, Vec4.Zero,
                 Vec4.Zero, Vec4.Zero
             );
@@ -170,8 +169,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         return new(
             DoubleToIndex(distanceToTop),
             DoubleToIndex(distanceToRight),
-            new((float)(area[1] - area[0]), (float)area[0]),
-            new((float)(area[2] - area[1]), (float)(area[3] - area[2])),
+            new((float)(area[1] - area[0]), (float)area[0], (float)(area[2] - area[1]), (float)(area[3] - area[2])),
             new((float)lightFrom[4], (float)lightFrom[5], (float)lightFrom[7], (float)lightFrom[6]),
             new((float)lightFrom[0], (float)lightFrom[1], (float)lightFrom[3], (float)lightFrom[2]),
             new((float)lightFrom[8], (float)lightFrom[9], (float)lightFrom[11], (float)lightFrom[10]),
@@ -520,8 +518,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                         ref LightingSpread spread
                             = ref _lightingSpread[++j];
                         SetLightMap(i,
-                            Vec2.Dot(verticalLight, spread.LightFromBottom)
-                            + Vec2.Dot(horizontalLight, spread.LightFromLeft)
+                            Vec4.Dot(
+                                new Vec4(verticalLight, horizontalLight.X, horizontalLight.Y),
+                                spread.LightFrom
+                            )
                         );
                         float topDecay = mask[spread.DistanceToTop];
                         float rightDecay = mask[spread.DistanceToRight];
