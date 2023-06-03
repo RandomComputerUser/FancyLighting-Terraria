@@ -72,7 +72,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         double temporalMax = 0.125
     )
     {
-        _logBrightnessCutoff = FancyLightingMod._inCameraMode
+        float cutoff = FancyLightingMod._inCameraMode
             ? cameraModeCutoff
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
                 ? (float)Math.Clamp(
@@ -83,10 +83,10 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 : baseCutoff;
         if (LightingConfig.Instance.DoGammaCorrection())
         {
-            _logBrightnessCutoff *= _logBrightnessCutoff;
+            cutoff *= cutoff;
         }
 
-        _logBrightnessCutoff = MathF.Log(_logBrightnessCutoff);
+        _logBrightnessCutoff = MathF.Log(cutoff);
         _temporalData = 0;
     }
 
