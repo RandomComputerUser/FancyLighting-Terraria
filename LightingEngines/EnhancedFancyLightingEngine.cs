@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Terraria.Graphics.Light;
 using Vec2 = System.Numerics.Vector2;
+using Vec4 = System.Numerics.Vector4;
 
 namespace FancyLighting.LightingEngines;
 
@@ -16,14 +17,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         int DistanceToRight,
         Vec2 LightFromLeft,
         Vec2 LightFromBottom,
-        Vec2 TopFromLeftX,
-        Vec2 TopFromLeftY,
-        Vec2 TopFromBottomX,
-        Vec2 TopFromBottomY,
-        Vec2 RightFromLeftX,
-        Vec2 RightFromLeftY,
-        Vec2 RightFromBottomX,
-        Vec2 RightFromBottomY
+        Vec4 FromLeftX,
+        Vec4 FromLeftY,
+        Vec4 FromBottomX,
+        Vec4 FromBottomY
     );
 
     private readonly record struct DistanceCache(double Top, double Right);
@@ -95,15 +92,15 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
 
                 distances[row] = new(
                     value.DistanceToTop / (double)DISTANCE_TICKS
-                        + (Vec2.Dot(value.TopFromLeftX, Vec2.One) + Vec2.Dot(value.TopFromLeftY, Vec2.One)) / 2.0
-                            * distances[row].Right
-                        + (Vec2.Dot(value.TopFromBottomX, Vec2.One) + Vec2.Dot(value.TopFromBottomY, Vec2.One)) / 2.0
-                            * distances[row - 1].Top,
+                        + ((value.FromLeftX.X + value.FromLeftX.Y) + (value.FromLeftY.X + value.FromLeftY.Y))
+                            / 2.0 * distances[row].Right
+                        + ((value.FromBottomX.X + value.FromBottomX.Y) + (value.FromBottomY.X + value.FromBottomY.Y))
+                            / 2.0 * distances[row - 1].Top,
                     value.DistanceToRight / (double)DISTANCE_TICKS
-                        + (Vec2.Dot(value.RightFromLeftX, Vec2.One) + Vec2.Dot(value.RightFromLeftY, Vec2.One)) / 2.0
-                            * distances[row].Right
-                        + (Vec2.Dot(value.RightFromBottomX, Vec2.One) + Vec2.Dot(value.RightFromBottomY, Vec2.One)) / 2.0
-                            * distances[row - 1].Top
+                        + ((value.FromLeftX.Z + value.FromLeftX.W) + (value.FromLeftY.Z + value.FromLeftY.W))
+                            / 2.0 * distances[row].Right
+                        + ((value.FromBottomX.Z + value.FromBottomX.W) + (value.FromBottomY.Z + value.FromBottomY.W))
+                            / 2.0 * distances[row - 1].Top
                 );
             }
         }
@@ -127,10 +124,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero
+                Vec4.Zero, Vec4.Zero,
+                Vec4.Zero, Vec4.Zero
             );
         }
 
@@ -141,10 +136,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero
+                Vec4.Zero, Vec4.Zero,
+                Vec4.Zero, Vec4.Zero
             );
         }
 
@@ -155,10 +148,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero,
-                Vec2.Zero, Vec2.Zero
+                Vec4.Zero, Vec4.Zero,
+                Vec4.Zero, Vec4.Zero
             );
         }
 
@@ -181,14 +172,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             DoubleToIndex(distanceToRight),
             new((float)(area[1] - area[0]), (float)area[0]),
             new((float)(area[2] - area[1]), (float)(area[3] - area[2])),
-            new((float)lightFrom[4], (float)lightFrom[5]),
-            new((float)lightFrom[0], (float)lightFrom[1]),
-            new((float)lightFrom[8], (float)lightFrom[9]),
-            new((float)lightFrom[12], (float)lightFrom[13]),
-            new((float)lightFrom[7], (float)lightFrom[6]),
-            new((float)lightFrom[3], (float)lightFrom[2]),
-            new((float)lightFrom[11], (float)lightFrom[10]),
-            new((float)lightFrom[15], (float)lightFrom[14])
+            new((float)lightFrom[4], (float)lightFrom[5], (float)lightFrom[7], (float)lightFrom[6]),
+            new((float)lightFrom[0], (float)lightFrom[1], (float)lightFrom[3], (float)lightFrom[2]),
+            new((float)lightFrom[8], (float)lightFrom[9], (float)lightFrom[11], (float)lightFrom[10]),
+            new((float)lightFrom[12], (float)lightFrom[13], (float)lightFrom[15], (float)lightFrom[14])
         );
     }
 
@@ -536,28 +523,20 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                             Vec2.Dot(verticalLight, spread.LightFromBottom)
                             + Vec2.Dot(horizontalLight, spread.LightFromLeft)
                         );
-                        workingLights[y]
-                            = (
+                        float topDecay = mask[spread.DistanceToTop];
+                        float rightDecay = mask[spread.DistanceToRight];
+                        Vec4 outgoingLight = (
                                 (
-                                    horizontalLight.X * spread.RightFromLeftX
-                                    + horizontalLight.Y * spread.RightFromLeftY
+                                    horizontalLight.X * spread.FromLeftX
+                                    + horizontalLight.Y * spread.FromLeftY
                                 )
                                 + (
-                                    verticalLight.X * spread.RightFromBottomX
-                                    + verticalLight.Y * spread.RightFromBottomY
+                                    verticalLight.X * spread.FromBottomX
+                                    + verticalLight.Y * spread.FromBottomY
                                 )
-                            ) * mask[spread.DistanceToRight];
-                        verticalLight
-                            = (
-                                (
-                                    horizontalLight.X * spread.TopFromLeftX
-                                    + horizontalLight.Y * spread.TopFromLeftY
-                                )
-                                + (
-                                    verticalLight.X * spread.TopFromBottomX
-                                    + verticalLight.Y * spread.TopFromBottomY
-                                )
-                            ) * mask[spread.DistanceToTop];
+                            ) * new Vec4(topDecay, topDecay, rightDecay, rightDecay);
+                        workingLights[y] = new(outgoingLight.Z, outgoingLight.W);
+                        verticalLight = new(outgoingLight.X, outgoingLight.Y);
                     }
                 }
             }
