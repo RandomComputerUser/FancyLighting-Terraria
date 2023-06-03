@@ -39,7 +39,6 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
     private const int MAX_LIGHT_RANGE = 64;
     private const int DISTANCE_TICKS = 256;
 
-    private const float LOW_LIGHT_LEVEL = 0.03f;
     private const float GI_MULT = 0.55f;
 
     private readonly LightingSpread[] _lightingSpread;
@@ -342,7 +341,11 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
     )
     {
         Vector3 color = colors[index];
-        if (color.X <= LOW_LIGHT_LEVEL && color.Y <= LOW_LIGHT_LEVEL && color.Z <= LOW_LIGHT_LEVEL)
+        if (
+            color.X <= _initialBrightnessCutoff
+            && color.Y <= _initialBrightnessCutoff
+            && color.Z <= _initialBrightnessCutoff
+        )
         {
             return;
         }

@@ -16,6 +16,9 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
     protected Rectangle _lightMapArea;
     protected int _temporalData;
 
+    private const float LOW_LIGHT_LEVEL = 0.03f;
+
+    protected float _initialBrightnessCutoff;
     protected float _logBrightnessCutoff;
     protected float _reciprocalLogSlowestDecay;
     protected float _lightLossExitingSolid;
@@ -135,6 +138,8 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         double temporalMax = 0.125
     )
     {
+        _initialBrightnessCutoff = LOW_LIGHT_LEVEL;
+
         float cutoff = FancyLightingMod._inCameraMode
             ? cameraModeCutoff
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
@@ -144,8 +149,10 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                         temporalMax
                     )
                 : baseCutoff;
+
         if (LightingConfig.Instance.DoGammaCorrection())
         {
+            _initialBrightnessCutoff *= _initialBrightnessCutoff;
             cutoff *= cutoff;
         }
 
