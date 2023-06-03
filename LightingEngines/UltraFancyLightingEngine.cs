@@ -75,15 +75,13 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
     private void ComputeLightingSpread(out LightingSpread[] values)
     {
         values = new LightingSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
-
         DistanceCache[] distances = new DistanceCache[MAX_LIGHT_RANGE + 1];
-        double[] lightFrom = new double[8 * 8];
 
         for (int row = 0; row <= MAX_LIGHT_RANGE; ++row)
         {
             int index = row;
             ref LightingSpread value = ref values[index];
-            value = CalculateTileLightingSpread(lightFrom, row, 0, 0.0, 0.0);
+            value = CalculateTileLightingSpread(row, 0, 0.0, 0.0);
             distances[row] = new(row + 1.0, row + value.DistanceToRight / (double)DISTANCE_TICKS);
         }
 
@@ -91,7 +89,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
         {
             int index = (MAX_LIGHT_RANGE + 1) * col;
             ref LightingSpread value = ref values[index];
-            value = CalculateTileLightingSpread(lightFrom, 0, col, 0.0, 0.0);
+            value = CalculateTileLightingSpread(0, col, 0.0, 0.0);
             distances[0] = new(col + value.DistanceToTop / (double)DISTANCE_TICKS, col + 1.0);
 
             for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
@@ -100,7 +98,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 double distance = MathUtil.Hypot(row, col);
                 value = ref values[index];
                 value = CalculateTileLightingSpread(
-                    lightFrom, row, col, distances[row].Right - distance, distances[row - 1].Top - distance
+                    row, col, distances[row].Right - distance, distances[row - 1].Top - distance
                 );
 
                 distances[row] = new(
@@ -136,7 +134,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
     }
 
     private static LightingSpread CalculateTileLightingSpread(
-        double[] lightFrom, int row, int col, double leftDistanceError, double bottomDistanceError
+        int row, int col, double leftDistanceError, double bottomDistanceError
     )
     {
         static int DoubleToIndex(double x)
@@ -188,68 +186,14 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
             );
         }
 
+        Span<double> lightFrom = stackalloc double[8 * 8];
         Span<double> area = stackalloc double[8];
 
-        double xLeft = col - 0.5;
-        double xMidLeft = col - 0.25;
-        double xMid = col;
-        double xMidRight = col + 0.25;
-        double xRight = col + 0.5;
-        double yBottom = row - 0.5;
-        double yMidBottom = row - 0.25;
-        double yMid = row;
-        double yMidTop = row + 0.25;
-        double yTop = row + 0.5;
-        Span<double> x = stackalloc[] { xLeft, xLeft, xLeft, xLeft, xMidLeft, xMid, xMidRight, xRight };
-        Span<double> y = stackalloc[] { yMidTop, yMid, yMidBottom, yBottom, yBottom, yBottom, yBottom, yBottom };
-        double previousT = 0.0;
-        for (int i = 0; i < 8; ++i)
-        {
-            double x1 = x[i];
-            double y1 = y[i];
+        Span<double> x = stackalloc[] { 0.0, 0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0 };
+        Span<double> y = stackalloc[] { 0.75, 0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        CalculateSubTileLightingSpread(in x, in y, ref lightFrom, ref area, row, col);
 
-            double slope = y1 / x1;
-
-            double t;
-            double x2 = xRight;
-            double y2 = y1 + (x2 - x1) * slope;
-            if (y2 > yTop)
-            {
-                y2 = yTop;
-                x2 = x1 + (y2 - y1) / slope;
-                t = 4.0 * (x2 - xLeft);
-            }
-            else
-            {
-                t = 4.0 * ((yTop - y2) + 1.0);
-            }
-
-            area[i] = (yTop - y1) * (x2 - xLeft) - 0.5 * (y2 - y1) * (x2 - x1);
-
-            for (int j = 0; j < 8; ++j)
-            {
-                int index = 8 * i + j;
-
-                if (j + 1 <= previousT)
-                {
-                    lightFrom[index] = 0.0;
-                    continue;
-                }
-                if (j >= t)
-                {
-                    lightFrom[index] = 0.0;
-                    continue;
-                }
-
-                double value = j < previousT ? j + 1 - previousT : 1.0;
-                value -= j + 1 > t ? j + 1 - t : 0.0;
-                lightFrom[index] = value;
-            }
-
-            previousT = t;
-        }
-
-        double QuadrantSum(int index)
+        static double QuadrantSum(in Span<double> lightFrom, int index)
         {
             double result = 0.0;
             int i = index;
@@ -265,7 +209,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
             return result;
         }
 
-        Vec4 VectorAt(int index)
+        static Vec4 VectorAt(in Span<double> lightFrom, int index)
             => new(
                 (float)lightFrom[index],
                 (float)lightFrom[index + 1],
@@ -273,7 +217,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 (float)lightFrom[index + 3]
             );
 
-        Vec4 ReverseVectorAt(int index)
+        static Vec4 ReverseVectorAt(in Span<double> lightFrom, int index)
             => new(
                 (float)lightFrom[index + 3],
                 (float)lightFrom[index + 2],
@@ -282,11 +226,11 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
             );
 
         distanceToTop
-            -= QuadrantSum(8 * 0 + 0) / 4.0 * leftDistanceError
-            + QuadrantSum(8 * 4 + 0) / 4.0 * bottomDistanceError;
+            -= QuadrantSum(lightFrom, 8 * 0 + 0) / 4.0 * leftDistanceError
+            + QuadrantSum(lightFrom, 8 * 4 + 0) / 4.0 * bottomDistanceError;
         distanceToRight
-            -= QuadrantSum(8 * 0 + 4) / 4.0 * leftDistanceError
-            + QuadrantSum(8 * 4 + 4) / 4.0 * bottomDistanceError;
+            -= QuadrantSum(lightFrom, 8 * 0 + 4) / 4.0 * leftDistanceError
+            + QuadrantSum(lightFrom, 8 * 4 + 4) / 4.0 * bottomDistanceError;
 
         return new(
             DoubleToIndex(distanceToTop),
@@ -303,22 +247,22 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase<Vec4>
                 (float)(area[6] - area[5]),
                 (float)(area[7] - area[6])
             ),
-            VectorAt(8 * 3 + 0),
-            VectorAt(8 * 2 + 0),
-            VectorAt(8 * 1 + 0),
-            VectorAt(8 * 0 + 0),
-            VectorAt(8 * 4 + 0),
-            VectorAt(8 * 5 + 0),
-            VectorAt(8 * 6 + 0),
-            VectorAt(8 * 7 + 0),
-            ReverseVectorAt(8 * 3 + 4),
-            ReverseVectorAt(8 * 2 + 4),
-            ReverseVectorAt(8 * 1 + 4),
-            ReverseVectorAt(8 * 0 + 4),
-            ReverseVectorAt(8 * 4 + 4),
-            ReverseVectorAt(8 * 5 + 4),
-            ReverseVectorAt(8 * 6 + 4),
-            ReverseVectorAt(8 * 7 + 4)
+            VectorAt(lightFrom, 8 * 3 + 0),
+            VectorAt(lightFrom, 8 * 2 + 0),
+            VectorAt(lightFrom, 8 * 1 + 0),
+            VectorAt(lightFrom, 8 * 0 + 0),
+            VectorAt(lightFrom, 8 * 4 + 0),
+            VectorAt(lightFrom, 8 * 5 + 0),
+            VectorAt(lightFrom, 8 * 6 + 0),
+            VectorAt(lightFrom, 8 * 7 + 0),
+            ReverseVectorAt(lightFrom, 8 * 3 + 4),
+            ReverseVectorAt(lightFrom, 8 * 2 + 4),
+            ReverseVectorAt(lightFrom, 8 * 1 + 4),
+            ReverseVectorAt(lightFrom, 8 * 0 + 4),
+            ReverseVectorAt(lightFrom, 8 * 4 + 4),
+            ReverseVectorAt(lightFrom, 8 * 5 + 4),
+            ReverseVectorAt(lightFrom, 8 * 6 + 4),
+            ReverseVectorAt(lightFrom, 8 * 7 + 4)
         );
     }
 

@@ -45,6 +45,69 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         int height
     );
 
+    protected static void CalculateSubTileLightingSpread(
+        in Span<double> x,
+        in Span<double> y,
+        ref Span<double> lightFrom,
+        ref Span<double> area,
+        int row,
+        int col
+    )
+    {
+        int numSections = x.Length;
+        double tMult = 0.5 * numSections;
+        double leftX = col - 0.5;
+        double rightX = col + 0.5;
+        double bottomY = row - 0.5;
+        double topY = row + 0.5;
+
+        double previousT = 0.0;
+        int index = 0;
+        for (int i = 0; i < numSections; ++i)
+        {
+            double x1 = leftX + x[i];
+            double y1 = bottomY + y[i];
+
+            double slope = y1 / x1;
+
+            double t;
+            double x2 = rightX;
+            double y2 = y1 + (x2 - x1) * slope;
+            if (y2 > topY)
+            {
+                y2 = topY;
+                x2 = x1 + (y2 - y1) / slope;
+                t = tMult * (x2 - leftX);
+            }
+            else
+            {
+                t = tMult * ((topY - y2) + 1.0);
+            }
+
+            area[i] = (topY - y1) * (x2 - leftX) - 0.5 * (y2 - y1) * (x2 - x1);
+
+            for (int j = 0; j < numSections; ++j)
+            {
+                if (j + 1 <= previousT)
+                {
+                    lightFrom[index++] = 0.0;
+                    continue;
+                }
+                if (j >= t)
+                {
+                    lightFrom[index++] = 0.0;
+                    continue;
+                }
+
+                double value = j < previousT ? j + 1 - previousT : 1.0;
+                value -= j + 1 > t ? j + 1 - t : 0.0;
+                lightFrom[index++] = value;
+            }
+
+            previousT = t;
+        }
+    }
+
     protected void ComputeCircles(int maxLightRange)
     {
         _circles = new int[maxLightRange + 1][];

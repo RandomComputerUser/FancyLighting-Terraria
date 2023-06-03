@@ -11,14 +11,14 @@ namespace FancyLighting.LightingEngines;
 internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 {
     private readonly record struct LightingSpread(
-        float LightFromLeft,
-        float TopLightFromLeft,
-        float TopLightFromBottom,
         int DistanceToTop,
+        int DistanceToRight,
+        float LightFromLeft,
         float LightFromBottom,
-        float RightLightFromBottom,
-        float RightLightFromLeft,
-        int DistanceToRight
+        float TopFromLeft,
+        float TopFromBottom,
+        float RightFromLeft,
+        float RightFromBottom
     );
 
     private readonly record struct DistanceCache(double Top, double Right);
@@ -61,165 +61,118 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
 
     private void ComputeLightingSpread(out LightingSpread[] values)
     {
-        static int DoubleToIndex(double x)
-            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
-
         values = new LightingSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
-        DistanceCache[,] distances = new DistanceCache[MAX_LIGHT_RANGE + 1, MAX_LIGHT_RANGE + 1];
+        DistanceCache[] distances = new DistanceCache[MAX_LIGHT_RANGE + 1];
 
-        for (int i = 1; i < MAX_LIGHT_RANGE + 1; ++i)
+        for (int row = 0; row <= MAX_LIGHT_RANGE; ++row)
         {
-            CalculateLeftStats(i, 0,
-                out double lightFromLeft, out double topLightFromLeft,
-                out double distanceToTop
-            );
-            values[(MAX_LIGHT_RANGE + 1) * i] = new(
-                (float)lightFromLeft,
-                (float)topLightFromLeft,
-                (float)(1.0 - topLightFromLeft),
-                DoubleToIndex(distanceToTop),
-                0f,
-                0f,
-                1f,
-                DoubleToIndex(1.0)
-            );
-            distances[i, 0] = new DistanceCache(
-                (double)DISTANCE_TICKS * i + DoubleToIndex(distanceToTop), (double)DISTANCE_TICKS * (i + 1)
-            );
+            int index = row;
+            ref LightingSpread value = ref values[index];
+            value = CalculateTileLightingSpread(row, 0, 0.0, 0.0);
+            distances[row] = new(row + 1.0, row + value.DistanceToRight / (double)DISTANCE_TICKS);
         }
 
-        for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
+        for (int col = 1; col <= MAX_LIGHT_RANGE; ++col)
         {
-            CalculateLeftStats(j, 0,
-                out double lightFromBottom, out double rightLightFromBottom,
-                out double distanceToRight
-            );
-            values[j] = new(
-                0f,
-                0f,
-                1f,
-                DoubleToIndex(1.0),
-                (float)lightFromBottom,
-                (float)rightLightFromBottom,
-                (float)(1.0 - rightLightFromBottom),
-                DoubleToIndex(distanceToRight)
-            );
-            distances[0, j] = new(
-                (double)DISTANCE_TICKS * (j + 1), (double)DISTANCE_TICKS * j + DoubleToIndex(distanceToRight)
-            );
-        }
+            int index = (MAX_LIGHT_RANGE + 1) * col;
+            ref LightingSpread value = ref values[index];
+            value = CalculateTileLightingSpread(0, col, 0.0, 0.0);
+            distances[0] = new(col + value.DistanceToTop / (double)DISTANCE_TICKS, col + 1.0);
 
-        for (int j = 1; j < MAX_LIGHT_RANGE + 1; ++j)
-        {
-            for (int i = 1; i < MAX_LIGHT_RANGE + 1; ++i)
+            for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
             {
-                CalculateLeftStats(
-                    i, j,
-                    out double lightFromLeft, out double topLightFromLeft,
-                    out double distanceToTop
-                );
-                CalculateLeftStats(j, i,
-                    out double lightFromBottom, out double rightLightFromBottom,
-                    out double distanceToRight
+                ++index;
+                double distance = MathUtil.Hypot(row, col);
+                value = ref values[index];
+                value = CalculateTileLightingSpread(
+                    row, col, distances[row].Right - distance, distances[row - 1].Top - distance
                 );
 
-                double leftError = distances[i - 1, j].Right / DISTANCE_TICKS - MathUtil.Hypot(i, j);
-                double bottomError = distances[i, j - 1].Top / DISTANCE_TICKS - MathUtil.Hypot(i, j);
-                distanceToTop -= topLightFromLeft * leftError + (1.0 - topLightFromLeft) * bottomError;
-                distanceToRight -= rightLightFromBottom * bottomError + (1.0 - rightLightFromBottom) * leftError;
-
-                distances[i, j] = new DistanceCache(
-                    topLightFromLeft * (DoubleToIndex(distanceToTop) + distances[i - 1, j].Right)
-                        + (1.0 - topLightFromLeft) * (DoubleToIndex(distanceToTop) + distances[i, j - 1].Top),
-                    rightLightFromBottom * (DoubleToIndex(distanceToRight) + distances[i, j - 1].Top)
-                        + (1.0 - rightLightFromBottom) * (DoubleToIndex(distanceToRight) + distances[i - 1, j].Right)
-                );
-
-                values[(MAX_LIGHT_RANGE + 1) * i + j] = new(
-                    (float)lightFromLeft,
-                    (float)topLightFromLeft,
-                    (float)(1.0 - topLightFromLeft),
-                    DoubleToIndex(distanceToTop),
-                    (float)lightFromBottom,
-                    (float)rightLightFromBottom,
-                    (float)(1.0 - rightLightFromBottom),
-                    DoubleToIndex(distanceToRight)
+                distances[row] = new(
+                    value.DistanceToTop / (double)DISTANCE_TICKS
+                        + value.TopFromLeft * distances[row].Right
+                        + value.TopFromBottom * distances[row - 1].Top,
+                    value.DistanceToRight / (double)DISTANCE_TICKS
+                        + value.RightFromLeft * distances[row].Right
+                        + value.RightFromBottom * distances[row - 1].Top
                 );
             }
         }
     }
 
-    private static void CalculateLeftStats(
-        int i,
-        int j,
-        out double spread,
-        out double adjacentFrom,
-        out double adjacentDistance
+    private static LightingSpread CalculateTileLightingSpread(
+        int row, int col, double leftDistanceError, double bottomDistanceError
     )
     {
-        if (j == 0)
+        static int DoubleToIndex(double x)
+            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
+
+        double distance = MathUtil.Hypot(col, row);
+        double distanceToTop = MathUtil.Hypot(col, row + 1) - distance;
+        double distanceToRight = MathUtil.Hypot(col + 1, row) - distance;
+
+        if (row == 0 && col == 0)
         {
-            spread = 1.0;
-            adjacentFrom = 1.0;
-            adjacentDistance = MathUtil.Hypot(i, 1.0) - i;
-            return;
-        }
-        // i should never be 0
-
-        adjacentDistance = MathUtil.Hypot(i, j + 1) - MathUtil.Hypot(i, j);
-
-        double slope = (j - 0.5) / (i - 0.5);
-        double bottomLeftAngle = Math.Atan2(j - 0.5, i - 0.5);
-        double topRightAngle = Math.Atan2(j + 0.5, i + 0.5);
-        double topLeftAngle = Math.Atan2(j + 0.5, i - 0.5);
-        double bottomRightAngle = Math.Atan2(j - 0.5, i + 0.5);
-
-        adjacentFrom = slope <= 1.0
-            ? 1.0
-            : (topLeftAngle - Math.Atan2(j + 0.5, i - 0.5 + 1.0 / slope)) / (topLeftAngle - topRightAngle);
-
-        if (slope == 1.0)
-        {
-            spread = 0.5;
-            return;
+            return new(
+                DoubleToIndex(distanceToTop),
+                DoubleToIndex(distanceToRight),
+                // The values below are unused and should never be used
+                0f, 0f,
+                0f,
+                0f,
+                0f,
+                0f
+            );
         }
 
-        double lightFromLeft = MathUtil.Integrate(
-            (angle) =>
-            {
-                double tanValue = Math.Tan(angle);
+        if (row == 0)
+        {
+            return new(
+                DoubleToIndex(distanceToTop),
+                DoubleToIndex(distanceToRight),
+                // The values below are unused and should never be used
+                0f, 0f,
+                0f,
+                0f,
+                0f,
+                0f
+            );
+        }
 
-                double x = i + 0.5;
-                double y = x * tanValue;
-                if (y > j + 0.5)
-                {
-                    y = j + 0.5;
-                    x = y / tanValue;
-                }
-                return MathUtil.Hypot(x - (i - 0.5), y - (i - 0.5) * tanValue);
-            },
-            bottomLeftAngle,
-            topLeftAngle
+        if (col == 0)
+        {
+            return new(
+                DoubleToIndex(distanceToTop),
+                DoubleToIndex(distanceToRight),
+                // The values below are unused and should never be used
+                0f, 0f,
+                0f,
+                0f,
+                0f,
+                0f
+            );
+        }
+
+        Span<double> lightFrom = stackalloc double[2 * 2];
+        Span<double> area = stackalloc double[2];
+
+        Span<double> x = stackalloc[] { 0.0, 1.0 };
+        Span<double> y = stackalloc[] { 0.0, 0.0 };
+        CalculateSubTileLightingSpread(in x, in y, ref lightFrom, ref area, row, col);
+
+        distanceToTop -= lightFrom[0] * leftDistanceError + lightFrom[2] * bottomDistanceError;
+        distanceToRight -= lightFrom[1] * leftDistanceError + lightFrom[3] * bottomDistanceError;
+
+        return new(
+            DoubleToIndex(distanceToTop),
+            DoubleToIndex(distanceToRight),
+            (float)area[0],
+            (float)(area[1] - area[0]),
+            (float)lightFrom[0],
+            (float)lightFrom[2],
+            (float)lightFrom[1],
+            (float)lightFrom[3]
         );
-        double lightFromBottom = MathUtil.Integrate(
-            (angle) =>
-            {
-                double tanValue = Math.Tan(angle);
-
-                double x = i + 0.5;
-                double y = x * tanValue;
-                if (y > j + 0.5)
-                {
-                    y = j + 0.5;
-                    x = y / tanValue;
-                }
-                return MathUtil.Hypot(x - (j - 0.5) / tanValue, y - (j - 0.5));
-            },
-            bottomRightAngle,
-            bottomLeftAngle
-        );
-
-        spread = lightFromLeft / (lightFromLeft + lightFromBottom);
     }
 
     public override void SpreadLight(
@@ -571,10 +524,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                             + spread.LightFromLeft * horizontalLight
                         );
                         workingLights[y]
-                            = (spread.RightLightFromBottom * verticalLight + spread.RightLightFromLeft * horizontalLight)
+                            = (spread.RightFromBottom * verticalLight + spread.RightFromLeft * horizontalLight)
                             * mask[spread.DistanceToRight];
                         verticalLight
-                            = (spread.TopLightFromLeft * horizontalLight + spread.TopLightFromBottom * verticalLight)
+                            = (spread.TopFromLeft * horizontalLight + spread.TopFromBottom * verticalLight)
                             * mask[spread.DistanceToTop];
                     }
                 }
@@ -637,10 +590,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                             + spread.LightFromLeft * horizontalLight
                         );
                         workingLights[y]
-                            = (spread.RightLightFromBottom * verticalLight + spread.RightLightFromLeft * horizontalLight)
+                            = (spread.RightFromBottom * verticalLight + spread.RightFromLeft * horizontalLight)
                             * mask[spread.DistanceToRight];
                         verticalLight
-                            = (spread.TopLightFromLeft * horizontalLight + spread.TopLightFromBottom * verticalLight)
+                            = (spread.TopFromLeft * horizontalLight + spread.TopFromBottom * verticalLight)
                             * mask[spread.DistanceToTop];
                     }
                 }
@@ -703,10 +656,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                             + spread.LightFromLeft * horizontalLight
                         );
                         workingLights[y]
-                            = (spread.RightLightFromBottom * verticalLight + spread.RightLightFromLeft * horizontalLight)
+                            = (spread.RightFromBottom * verticalLight + spread.RightFromLeft * horizontalLight)
                             * mask[spread.DistanceToRight];
                         verticalLight
-                            = (spread.TopLightFromLeft * horizontalLight + spread.TopLightFromBottom * verticalLight)
+                            = (spread.TopFromLeft * horizontalLight + spread.TopFromBottom * verticalLight)
                             * mask[spread.DistanceToTop];
                     }
                 }
@@ -769,10 +722,10 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase<float>
                             + spread.LightFromLeft * horizontalLight
                         );
                         workingLights[y]
-                            = (spread.RightLightFromBottom * verticalLight + spread.RightLightFromLeft * horizontalLight)
+                            = (spread.RightFromBottom * verticalLight + spread.RightFromLeft * horizontalLight)
                             * mask[spread.DistanceToRight];
                         verticalLight
-                            = (spread.TopLightFromLeft * horizontalLight + spread.TopLightFromBottom * verticalLight)
+                            = (spread.TopFromLeft * horizontalLight + spread.TopFromBottom * verticalLight)
                             * mask[spread.DistanceToTop];
                     }
                 }

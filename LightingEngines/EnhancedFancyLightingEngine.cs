@@ -125,17 +125,12 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
-                // The values below are unused, but are accurate should they be used
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero
+                // The values below are unused and should never be used
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero
             );
         }
 
@@ -144,17 +139,12 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
-                // The values below are unused, but are accurate should they be used
-                new(0.5f, 0.5f),
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.One,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.UnitX,
-                Vec2.UnitY,
-                Vec2.Zero,
-                Vec2.Zero
+                // The values below are unused and should never be used
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero
             );
         }
 
@@ -163,77 +153,21 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return new(
                 DoubleToIndex(distanceToTop),
                 DoubleToIndex(distanceToRight),
-                // The values below are unused, but are accurate should they be used
-                Vec2.Zero,
-                new(0.5f, 0.5f),
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.UnitX,
-                Vec2.UnitY,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.Zero,
-                Vec2.One
+                // The values below are unused and should never be used
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero,
+                Vec2.Zero, Vec2.Zero
             );
         }
 
-        Span<double> lightFrom = stackalloc double[16];
+        Span<double> lightFrom = stackalloc double[4 * 4];
         Span<double> area = stackalloc double[4];
 
-        double leftX = col - 0.5;
-        double midX = col;
-        double rightX = col + 0.5;
-        double bottomY = row - 0.5;
-        double midY = row;
-        double topY = row + 0.5;
-        Span<double> x = stackalloc[] { leftX, leftX, midX, rightX };
-        Span<double> y = stackalloc[] { midY, bottomY, bottomY, bottomY };
-        double previousT = 0.0;
-        for (int i = 0; i < 4; ++i)
-        {
-            double x1 = x[i];
-            double y1 = y[i];
-
-            double slope = y1 / x1;
-
-            double t;
-            double x2 = rightX;
-            double y2 = y1 + (x2 - x1) * slope;
-            if (y2 > topY)
-            {
-                y2 = topY;
-                x2 = x1 + (y2 - y1) / slope;
-                t = 2.0 * (x2 - leftX);
-            }
-            else
-            {
-                t = 2.0 * (topY - y2) + 2.0;
-            }
-
-            area[i] = (topY - y1) * (x2 - leftX) - 0.5 * (y2 - y1) * (x2 - x1);
-
-            for (int j = 0; j < 4; ++j)
-            {
-                int index = 4 * i + j;
-
-                if (j + 1 <= previousT)
-                {
-                    lightFrom[index] = 0.0;
-                    continue;
-                }
-                if (j >= t)
-                {
-                    lightFrom[index] = 0.0;
-                    continue;
-                }
-
-                double value = j < previousT ? j + 1 - previousT : 1.0;
-                value -= j + 1 > t ? j + 1 - t : 0.0;
-                lightFrom[index] = value;
-            }
-
-            previousT = t;
-        }
+        Span<double> x = stackalloc[] { 0.0, 0.0, 0.5, 1.0 };
+        Span<double> y = stackalloc[] { 0.5, 0.0, 0.0, 0.0 };
+        CalculateSubTileLightingSpread(in x, in y, ref lightFrom, ref area, row, col);
 
         distanceToTop
             -= (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5]) / 2.0 * leftDistanceError
