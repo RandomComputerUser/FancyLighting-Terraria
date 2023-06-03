@@ -519,7 +519,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                             = ref _lightingSpread[++j];
                         SetLightMap(i,
                             Vec4.Dot(
-                                new Vec4(verticalLight, horizontalLight.X, horizontalLight.Y),
+                                new Vec4(horizontalLight, verticalLight.X, verticalLight.Y),
                                 spread.LightFrom
                             )
                         );
