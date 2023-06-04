@@ -354,7 +354,6 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     {
         // Performance optimization
         float[][] lightMask = _lightMask;
-        float[] airDecay = _lightAirDecay;
         float[] solidDecay = _lightSolidDecay;
         float lightLoss = _lightLossExitingSolid;
         LightSpread[] lightSpread = _lightSpread;
@@ -370,7 +369,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 i += verticalChange;
 
                 float[] mask = lightMask[i];
-                if (prevMask == solidDecay && mask == airDecay)
+                if (prevMask == solidDecay && mask != solidDecay)
                 {
                     value *= lightLoss * prevMask[DISTANCE_TICKS];
                 }
@@ -395,7 +394,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             {
                 ref Vec2 horizontalLight = ref workingLights[0];
 
-                if (x > 1 && mask == airDecay && lightMask[i - horizontalChange] == solidDecay)
+                if (x > 1 && mask != solidDecay && lightMask[i - horizontalChange] == solidDecay)
                 {
                     horizontalLight *= lightLoss;
                 }
@@ -411,7 +410,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 ref Vec2 horizontalLight = ref workingLights[y];
 
                 mask = lightMask[i += verticalChange];
-                if (mask == airDecay)
+                if (mask != solidDecay)
                 {
                     if (prevMask == solidDecay)
                     {

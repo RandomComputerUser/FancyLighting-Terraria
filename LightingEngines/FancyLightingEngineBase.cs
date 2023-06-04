@@ -5,9 +5,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Terraria;
 using Terraria.Graphics.Light;
-using Terraria.ID;
 using Vec3 = System.Numerics.Vector3;
 
 namespace FancyLighting.LightingEngines;
@@ -15,7 +13,7 @@ namespace FancyLighting.LightingEngines;
 internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 {
     protected int[][] _circles;
-    protected Rectangle _lightMapArea;
+    protected Rectangle _lightMapArea; // Not used in the current version, but still nice to have
     private long _temporalData = 0;
 
     protected const int MAX_LIGHT_RANGE = 64;
@@ -35,7 +33,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     protected float[] _lightSolidDecay;
     protected float[] _lightWaterDecay;
     protected float[] _lightHoneyDecay;
-    protected float[] _lightShadowPaintDecay; // In vanilla, shadow paint isn't a special case
 
     protected float[][] _lightMask;
 
@@ -129,14 +126,12 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         _lightSolidDecay = new float[DISTANCE_TICKS + 1];
         _lightWaterDecay = new float[DISTANCE_TICKS + 1];
         _lightHoneyDecay = new float[DISTANCE_TICKS + 1];
-        _lightShadowPaintDecay = new float[DISTANCE_TICKS + 1];
         for (int exponent = 0; exponent <= DISTANCE_TICKS; ++exponent)
         {
             _lightAirDecay[exponent] = 1f;
             _lightSolidDecay[exponent] = 1f;
             _lightWaterDecay[exponent] = 1f;
             _lightHoneyDecay[exponent] = 1f;
-            _lightShadowPaintDecay[exponent] = 0f;
         }
     }
 
@@ -267,22 +262,16 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
         (i) =>
         {
-            int x = i + _lightMapArea.X;
-            int y = _lightMapArea.Y;
             int endIndex = height * (i + 1);
             for (int j = height * i; j < endIndex; ++j)
             {
                 _lightMask[j] = lightMasks[j] switch
                 {
-                    LightMaskMode.Solid
-                        => Main.tile[x, y].TileColor == PaintID.ShadowPaint
-                            ? _lightShadowPaintDecay
-                            : _lightSolidDecay,
+                    LightMaskMode.Solid => _lightSolidDecay,
                     LightMaskMode.Water => _lightWaterDecay,
                     LightMaskMode.Honey => _lightHoneyDecay,
                     _ => _lightAirDecay,
                 };
-                ++y;
             }
         }
     );
@@ -605,7 +594,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     {
         // Performance optimization
         float[][] lightMask = _lightMask;
-        float[] airDecay = _lightAirDecay;
         float[] solidDecay = _lightSolidDecay;
         float lightLoss = _lightLossExitingSolid;
 
@@ -624,7 +612,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             }
 
             float[] mask = lightMask[index];
-            if (prevMask == solidDecay && mask == airDecay)
+            if (prevMask == solidDecay && mask != solidDecay)
             {
                 color *= lightLoss * prevMask[DISTANCE_TICKS];
             }
