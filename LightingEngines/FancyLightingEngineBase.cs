@@ -16,7 +16,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 {
     protected int[][] _circles;
     protected Rectangle _lightMapArea;
-    protected int _temporalData;
+    private long _temporalData = 0;
 
     protected const int MAX_LIGHT_RANGE = 64;
     protected const int DISTANCE_TICKS = 256;
@@ -41,6 +41,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
     private Task[] _tasks;
     private Vec3[][] _workingLightMaps;
+    private int[] _workingTemporalData;
 
     public void Unload()
     { }
@@ -53,6 +54,10 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         LightMaskMode[] lightMasks,
         int width,
         int height
+    );
+
+    protected delegate void LightingAction(
+        Vec3[] workingLightMap, ref int workingTemporalData, int index
     );
 
     protected static void CalculateSubTileLightSpread(
@@ -181,7 +186,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         }
 
         _logBrightnessCutoff = MathF.Log(cutoff);
-        _temporalData = 0;
     }
 
     protected void UpdateDecays(LightMap lightMap)
@@ -304,6 +308,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         {
             _tasks = new Task[taskCount];
             _workingLightMaps = new Vec3[taskCount][];
+            _workingTemporalData = new int[taskCount];
 
             for (int i = 0; i < taskCount; ++i)
             {
@@ -313,6 +318,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         else if (_tasks.Length != taskCount)
         {
             _tasks = new Task[taskCount];
+            _workingTemporalData = new int[taskCount];
 
             Vec3[][] workingLightMaps = new Vec3[taskCount][];
             int numToCopy = Math.Min(_workingLightMaps.Length, taskCount);
@@ -352,23 +358,30 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         Vector3[] initialLightMapValue,
         Vector3[] destination,
         int lightMapSize,
-        Action<Vec3[], int> lightingAction
+        LightingAction lightingAction
     )
     {
         int taskCount = LightingConfig.Instance.ThreadCount;
 
+        for (int i = 0; i < taskCount; ++i)
+        {
+            _workingTemporalData[i] = 0;
+        }
+
         if (taskCount <= 1)
         {
             Vec3[] workingLightMap = _workingLightMaps[0];
+            ref int workingTemporalData = ref _workingTemporalData[0];
 
             CopyVec3Array(initialLightMapValue, workingLightMap, 0, lightMapSize);
 
             for (int i = 0; i < lightMapSize; ++i)
             {
-                lightingAction(workingLightMap, i);
+                lightingAction(workingLightMap, ref workingTemporalData, i);
             }
 
             CopyVec3Array(workingLightMap, destination, 0, lightMapSize);
+            _temporalData = workingTemporalData;
 
             return;
         }
@@ -385,6 +398,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                     int index = Interlocked.Increment(ref taskIndex);
 
                     Vec3[] workingLightMap = _workingLightMaps[index];
+                    ref int workingTemporalData = ref _workingTemporalData[index];
 
                     CopyVec3Array(initialLightMapValue, workingLightMap, 0, lightMapSize);
 
@@ -398,7 +412,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
                         for (int end = Math.Min(lightMapSize, i + INDEX_INCREMENT); i < end; ++i)
                         {
-                            lightingAction(workingLightMap, i);
+                            lightingAction(workingLightMap, ref workingTemporalData, i);
                         }
                     }
                 }
@@ -426,6 +440,12 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 CopyVec3Array(_workingLightMaps[0], destination, begin, end);
             }
         );
+
+        _temporalData = 0;
+        for (int i = 0; i < taskCount; ++i)
+        {
+            _temporalData += _workingTemporalData[i];
+        }
     }
 
     private static void MaxArraysIntoFirst(Vec3[] arr1, Vec3[] arr2, int begin, int end)
@@ -614,7 +634,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void UpdateTemporalData(
+    protected int CalculateTemporalData(
         Vec3 color,
         bool doUp,
         bool doDown,
@@ -654,6 +674,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                     + (doLowerRight ? 1 : 0)
                 ) * (baseWork * baseWork);
 
-        Interlocked.Add(ref _temporalData, approximateWorkDone);
+        return approximateWorkDone;
     }
 }

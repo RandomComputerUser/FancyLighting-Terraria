@@ -34,7 +34,6 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         ComputeLightSpread(out _lightSpread);
         InitializeDecayArrays();
         ComputeCircles();
-        _temporalData = 0;
     }
 
     private void ComputeLightSpread(out LightSpread[] values)
@@ -183,16 +182,16 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         bool doGI = LightingConfig.Instance.SimulateGlobalIllumination;
 
-        _countTemporal = true;
+        _countTemporal = LightingConfig.Instance.FancyLightingEngineUseTemporal;
         RunLightingPass(
             colors,
             doGI ? _tmp : colors,
             length,
-            (workingLightMap, i)
-                => ProcessLight(workingLightMap, colors, i, width, height)
+            (Vec3[] lightMap, ref int temporalData, int i)
+                => ProcessLight(lightMap, colors, ref temporalData, i, width, height)
         );
 
-        if (doGI)
+        if (LightingConfig.Instance.SimulateGlobalIllumination)
         {
             if (_skipGI is null || _skipGI.Length < length)
             {
@@ -208,21 +207,21 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 _tmp,
                 colors,
                 length,
-                (workingLightMap, i) =>
+                (Vec3[] lightMap, ref int temporalData, int i) =>
                 {
                     if (_skipGI[i])
                     {
                         return;
                     }
 
-                    ProcessLight(workingLightMap, colors, i, width, height);
+                    ProcessLight(lightMap, colors, ref temporalData, i, width, height);
                 }
             );
         }
     }
 
     private void ProcessLight(
-        Vec3[] workingLightMap, Vector3[] colors, int index, int width, int height
+        Vec3[] lightMap, Vector3[] colors, ref int temporalData, int index, int width, int height
     )
     {
         ref Vector3 colorRef = ref colors[index];
@@ -269,19 +268,19 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
         if (doUp)
         {
-            SpreadLightLine(workingLightMap, color, index, upDistance, -1);
+            SpreadLightLine(lightMap, color, index, upDistance, -1);
         }
         if (doDown)
         {
-            SpreadLightLine(workingLightMap, color, index, downDistance, 1);
+            SpreadLightLine(lightMap, color, index, downDistance, 1);
         }
         if (doLeft)
         {
-            SpreadLightLine(workingLightMap, color, index, leftDistance, -height);
+            SpreadLightLine(lightMap, color, index, leftDistance, -height);
         }
         if (doRight)
         {
-            SpreadLightLine(workingLightMap, color, index, rightDistance, height);
+            SpreadLightLine(lightMap, color, index, rightDistance, height);
         }
 
         // Using && instead of || for culling is sometimes inaccurate, but much faster
@@ -298,32 +297,32 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             if (doUpperLeft)
             {
                 ProcessQuadrant(
-                    workingLightMap, ref workingLights, circle, color, index, upDistance, leftDistance, -1, -height
+                    lightMap, ref workingLights, circle, color, index, upDistance, leftDistance, -1, -height
                 );
             }
             if (doUpperRight)
             {
                 ProcessQuadrant(
-                    workingLightMap, ref workingLights, circle, color, index, upDistance, rightDistance, -1, height
+                    lightMap, ref workingLights, circle, color, index, upDistance, rightDistance, -1, height
                 );
             }
             if (doLowerLeft)
             {
                 ProcessQuadrant(
-                    workingLightMap, ref workingLights, circle, color, index, downDistance, leftDistance, 1, -height
+                    lightMap, ref workingLights, circle, color, index, downDistance, leftDistance, 1, -height
                 );
             }
             if (doLowerRight)
             {
                 ProcessQuadrant(
-                    workingLightMap, ref workingLights, circle, color, index, downDistance, rightDistance, 1, height
+                    lightMap, ref workingLights, circle, color, index, downDistance, rightDistance, 1, height
                 );
             }
         }
 
         if (_countTemporal)
         {
-            UpdateTemporalData(
+            temporalData += CalculateTemporalData(
                 color, doUp, doDown, doLeft, doRight, doUpperLeft, doUpperRight, doLowerLeft, doLowerRight
             );
         }
