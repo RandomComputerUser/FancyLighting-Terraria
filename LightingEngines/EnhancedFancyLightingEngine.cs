@@ -224,7 +224,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     }
 
     private void ProcessLight(
-        Vector3[] workingLightMap, Vector3[] colors, int index, int width, int height
+        Vec3[] workingLightMap, Vector3[] colors, int index, int width, int height
     )
     {
         ref Vector3 colorRef = ref colors[index];
@@ -332,7 +332,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     }
 
     private void ProcessQuadrant(
-        Vector3[] lightMap,
+        Vec3[] lightMap,
         ref Span<Vec2> workingLights,
         int[] circle,
         Vec3 color,

@@ -40,7 +40,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     protected float[][] _lightMask;
 
     private Task[] _tasks;
-    private Vector3[][] _workingLightMaps;
+    private Vec3[][] _workingLightMaps;
 
     public void Unload()
     { }
@@ -303,18 +303,18 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         if (_tasks is null)
         {
             _tasks = new Task[taskCount];
-            _workingLightMaps = new Vector3[taskCount][];
+            _workingLightMaps = new Vec3[taskCount][];
 
             for (int i = 0; i < taskCount; ++i)
             {
-                _workingLightMaps[i] = new Vector3[lightMapSize];
+                _workingLightMaps[i] = new Vec3[lightMapSize];
             }
         }
         else if (_tasks.Length != taskCount)
         {
             _tasks = new Task[taskCount];
 
-            Vector3[][] workingLightMaps = new Vector3[taskCount][];
+            Vec3[][] workingLightMaps = new Vec3[taskCount][];
             int numToCopy = Math.Min(_workingLightMaps.Length, taskCount);
 
             for (int i = 0; i < numToCopy; ++i)
@@ -325,13 +325,13 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 }
                 else
                 {
-                    workingLightMaps[i] = new Vector3[lightMapSize];
+                    workingLightMaps[i] = new Vec3[lightMapSize];
                 }
             }
 
             for (int i = numToCopy; i < taskCount; ++i)
             {
-                workingLightMaps[i] = new Vector3[lightMapSize];
+                workingLightMaps[i] = new Vec3[lightMapSize];
             }
 
             _workingLightMaps = workingLightMaps;
@@ -342,7 +342,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             {
                 if (_workingLightMaps[i].Length < lightMapSize)
                 {
-                    _workingLightMaps[i] = new Vector3[lightMapSize];
+                    _workingLightMaps[i] = new Vec3[lightMapSize];
                 }
             }
         }
@@ -352,23 +352,23 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         Vector3[] initialLightMapValue,
         Vector3[] destination,
         int lightMapSize,
-        Action<Vector3[], int> lightingAction
+        Action<Vec3[], int> lightingAction
     )
     {
         int taskCount = LightingConfig.Instance.ThreadCount;
 
         if (taskCount <= 1)
         {
-            Vector3[] workingLightMap = _workingLightMaps[0];
+            Vec3[] workingLightMap = _workingLightMaps[0];
 
-            Array.Copy(initialLightMapValue, workingLightMap, lightMapSize);
+            CopyVec3Array(initialLightMapValue, workingLightMap, 0, lightMapSize);
 
             for (int i = 0; i < lightMapSize; ++i)
             {
                 lightingAction(workingLightMap, i);
             }
 
-            Array.Copy(workingLightMap, destination, lightMapSize);
+            CopyVec3Array(workingLightMap, destination, 0, lightMapSize);
 
             return;
         }
@@ -384,9 +384,9 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 {
                     int index = Interlocked.Increment(ref taskIndex);
 
-                    Vector3[] workingLightMap = _workingLightMaps[index];
+                    Vec3[] workingLightMap = _workingLightMaps[index];
 
-                    Array.Copy(initialLightMapValue, workingLightMap, lightMapSize);
+                    CopyVec3Array(initialLightMapValue, workingLightMap, 0, lightMapSize);
 
                     while (true)
                     {
@@ -407,42 +407,6 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
         Task.WaitAll(_tasks);
 
-        static void MaxArraysIntoFirst(Vector3[] arr1, Vector3[] arr2, int begin, int end)
-        {
-            for (int i = begin; i < end; ++i)
-            {
-                ref Vector3 vec1 = ref arr1[i];
-                ref Vector3 vec2 = ref arr2[i];
-
-                if (vec2.X > vec1.X)
-                {
-                    vec1.X = vec2.X;
-                }
-                if (vec2.Y > vec1.Y)
-                {
-                    vec1.Y = vec2.Y;
-                }
-                if (vec2.Z > vec1.Z)
-                {
-                    vec1.Z = vec2.Z;
-                }
-            }
-        }
-
-        static void MaxArrays(Vector3[] arr1, Vector3[] arr2, Vector3[] result, int begin, int end)
-        {
-            for (int i = begin; i < end; ++i)
-            {
-                ref Vector3 vec1 = ref arr1[i];
-                ref Vector3 vec2 = ref arr2[i];
-                ref Vector3 resultVec = ref result[i];
-
-                resultVec.X = vec2.X > vec1.X ? vec2.X : vec1.X;
-                resultVec.Y = vec2.Y > vec1.Y ? vec2.Y : vec1.Y;
-                resultVec.Z = vec2.Z > vec1.Z ? vec2.Z : vec1.Z;
-            }
-        }
-
         const int CHUNK_SIZE = 64;
 
         Parallel.For(
@@ -454,13 +418,47 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 int begin = CHUNK_SIZE * i;
                 int end = Math.Min(lightMapSize, begin + CHUNK_SIZE);
 
-                MaxArrays(_workingLightMaps[0], _workingLightMaps[1], destination, begin, end);
-                for (int j = 2; j < _workingLightMaps.Length; ++j)
+                for (int j = 1; j < _workingLightMaps.Length; ++j)
                 {
-                    MaxArraysIntoFirst(destination, _workingLightMaps[j], begin, end);
+                    MaxArraysIntoFirst(_workingLightMaps[0], _workingLightMaps[j], begin, end);
                 }
+
+                CopyVec3Array(_workingLightMaps[0], destination, begin, end);
             }
         );
+    }
+
+    private static void MaxArraysIntoFirst(Vec3[] arr1, Vec3[] arr2, int begin, int end)
+    {
+        for (int i = begin; i < end; ++i)
+        {
+            ref Vec3 value = ref arr1[i];
+            value = Vec3.Max(value, arr2[i]);
+        }
+    }
+
+    private static void CopyVec3Array(Vector3[] source, Vec3[] destination, int begin, int end)
+    {
+        for (int i = begin; i < end; ++i)
+        {
+            ref Vector3 sourceValue = ref source[i];
+            ref Vec3 destinationValue = ref destination[i];
+            destinationValue.X = sourceValue.X;
+            destinationValue.Y = sourceValue.Y;
+            destinationValue.Z = sourceValue.Z;
+        }
+    }
+
+    private static void CopyVec3Array(Vec3[] source, Vector3[] destination, int begin, int end)
+    {
+        for (int i = begin; i < end; ++i)
+        {
+            ref Vec3 sourceValue = ref source[i];
+            ref Vector3 destinationValue = ref destination[i];
+            destinationValue.X = sourceValue.X;
+            destinationValue.Y = sourceValue.Y;
+            destinationValue.Z = sourceValue.Z;
+        }
     }
 
     protected static void GetLightsForGlobalIllumination(
@@ -569,24 +567,11 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected static void SetLight(ref Vector3 light, Vec3 value)
-    {
-        if (value.X > light.X)
-        {
-            light.X = value.X;
-        }
-        if (value.Y > light.Y)
-        {
-            light.Y = value.Y;
-        }
-        if (value.Z > light.Z)
-        {
-            light.Z = value.Z;
-        }
-    }
+    protected static void SetLight(ref Vec3 light, Vec3 value)
+        => light = Vec3.Max(light, value);
 
     protected void SpreadLightLine(
-        Vector3[] lightMap,
+        Vec3[] lightMap,
         Vec3 color,
         int index,
         int distance,
