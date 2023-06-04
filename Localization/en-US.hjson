@@ -231,7 +231,7 @@ Mods: {
 						'''
 						Toggles whether to simulate a basic form of global illumination
 						When enabled, indirect lighting makes shadows brighter
-						May cause a large decrease in performance when enabled
+						May cause a large reduction in performance when enabled
 						'''
 				}
 
@@ -258,7 +258,9 @@ Mods: {
 					Tooltip:
 						'''
 						Controls how many threads smooth lighting and the fancy lighting engine use
-						The default value should result in the best performance
+						Higher values typically improve performance with diminishing returns
+						Values greater than the number of CPU hardware threads may reduce performance
+						The default value should result in good performance
 						'''
 				}
 
@@ -268,7 +270,7 @@ Mods: {
 						'''
 						Toggles whether to use enhanced shaders and colors allowed by the HiDef profile
 						When enabled, some visual effects are improved
-						May significantly decrease rendering performance if enabled
+						May significantly reduce rendering performance if enabled
 						'''
 				}
 			}

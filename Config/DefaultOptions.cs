@@ -33,6 +33,10 @@ public static class DefaultOptions
     public const SkyColorPreset CustomSkyPreset = SkyColorPreset.Profile1;
 
     public const int ThreadCount = 8; // Used for the DefaultValue attribute in LightingConfig
-    public static int RuntimeDefaultThreadCount => Environment.ProcessorCount;
+    public const int MinThreadCount = 1;
+    public const int MaxThreadCount = 32;
+    public const int MaxDefaultThreadCount = 16;
+    public static int RuntimeDefaultThreadCount
+        => Math.Clamp(Environment.ProcessorCount, MinThreadCount, MaxDefaultThreadCount);
     public const bool UseHiDefFeatures = false;
 }

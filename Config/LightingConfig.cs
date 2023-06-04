@@ -413,7 +413,7 @@ public sealed class LightingConfig : ModConfig
     // Other Settings
     [Header("General")]
 
-    [Range(1, 24)]
+    [Range(DefaultOptions.MinThreadCount, DefaultOptions.MaxThreadCount)]
     [Increment(1)]
     [DefaultValue(DefaultOptions.ThreadCount)]
     public int ThreadCount
