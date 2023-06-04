@@ -1485,12 +1485,12 @@ internal sealed class SmoothLighting
                             ? _overbrightAmbientOcclusionShader
                             : _overbrightShader;
 
-            float normalMapRadius = qualityNormalMaps ? 30f : 25f;
+            float normalMapRadius = hiDef ? 30f : 28f;
             normalMapRadius *= LightingConfig.Instance.NormalMapsMultiplier();
 
             if (fineNormalMaps)
             {
-                normalMapRadius *= 1.25f;
+                normalMapRadius *= 1.4f;
             }
             if (background)
             {
