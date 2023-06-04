@@ -187,6 +187,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             colors,
             doGI ? _tmp : colors,
             length,
+            _countTemporal,
             (Vec3[] lightMap, ref int temporalData, int i)
                 => ProcessLight(lightMap, colors, ref temporalData, i, width, height)
         );
@@ -207,6 +208,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 _tmp,
                 colors,
                 length,
+                false,
                 (Vec3[] lightMap, ref int temporalData, int i) =>
                 {
                     if (_skipGI[i])

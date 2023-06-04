@@ -358,14 +358,18 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         Vector3[] initialLightMapValue,
         Vector3[] destination,
         int lightMapSize,
+        bool countTemporalData,
         LightingAction lightingAction
     )
     {
         int taskCount = LightingConfig.Instance.ThreadCount;
 
-        for (int i = 0; i < taskCount; ++i)
+        if (countTemporalData)
         {
-            _workingTemporalData[i] = 0;
+            for (int i = 0; i < taskCount; ++i)
+            {
+                _workingTemporalData[i] = 0;
+            }
         }
 
         if (taskCount <= 1)
@@ -441,10 +445,13 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             }
         );
 
-        _temporalData = 0;
-        for (int i = 0; i < taskCount; ++i)
+        if (countTemporalData)
         {
-            _temporalData += _workingTemporalData[i];
+            _temporalData = 0;
+            for (int i = 0; i < taskCount; ++i)
+            {
+                _temporalData += _workingTemporalData[i];
+            }
         }
     }
 
