@@ -260,7 +260,7 @@ Mods: {
 						Controls how many threads smooth lighting and the fancy lighting engine use
 						Higher values typically improve performance with diminishing returns
 						Values greater than the number of CPU hardware threads may reduce performance
-						The default value should result in good performance
+						The default value should be close to optimal
 						'''
 				}
 

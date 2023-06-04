@@ -30,7 +30,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Slightly improved how light spreads when using the fancy lighting engine
 - Reduced visual disruption after updating settings
 - Made some minor optimizations
-- Updated the description
+- Updated the mod description
 - Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
 - Fixed a camera mode bug where overbright lighting was not applied to tile entities
 - Fixed a bug that disabled dithering when using a specific combination of settings
