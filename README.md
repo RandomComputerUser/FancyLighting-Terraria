@@ -21,6 +21,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Changed sky color profile 1
 - Added support for more glowing effects
 - Tweaked some pre-existing glowing effects
+- Tweaked simulated normal map strength
 - Increased the default ambient occlusion radius
 - Increased the maximum thread count to 32, but capped the default value to 16
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
@@ -30,6 +31,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Slightly improved how light spreads when using the fancy lighting engine
 - Reduced visual disruption after updating settings
 - Made some minor optimizations
+- Removed shadow paint blocking all light when using the fancy lighting engine
 - Updated the mod description
 - Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
 - Fixed a camera mode bug where overbright lighting was not applied to tile entities
