@@ -268,8 +268,12 @@ Mods: {
 					Label: Use Enhanced Shaders and Colors
 					Tooltip:
 						'''
-						Toggles whether to use enhanced shaders and colors allowed by the HiDef profile
-						When enabled, some visual effects are improved
+						Toggles whether to use enhanced shaders and colors allowed by the FNA HiDef profile
+						When enabled, some visual effects are improved:
+						- Increases the precision of colors used in lighting
+						- Increases the maximum overbright light brightness
+						- Improves enhanced simulated normal maps
+						- Performs gamma correction when paired with overbright rendering
 						May significantly reduce rendering performance if enabled
 						'''
 				}

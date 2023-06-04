@@ -4,10 +4,11 @@ Features:
 - Smooth lighting
 - Ambient occlusion
 - Dynamic shadows
+- New sky colors
 - Overbright rendering
 - Simulated normal maps
 - Simulated global illumination
-- New sky colors
+- Gamma correction
 
 This mod only takes effect when the lighting mode is set to color.
 
