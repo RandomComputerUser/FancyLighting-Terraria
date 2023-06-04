@@ -57,7 +57,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     );
 
     protected delegate void LightingAction(
-        Vec3[] workingLightMap, ref int workingTemporalData, int index
+        Vec3[] workingLightMap, ref int workingTemporalData, int begin, int end
     );
 
     protected static void CalculateSubTileLightSpread(
@@ -381,10 +381,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
             CopyVec3Array(initialLightMapValue, workingLightMap, 0, lightMapSize);
 
-            for (int i = 0; i < lightMapSize; ++i)
-            {
-                lightingAction(workingLightMap, ref workingTemporalData, i);
-            }
+            lightingAction(workingLightMap, ref workingTemporalData, 0, lightMapSize);
 
             CopyVec3Array(workingLightMap, destination, 0, lightMapSize);
             _temporalData = workingTemporalData;
@@ -416,10 +413,9 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                             break;
                         }
 
-                        for (int end = Math.Min(lightMapSize, i + INDEX_INCREMENT); i < end; ++i)
-                        {
-                            lightingAction(workingLightMap, ref workingTemporalData, i);
-                        }
+                        lightingAction(
+                            workingLightMap, ref workingTemporalData, i, Math.Min(lightMapSize, i + INDEX_INCREMENT)
+                        );
                     }
                 }
             );

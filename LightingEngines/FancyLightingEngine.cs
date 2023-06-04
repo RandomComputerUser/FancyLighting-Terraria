@@ -188,8 +188,13 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             doGI ? _tmp : colors,
             length,
             _countTemporal,
-            (Vec3[] lightMap, ref int temporalData, int i)
-                => ProcessLight(lightMap, colors, ref temporalData, i, width, height)
+            (Vec3[] lightMap, ref int temporalData, int begin, int end) =>
+            {
+                for (int i = begin; i < end; ++i)
+                {
+                    ProcessLight(lightMap, colors, ref temporalData, i, width, height);
+                }
+            }
         );
 
         if (LightingConfig.Instance.SimulateGlobalIllumination)
@@ -209,14 +214,17 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
                 colors,
                 length,
                 false,
-                (Vec3[] lightMap, ref int temporalData, int i) =>
+                (Vec3[] lightMap, ref int temporalData, int begin, int end) =>
                 {
-                    if (_skipGI[i])
+                    for (int i = begin; i < end; ++i)
                     {
-                        return;
-                    }
+                        if (_skipGI[i])
+                        {
+                            continue;
+                        }
 
-                    ProcessLight(lightMap, colors, ref temporalData, i, width, height);
+                        ProcessLight(lightMap, colors, ref temporalData, i, width, height);
+                    }
                 }
             );
         }
