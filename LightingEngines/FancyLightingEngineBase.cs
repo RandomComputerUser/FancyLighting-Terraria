@@ -229,12 +229,14 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             _lightLossExitingSolid *= _lightLossExitingSolid;
         }
 
-        float slowestDecay = Math.Max(
+        const float THRESHOLD_MULT_EXPONENT = 0.41421354f; // sqrt(2) - 1
+
+        float logSlowestDecay = MathF.Log(Math.Max(
             Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
             Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
-        );
-        _thresholdMult = MathF.Sqrt(slowestDecay);
-        _reciprocalLogSlowestDecay = 1f / MathF.Log(slowestDecay);
+        ));
+        _thresholdMult = MathF.Exp(THRESHOLD_MULT_EXPONENT * logSlowestDecay);
+        _reciprocalLogSlowestDecay = 1f / logSlowestDecay;
 
         UpdateDecay(_lightAirDecay, lightAirDecayBaseline);
         UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline);
