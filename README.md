@@ -22,7 +22,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added support for more glowing effects
 - Tweaked some pre-existing glowing effects
 - Increased the default ambient occlusion radius
-- Increased the maximum thread count to 32, but capped the maximum default value to 16
+- Increased the maximum thread count to 32, but capped the default value to 16
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Optimized the fancy lighting engine
 - Improved temporal optimization for the fancy lighting engine
