@@ -2,17 +2,16 @@
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using System;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using Terraria.Graphics.Light;
 using Vec2 = System.Numerics.Vector2;
+using Vec3 = System.Numerics.Vector3;
 using Vec4 = System.Numerics.Vector4;
 
 namespace FancyLighting.LightingEngines;
 
-internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2>
+internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
 {
-    private readonly record struct LightingSpread(
+    private readonly record struct LightSpread(
         int DistanceToTop,
         int DistanceToRight,
         Vec4 LightFrom,
@@ -24,12 +23,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
 
     private readonly record struct DistanceCache(double Top, double Right);
 
-    private const int MAX_LIGHT_RANGE = 64;
-    private const int DISTANCE_TICKS = 256;
-
-    private const float GI_MULT = 0.55f;
-
-    private readonly LightingSpread[] _lightingSpread;
+    private readonly LightSpread[] _lightSpread;
 
     private Vector3[] _tmp;
     private bool[] _skipGI;
@@ -38,45 +32,30 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
 
     public EnhancedFancyLightingEngine()
     {
-        ComputeLightingSpread(out _lightingSpread);
-
-        _lightAirDecay = new float[DISTANCE_TICKS + 1];
-        _lightSolidDecay = new float[DISTANCE_TICKS + 1];
-        _lightWaterDecay = new float[DISTANCE_TICKS + 1];
-        _lightHoneyDecay = new float[DISTANCE_TICKS + 1];
-        _lightShadowPaintDecay = new float[DISTANCE_TICKS + 1];
-        for (int exponent = 0; exponent <= DISTANCE_TICKS; ++exponent)
-        {
-            _lightAirDecay[exponent] = 1f;
-            _lightSolidDecay[exponent] = 1f;
-            _lightWaterDecay[exponent] = 1f;
-            _lightHoneyDecay[exponent] = 1f;
-            _lightShadowPaintDecay[exponent] = 0f;
-        }
-
-        ComputeCircles(MAX_LIGHT_RANGE);
-
+        ComputeLightSpread(out _lightSpread);
+        InitializeDecayArrays();
+        ComputeCircles();
         _temporalData = 0;
     }
 
-    private void ComputeLightingSpread(out LightingSpread[] values)
+    private void ComputeLightSpread(out LightSpread[] values)
     {
-        values = new LightingSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
+        values = new LightSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
         DistanceCache[] distances = new DistanceCache[MAX_LIGHT_RANGE + 1];
 
         for (int row = 0; row <= MAX_LIGHT_RANGE; ++row)
         {
             int index = row;
-            ref LightingSpread value = ref values[index];
-            value = CalculateTileLightingSpread(row, 0, 0.0, 0.0);
+            ref LightSpread value = ref values[index];
+            value = CalculateTileLightSpread(row, 0, 0.0, 0.0);
             distances[row] = new(row + 1.0, row + value.DistanceToRight / (double)DISTANCE_TICKS);
         }
 
         for (int col = 1; col <= MAX_LIGHT_RANGE; ++col)
         {
             int index = (MAX_LIGHT_RANGE + 1) * col;
-            ref LightingSpread value = ref values[index];
-            value = CalculateTileLightingSpread(0, col, 0.0, 0.0);
+            ref LightSpread value = ref values[index];
+            value = CalculateTileLightSpread(0, col, 0.0, 0.0);
             distances[0] = new(col + value.DistanceToTop / (double)DISTANCE_TICKS, col + 1.0);
 
             for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
@@ -84,7 +63,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 ++index;
                 double distance = MathUtil.Hypot(row, col);
                 value = ref values[index];
-                value = CalculateTileLightingSpread(
+                value = CalculateTileLightSpread(
                     row, col, distances[row].Right - distance, distances[row - 1].Top - distance
                 );
 
@@ -104,7 +83,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         }
     }
 
-    private static LightingSpread CalculateTileLightingSpread(
+    private static LightSpread CalculateTileLightSpread(
         int row, int col, double leftDistanceError, double bottomDistanceError
     )
     {
@@ -156,7 +135,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
 
         Span<double> x = stackalloc[] { 0.0, 0.0, 0.5, 1.0 };
         Span<double> y = stackalloc[] { 0.5, 0.0, 0.0, 0.0 };
-        CalculateSubTileLightingSpread(in x, in y, ref lightFrom, ref area, row, col);
+        CalculateSubTileLightSpread(in x, in y, ref lightFrom, ref area, row, col);
 
         distanceToTop
             -= (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5]) / 2.0 * leftDistanceError
@@ -185,8 +164,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
     )
     {
         UpdateBrightnessCutoff();
-
-        UpdateDecays(lightMap, DISTANCE_TICKS);
+        UpdateDecays(lightMap);
 
         if (LightingConfig.Instance.DoGammaCorrection())
         {
@@ -202,10 +180,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
         }
 
         Array.Copy(colors, _tmp, length);
-
         UpdateLightMasks(lightMasks, width, height);
-
-        InitializeTaskVariables(length, MAX_LIGHT_RANGE);
+        InitializeTaskVariables(length);
 
         bool doGI = LightingConfig.Instance.SimulateGlobalIllumination;
 
@@ -214,8 +190,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             colors,
             doGI ? _tmp : colors,
             length,
-            (workingLightMap, workingLights, i)
-                => ProcessLight(workingLightMap, workingLights, i, colors, width, height)
+            (workingLightMap, i)
+                => ProcessLight(workingLightMap, colors, i, width, height)
         );
 
         if (LightingConfig.Instance.SimulateGlobalIllumination)
@@ -226,7 +202,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             }
 
             GetLightsForGlobalIllumination(
-                _tmp, colors, colors, _skipGI, lightMasks, width, height, GI_MULT
+                _tmp, colors, colors, _skipGI, lightMasks, width, height
             );
 
             _countTemporal = false;
@@ -234,24 +210,25 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
                 _tmp,
                 colors,
                 length,
-                (workingLightMap, workingLights, i) =>
+                (workingLightMap, i) =>
                 {
                     if (_skipGI[i])
                     {
                         return;
                     }
 
-                    ProcessLight(workingLightMap, workingLights, i, colors, width, height);
+                    ProcessLight(workingLightMap, colors, i, width, height);
                 }
             );
         }
     }
 
     private void ProcessLight(
-        Vector3[] workingLightMap, Vec2[] workingLights, int index, Vector3[] colors, int width, int height
+        Vector3[] workingLightMap, Vector3[] colors, int index, int width, int height
     )
     {
-        Vector3 color = colors[index];
+        ref Vector3 colorRef = ref colors[index];
+        Vec3 color = new(colorRef.X, colorRef.Y, colorRef.Z);
         if (
             color.X <= _initialBrightnessCutoff
             && color.Y <= _initialBrightnessCutoff
@@ -261,337 +238,208 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase<Vec2
             return;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void SetLightMap(int i, float value)
-        {
-            ref Vector3 vec = ref workingLightMap[i];
+        color *= _lightMask[index][DISTANCE_TICKS];
 
-            // Potentially faster than Math.Max, which checks for NaN and signed zero
-
-            float newValue;
-
-            newValue = value * color.X;
-            if (newValue > vec.X)
-            {
-                vec.X = newValue;
-            }
-
-            newValue = value * color.Y;
-            if (newValue > vec.Y)
-            {
-                vec.Y = newValue;
-            }
-
-            newValue = value * color.Z;
-            if (newValue > vec.Z)
-            {
-                vec.Z = newValue;
-            }
-        }
-
-        int length = width * height;
-
-        int midX = index / height;
-        int topEdge = height * midX;
-        int bottomEdge = topEdge + (height - 1);
-
-        bool skipUp, skipDown, skipLeft, skipRight;
-
-        Vector3.Multiply(
-            ref color,
-            _lightMask[index][DISTANCE_TICKS] * _lightMask[index][DISTANCE_TICKS / 2],
-            out Vector3 threshold
+        CalculateLightSourceValues(
+            colors,
+            color,
+            index,
+            width,
+            height,
+            out int upDistance,
+            out int downDistance,
+            out int leftDistance,
+            out int rightDistance,
+            out bool doUp,
+            out bool doDown,
+            out bool doLeft,
+            out bool doRight
         );
 
-        if (index == topEdge)
-        {
-            skipUp = true;
-        }
-        else
-        {
-            Vector3.Multiply(ref colors[index - 1], _lightMask[index - 1][DISTANCE_TICKS], out Vector3 otherColor);
-            skipUp = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
-        }
-        if (index == bottomEdge)
-        {
-            skipDown = true;
-        }
-        else
-        {
-            Vector3.Multiply(ref colors[index + 1], _lightMask[index + 1][DISTANCE_TICKS], out Vector3 otherColor);
-            skipDown = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
-        }
-        if (index < height)
-        {
-            skipLeft = true;
-        }
-        else
-        {
-            Vector3.Multiply(ref colors[index - height], _lightMask[index - height][DISTANCE_TICKS], out Vector3 otherColor);
-            skipLeft = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
-        }
-        if (index + height >= length)
-        {
-            skipRight = true;
-        }
-        else
-        {
-            Vector3.Multiply(ref colors[index + height], _lightMask[index + height][DISTANCE_TICKS], out Vector3 otherColor);
-            skipRight = otherColor.X >= threshold.X && otherColor.Y >= threshold.Y && otherColor.Z >= threshold.Z;
-        }
-
         // We blend by taking the max of each component, so this is a valid check to skip
-        if (skipUp && skipDown && skipLeft && skipRight)
+        if (!(doUp || doDown || doLeft || doRight))
         {
             return;
         }
 
-        float initialDecay = _lightMask[index][DISTANCE_TICKS];
-        int lightRange = Math.Clamp(
-            (int)Math.Ceiling(
-                (
-                    _logBrightnessCutoff
-                    - MathF.Log(initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
-                ) * _reciprocalLogSlowestDecay
-            ) + 1,
-            1,
-            MAX_LIGHT_RANGE
-        );
+        int lightRange = CalculateLightRange(color);
 
-        // Up
-        if (!skipUp)
+        upDistance = Math.Min(upDistance, lightRange);
+        downDistance = Math.Min(downDistance, lightRange);
+        leftDistance = Math.Min(leftDistance, lightRange);
+        rightDistance = Math.Min(rightDistance, lightRange);
+
+        if (doUp)
         {
-            float lightValue = 1f;
-            int i = index;
-            for (int y = 1; y <= lightRange; ++y)
-            {
-                if (--i < topEdge)
-                {
-                    break;
-                }
-
-                lightValue *= _lightMask[i + 1][DISTANCE_TICKS];
-                if (y > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i + 1] == _lightSolidDecay)
-                {
-                    lightValue *= _lightLossExitingSolid;
-                }
-
-                SetLightMap(i, lightValue);
-            }
+            SpreadLightLine(workingLightMap, color, index, upDistance, -1);
+        }
+        if (doDown)
+        {
+            SpreadLightLine(workingLightMap, color, index, downDistance, 1);
+        }
+        if (doLeft)
+        {
+            SpreadLightLine(workingLightMap, color, index, leftDistance, -height);
+        }
+        if (doRight)
+        {
+            SpreadLightLine(workingLightMap, color, index, rightDistance, height);
         }
 
-        // Down
-        if (!skipDown)
-        {
-            float lightValue = 1f;
-            int i = index;
-            for (int y = 1; y <= lightRange; ++y)
-            {
-                if (++i > bottomEdge)
-                {
-                    break;
-                }
-
-                lightValue *= _lightMask[i - 1][DISTANCE_TICKS];
-                if (y > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i - 1] == _lightSolidDecay)
-                {
-                    lightValue *= _lightLossExitingSolid;
-                }
-
-                SetLightMap(i, lightValue);
-            }
-        }
-
-        // Left
-        if (!skipLeft)
-        {
-            float lightValue = 1f;
-            int i = index;
-            for (int x = 1; x <= lightRange; ++x)
-            {
-                if ((i -= height) < 0)
-                {
-                    break;
-                }
-
-                lightValue *= _lightMask[i + height][DISTANCE_TICKS];
-                if (x > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i + height] == _lightSolidDecay)
-                {
-                    lightValue *= _lightLossExitingSolid;
-                }
-
-                SetLightMap(i, lightValue);
-            }
-        }
-
-        // Right
-        if (!skipRight)
-        {
-            float lightValue = 1f;
-            int i = index;
-            for (int x = 1; x <= lightRange; ++x)
-            {
-                if ((i += height) >= length)
-                {
-                    break;
-                }
-
-                lightValue *= _lightMask[i - height][DISTANCE_TICKS];
-                if (x > 1 && _lightMask[i] == _lightAirDecay && _lightMask[i - height] == _lightSolidDecay)
-                {
-                    lightValue *= _lightLossExitingSolid;
-                }
-
-                SetLightMap(i, lightValue);
-            }
-        }
-
-        // Using || instead of && for culling is sometimes inaccurate, but much faster
-        bool doUpperRight = !(skipUp || skipRight);
-        bool doUpperLeft = !(skipUp || skipLeft);
-        bool doLowerRight = !(skipDown || skipRight);
-        bool doLowerLeft = !(skipDown || skipLeft);
-
-        int leftEdge = Math.Min(midX, lightRange);
-        int rightEdge = Math.Min(width - 1 - midX, lightRange);
-        topEdge = Math.Min(index - topEdge, lightRange);
-        bottomEdge = Math.Min(bottomEdge - index, lightRange);
-
-        int[] circle = _circles[lightRange];
+        // Using && instead of || for culling is sometimes inaccurate, but much faster
+        bool doUpperLeft = doUp && doLeft;
+        bool doUpperRight = doUp && doRight;
+        bool doLowerLeft = doDown && doLeft;
+        bool doLowerRight = doDown && doRight;
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
-            void ProcessQuadrant(int edgeY, int edgeX, int indexVerticalChange, int indexHorizontalChange)
-            {
-                // Performance optimization
-                float[][] _lightMask = this._lightMask;
-                float[] _lightAirDecay = this._lightAirDecay;
-                float[] _lightSolidDecay = this._lightSolidDecay;
-                float _lightLossExitingSolid = this._lightLossExitingSolid;
-                LightingSpread[] _lightingSpread = this._lightingSpread;
-
-                workingLights[0] = new(initialDecay);
-                float value = 1f;
-                for (int i = index, y = 1; y <= edgeY; ++y)
-                {
-                    value *= _lightMask[i][DISTANCE_TICKS];
-                    float[] mask = _lightMask[i += indexVerticalChange];
-
-                    if (y > 1 && mask == _lightAirDecay && _lightMask[i - indexVerticalChange] == _lightSolidDecay)
-                    {
-                        value *= _lightLossExitingSolid;
-                    }
-
-                    workingLights[y] = new(value * mask[_lightingSpread[y].DistanceToRight]);
-                }
-                for (int x = 1; x <= edgeX; ++x)
-                {
-                    int i = index + indexHorizontalChange * x;
-                    float[] mask = _lightMask[i];
-
-                    int j = (MAX_LIGHT_RANGE + 1) * x;
-                    Vec2 verticalLight
-                        = workingLights[0]
-                        * mask[_lightingSpread[j].DistanceToTop];
-                    workingLights[0] *= mask[DISTANCE_TICKS];
-                    if (x > 1 && mask == _lightAirDecay && _lightMask[i - indexHorizontalChange] == _lightSolidDecay)
-                    {
-                        verticalLight *= _lightLossExitingSolid;
-                        workingLights[0] *= _lightLossExitingSolid;
-                    }
-
-                    int edge = Math.Min(edgeY, circle[x]);
-                    for (int y = 1; y <= edge; ++y)
-                    {
-                        mask = _lightMask[i += indexVerticalChange];
-                        Vec2 horizontalLight = workingLights[y];
-
-                        if (mask == _lightAirDecay)
-                        {
-                            if (_lightMask[i - indexVerticalChange] == _lightSolidDecay)
-                            {
-                                verticalLight *= _lightLossExitingSolid;
-                            }
-
-                            if (_lightMask[i - indexHorizontalChange] == _lightSolidDecay)
-                            {
-                                horizontalLight *= _lightLossExitingSolid;
-                            }
-                        }
-                        ref LightingSpread spread
-                            = ref _lightingSpread[++j];
-                        SetLightMap(i,
-                            Vec4.Dot(
-                                new Vec4(horizontalLight, verticalLight.X, verticalLight.Y),
-                                spread.LightFrom
-                            )
-                        );
-                        float topDecay = mask[spread.DistanceToTop];
-                        float rightDecay = mask[spread.DistanceToRight];
-                        Vec4 outgoingLight = (
-                                (
-                                    horizontalLight.X * spread.FromLeftX
-                                    + horizontalLight.Y * spread.FromLeftY
-                                )
-                                + (
-                                    verticalLight.X * spread.FromBottomX
-                                    + verticalLight.Y * spread.FromBottomY
-                                )
-                            ) * new Vec4(topDecay, topDecay, rightDecay, rightDecay);
-                        workingLights[y] = new(outgoingLight.Z, outgoingLight.W);
-                        verticalLight = new(outgoingLight.X, outgoingLight.Y);
-                    }
-                }
-            }
-
-            if (doUpperRight)
-            {
-                ProcessQuadrant(topEdge, rightEdge, -1, height);
-            }
+            int[] circle = _circles[lightRange];
+            Span<Vec2> workingLights = stackalloc Vec2[lightRange + 1];
 
             if (doUpperLeft)
             {
-                ProcessQuadrant(topEdge, leftEdge, -1, -height);
+                ProcessQuadrant(
+                    workingLightMap, ref workingLights, circle, color, index, upDistance, leftDistance, -1, -height
+                );
             }
-
-            if (doLowerRight)
+            if (doUpperRight)
             {
-                ProcessQuadrant(bottomEdge, rightEdge, 1, height);
+                ProcessQuadrant(
+                    workingLightMap, ref workingLights, circle, color, index, upDistance, rightDistance, -1, height
+                );
             }
-
             if (doLowerLeft)
             {
-                ProcessQuadrant(bottomEdge, leftEdge, 1, -height);
+                ProcessQuadrant(
+                    workingLightMap, ref workingLights, circle, color, index, downDistance, leftDistance, 1, -height
+                );
+            }
+            if (doLowerRight)
+            {
+                ProcessQuadrant(
+                    workingLightMap, ref workingLights, circle, color, index, downDistance, rightDistance, 1, height
+                );
             }
         }
 
         if (_countTemporal)
         {
-            const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
-
-            int baseWork = Math.Clamp(
-                (int)Math.Ceiling(
-                    (
-                        LOG_BASE_DECAY
-                        - MathF.Log(initialDecay * Math.Max(color.X, Math.Max(color.Y, color.Z)))
-                    ) * _reciprocalLogSlowestDecay
-                ) + 1,
-                1,
-                MAX_LIGHT_RANGE
+            UpdateTemporalData(
+                color, doUp, doDown, doLeft, doRight, doUpperLeft, doUpperRight, doLowerLeft, doLowerRight
             );
+        }
+    }
 
-            int approximateWorkDone
-                = 1
-                + (!skipUp ? baseWork : 0)
-                + (!skipDown ? baseWork : 0)
-                + (!skipLeft ? baseWork : 0)
-                + (!skipRight ? baseWork : 0)
-                + (doUpperRight ? baseWork * baseWork : 0)
-                + (doUpperLeft ? baseWork * baseWork : 0)
-                + (doLowerRight ? baseWork * baseWork : 0)
-                + (doLowerLeft ? baseWork * baseWork : 0);
+    private void ProcessQuadrant(
+        Vector3[] lightMap,
+        ref Span<Vec2> workingLights,
+        int[] circle,
+        Vec3 color,
+        int index,
+        int verticalDistance,
+        int horizontalDistance,
+        int verticalChange,
+        int horizontalChange
+    )
+    {
+        // Performance optimization
+        float[][] lightMask = _lightMask;
+        float[] airDecay = _lightAirDecay;
+        float[] solidDecay = _lightSolidDecay;
+        float lightLoss = _lightLossExitingSolid;
+        LightSpread[] lightSpread = _lightSpread;
 
-            Interlocked.Add(ref _temporalData, approximateWorkDone);
+        {
+            workingLights[0] = new(1f);
+            int i = index + verticalChange;
+            float value = 1f;
+            float[] prevMask = lightMask[i];
+            workingLights[1] = new(prevMask[lightSpread[1].DistanceToRight]);
+            for (int y = 2; y <= verticalDistance; ++y)
+            {
+                i += verticalChange;
+
+                float[] mask = lightMask[i];
+                if (prevMask == solidDecay && mask == airDecay)
+                {
+                    value *= lightLoss * prevMask[DISTANCE_TICKS];
+                }
+                else
+                {
+                    value *= prevMask[DISTANCE_TICKS];
+                }
+                prevMask = mask;
+
+                workingLights[y] = new(value * mask[lightSpread[y].DistanceToRight]);
+            }
+        }
+
+        for (int x = 1; x <= horizontalDistance; ++x)
+        {
+            int i = index + horizontalChange * x;
+            int j = (MAX_LIGHT_RANGE + 1) * x;
+
+            float[] mask = lightMask[i];
+
+            Vec2 verticalLight;
+            {
+                ref Vec2 horizontalLight = ref workingLights[0];
+
+                if (x > 1 && mask == airDecay && lightMask[i - horizontalChange] == solidDecay)
+                {
+                    horizontalLight *= lightLoss;
+                }
+
+                verticalLight = horizontalLight * mask[lightSpread[j].DistanceToTop];
+                horizontalLight *= mask[DISTANCE_TICKS];
+            }
+
+            int edge = Math.Min(verticalDistance, circle[x]);
+            float[] prevMask = mask;
+            for (int y = 1; y <= edge; ++y)
+            {
+                ref Vec2 horizontalLight = ref workingLights[y];
+
+                mask = lightMask[i += verticalChange];
+                if (mask == airDecay)
+                {
+                    if (prevMask == solidDecay)
+                    {
+                        verticalLight *= lightLoss;
+                    }
+                    if (lightMask[i - horizontalChange] == solidDecay)
+                    {
+                        horizontalLight *= lightLoss;
+                    }
+                }
+                prevMask = mask;
+
+                ref LightSpread spread = ref lightSpread[++j];
+
+                SetLight(
+                    ref lightMap[i],
+                    Vec4.Dot(
+                            new Vec4(horizontalLight, verticalLight.X, verticalLight.Y),
+                            spread.LightFrom
+                        ) * color
+                );
+
+                float topDecay = mask[spread.DistanceToTop];
+                float rightDecay = mask[spread.DistanceToRight];
+                Vec4 outgoingLight = (
+                        (
+                            horizontalLight.X * spread.FromLeftX
+                            + horizontalLight.Y * spread.FromLeftY
+                        )
+                        + (
+                            verticalLight.X * spread.FromBottomX
+                            + verticalLight.Y * spread.FromBottomY
+                        )
+                    ) * new Vec4(topDecay, topDecay, rightDecay, rightDecay);
+                horizontalLight = new(outgoingLight.Z, outgoingLight.W);
+                verticalLight = new(outgoingLight.X, outgoingLight.Y);
+            }
         }
     }
 }

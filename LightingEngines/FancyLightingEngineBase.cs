@@ -2,23 +2,31 @@
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.Graphics.Light;
 using Terraria.ID;
+using Vec3 = System.Numerics.Vector3;
 
 namespace FancyLighting.LightingEngines;
 
-internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLightingEngine
+internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 {
     protected int[][] _circles;
     protected Rectangle _lightMapArea;
     protected int _temporalData;
 
+    protected const int MAX_LIGHT_RANGE = 64;
+    protected const int DISTANCE_TICKS = 256;
+
+    private const float MAX_DECAY_MULT = 0.95f;
+    private const float GI_MULT = 0.55f;
     private const float LOW_LIGHT_LEVEL = 0.03f;
 
     protected float _initialBrightnessCutoff;
+    protected float _thresholdMult;
     protected float _logBrightnessCutoff;
     protected float _reciprocalLogSlowestDecay;
     protected float _lightLossExitingSolid;
@@ -27,13 +35,12 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
     protected float[] _lightSolidDecay;
     protected float[] _lightWaterDecay;
     protected float[] _lightHoneyDecay;
-    protected float[] _lightShadowPaintDecay; // In vanilla shadow paint isn't a special case
+    protected float[] _lightShadowPaintDecay; // In vanilla, shadow paint isn't a special case
 
     protected float[][] _lightMask;
 
     private Task[] _tasks;
     private Vector3[][] _workingLightMaps;
-    private WorkingLightType[][] _workingLights;
 
     public void Unload()
     { }
@@ -48,7 +55,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         int height
     );
 
-    protected static void CalculateSubTileLightingSpread(
+    protected static void CalculateSubTileLightSpread(
         in Span<double> x,
         in Span<double> y,
         ref Span<double> lightFrom,
@@ -111,11 +118,28 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         }
     }
 
-    protected void ComputeCircles(int maxLightRange)
+    protected void InitializeDecayArrays()
     {
-        _circles = new int[maxLightRange + 1][];
+        _lightAirDecay = new float[DISTANCE_TICKS + 1];
+        _lightSolidDecay = new float[DISTANCE_TICKS + 1];
+        _lightWaterDecay = new float[DISTANCE_TICKS + 1];
+        _lightHoneyDecay = new float[DISTANCE_TICKS + 1];
+        _lightShadowPaintDecay = new float[DISTANCE_TICKS + 1];
+        for (int exponent = 0; exponent <= DISTANCE_TICKS; ++exponent)
+        {
+            _lightAirDecay[exponent] = 1f;
+            _lightSolidDecay[exponent] = 1f;
+            _lightWaterDecay[exponent] = 1f;
+            _lightHoneyDecay[exponent] = 1f;
+            _lightShadowPaintDecay[exponent] = 0f;
+        }
+    }
+
+    protected void ComputeCircles()
+    {
+        _circles = new int[MAX_LIGHT_RANGE + 1][];
         _circles[0] = new int[] { 0 };
-        for (int radius = 1; radius < maxLightRange + 1; ++radius)
+        for (int radius = 1; radius <= MAX_LIGHT_RANGE; ++radius)
         {
             _circles[radius] = new int[radius + 1];
             _circles[radius][0] = radius;
@@ -160,21 +184,17 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         _temporalData = 0;
     }
 
-    protected void UpdateDecays(
-        LightMap lightMap,
-        int exponentDivisor,
-        float maxDecayMult = 0.95f
-    )
+    protected void UpdateDecays(LightMap lightMap)
     {
         float decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter ? 1f : 0.975f;
         float lightAirDecayBaseline
-            = decayMult * Math.Min(lightMap.LightDecayThroughAir, maxDecayMult);
+            = decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_MULT);
         float lightSolidDecayBaseline = decayMult * Math.Min(
             MathF.Pow(
                 lightMap.LightDecayThroughSolid,
                 LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
             ),
-            maxDecayMult
+            MAX_DECAY_MULT
         );
         float lightWaterDecayBaseline = decayMult * Math.Min(
             0.625f * lightMap.LightDecayThroughWater.Length() / Vector3.One.Length()
@@ -182,7 +202,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 lightMap.LightDecayThroughWater.X,
                 Math.Max(lightMap.LightDecayThroughWater.Y, lightMap.LightDecayThroughWater.Z)
             ),
-            maxDecayMult
+            MAX_DECAY_MULT
         );
         float lightHoneyDecayBaseline = decayMult * Math.Min(
             0.625f * lightMap.LightDecayThroughHoney.Length() / Vector3.One.Length()
@@ -190,7 +210,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 lightMap.LightDecayThroughHoney.X,
                 Math.Max(lightMap.LightDecayThroughHoney.Y, lightMap.LightDecayThroughHoney.Z)
             ),
-            maxDecayMult
+            MAX_DECAY_MULT
         );
 
         _lightLossExitingSolid = LightingConfig.Instance.FancyLightingEngineExitMultiplier();
@@ -205,28 +225,30 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             _lightLossExitingSolid *= _lightLossExitingSolid;
         }
 
-        _reciprocalLogSlowestDecay = 1f / MathF.Log(
-            Math.Max(
-                Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
-                Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
-            )
-        );
+        const float THRESHOLD_MULT_EXPONENT = 0.41421354f; // sqrt(2) - 1
 
-        UpdateDecay(_lightAirDecay, lightAirDecayBaseline, exponentDivisor);
-        UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline, exponentDivisor);
-        UpdateDecay(_lightWaterDecay, lightWaterDecayBaseline, exponentDivisor);
-        UpdateDecay(_lightHoneyDecay, lightHoneyDecayBaseline, exponentDivisor);
+        float logSlowestDecay = MathF.Log(Math.Max(
+            Math.Max(lightAirDecayBaseline, lightSolidDecayBaseline),
+            Math.Max(lightWaterDecayBaseline, lightHoneyDecayBaseline)
+        ));
+        _thresholdMult = MathF.Exp(THRESHOLD_MULT_EXPONENT * logSlowestDecay);
+        _reciprocalLogSlowestDecay = 1f / logSlowestDecay;
+
+        UpdateDecay(_lightAirDecay, lightAirDecayBaseline);
+        UpdateDecay(_lightSolidDecay, lightSolidDecayBaseline);
+        UpdateDecay(_lightWaterDecay, lightWaterDecayBaseline);
+        UpdateDecay(_lightHoneyDecay, lightHoneyDecayBaseline);
     }
 
-    private static void UpdateDecay(float[] decay, float baseline, int distanceTicks)
+    private static void UpdateDecay(float[] decay, float baseline)
     {
-        if (baseline == decay[distanceTicks])
+        if (baseline == decay[DISTANCE_TICKS])
         {
             return;
         }
 
         float logBaseline = MathF.Log(baseline);
-        float exponentMult = 1f / distanceTicks;
+        float exponentMult = 1f / DISTANCE_TICKS;
         for (int i = 0; i < decay.Length; ++i)
         {
             decay[i] = MathF.Exp(exponentMult * i * logBaseline);
@@ -261,7 +283,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         }
     );
 
-    protected void ConvertLightColorsToLinear(Vector3[] colors, int width, int height)
+    protected static void ConvertLightColorsToLinear(Vector3[] colors, int width, int height)
         => Parallel.For(
             0,
             width,
@@ -276,7 +298,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             }
         );
 
-    protected void InitializeTaskVariables(int lightMapSize, int maxLightRange)
+    protected void InitializeTaskVariables(int lightMapSize)
     {
         int taskCount = LightingConfig.Instance.ThreadCount;
 
@@ -284,12 +306,10 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         {
             _tasks = new Task[taskCount];
             _workingLightMaps = new Vector3[taskCount][];
-            _workingLights = new WorkingLightType[taskCount][];
 
             for (int i = 0; i < taskCount; ++i)
             {
                 _workingLightMaps[i] = new Vector3[lightMapSize];
-                _workingLights[i] = new WorkingLightType[maxLightRange + 1];
             }
         }
         else if (_tasks.Length != taskCount)
@@ -297,7 +317,6 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             _tasks = new Task[taskCount];
 
             Vector3[][] workingLightMaps = new Vector3[taskCount][];
-            WorkingLightType[][] workingLights = new WorkingLightType[taskCount][];
             int numToCopy = Math.Min(_workingLightMaps.Length, taskCount);
 
             for (int i = 0; i < numToCopy; ++i)
@@ -310,18 +329,14 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 {
                     workingLightMaps[i] = new Vector3[lightMapSize];
                 }
-
-                workingLights[i] = _workingLights[i];
             }
 
             for (int i = numToCopy; i < taskCount; ++i)
             {
                 workingLightMaps[i] = new Vector3[lightMapSize];
-                workingLights[i] = new WorkingLightType[maxLightRange + 1];
             }
 
             _workingLightMaps = workingLightMaps;
-            _workingLights = workingLights;
         }
         else
         {
@@ -339,7 +354,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         Vector3[] initialLightMapValue,
         Vector3[] destination,
         int lightMapSize,
-        Action<Vector3[], WorkingLightType[], int> lightingAction
+        Action<Vector3[], int> lightingAction
     )
     {
         int taskCount = LightingConfig.Instance.ThreadCount;
@@ -347,13 +362,12 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         if (taskCount <= 1)
         {
             Vector3[] workingLightMap = _workingLightMaps[0];
-            WorkingLightType[] workingLights = _workingLights[0];
 
             Array.Copy(initialLightMapValue, workingLightMap, lightMapSize);
 
             for (int i = 0; i < lightMapSize; ++i)
             {
-                lightingAction(workingLightMap, workingLights, i);
+                lightingAction(workingLightMap, i);
             }
 
             Array.Copy(workingLightMap, destination, lightMapSize);
@@ -373,7 +387,6 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                     int index = Interlocked.Increment(ref taskIndex);
 
                     Vector3[] workingLightMap = _workingLightMaps[index];
-                    WorkingLightType[] workingLights = _workingLights[index];
 
                     Array.Copy(initialLightMapValue, workingLightMap, lightMapSize);
 
@@ -387,7 +400,7 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
 
                         for (int end = Math.Min(lightMapSize, i + INDEX_INCREMENT); i < end; ++i)
                         {
-                            lightingAction(workingLightMap, workingLights, i);
+                            lightingAction(workingLightMap, i);
                         }
                     }
                 }
@@ -403,18 +416,14 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 ref Vector3 vec1 = ref arr1[i];
                 ref Vector3 vec2 = ref arr2[i];
 
-                // Potentially faster than Math.Max, which checks for NaN and signed zero
-
                 if (vec2.X > vec1.X)
                 {
                     vec1.X = vec2.X;
                 }
-
                 if (vec2.Y > vec1.Y)
                 {
                     vec1.Y = vec2.Y;
                 }
-
                 if (vec2.Z > vec1.Z)
                 {
                     vec1.Z = vec2.Z;
@@ -430,7 +439,6 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 ref Vector3 vec2 = ref arr2[i];
                 ref Vector3 resultVec = ref result[i];
 
-                // Potentially faster than Math.Max, which checks for NaN and signed zero
                 resultVec.X = vec2.X > vec1.X ? vec2.X : vec1.X;
                 resultVec.Y = vec2.Y > vec1.Y ? vec2.Y : vec1.Y;
                 resultVec.Z = vec2.Z > vec1.Z ? vec2.Z : vec1.Z;
@@ -457,17 +465,17 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
         );
     }
 
-    protected void GetLightsForGlobalIllumination(
+    protected static void GetLightsForGlobalIllumination(
         Vector3[] source,
         Vector3[] destination,
         Vector3[] lightSources,
         bool[] skipGI,
         LightMaskMode[] lightMasks,
         int width,
-        int height,
-        float giMult
+        int height
     )
     {
+        float giMult = GI_MULT;
         if (LightingConfig.Instance.DoGammaCorrection())
         {
             giMult *= giMult;
@@ -479,10 +487,8 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
             new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
             (i) =>
             {
-                int x = i + _lightMapArea.X;
-                int y = _lightMapArea.Y;
                 int endIndex = height * (i + 1);
-                for (int j = height * i; j < endIndex; ++j, ++y)
+                for (int j = height * i; j < endIndex; ++j)
                 {
                     ref Vector3 giLight = ref destination[j];
 
@@ -508,5 +514,163 @@ internal abstract class FancyLightingEngineBase<WorkingLightType> : ICustomLight
                 }
             }
         );
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void CalculateLightSourceValues(
+        Vector3[] colors,
+        Vec3 color,
+        int index,
+        int width,
+        int height,
+        out int upDistance,
+        out int downDistance,
+        out int leftDistance,
+        out int rightDistance,
+        out bool doUp,
+        out bool doDown,
+        out bool doLeft,
+        out bool doRight
+    )
+    {
+        (int x, int y) = Math.DivRem(index, height);
+
+        upDistance = y;
+        downDistance = height - 1 - y;
+        leftDistance = x;
+        rightDistance = width - 1 - x;
+
+        Vec3 threshold = _thresholdMult * color;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool LessThanThreshold(int otherIndex)
+        {
+            ref Vector3 otherColorRef = ref colors[otherIndex];
+            Vec3 otherColor = new(otherColorRef.X, otherColorRef.Y, otherColorRef.Z);
+            otherColor *= _lightMask[otherIndex][DISTANCE_TICKS];
+            return otherColor.X < threshold.X || otherColor.Y < threshold.Y || otherColor.Z < threshold.Z;
+        }
+
+        doUp = upDistance > 0 ? LessThanThreshold(index - 1) : false;
+        doDown = downDistance > 0 ? LessThanThreshold(index + 1) : false;
+        doLeft = leftDistance > 0 ? LessThanThreshold(index - height) : false;
+        doRight = rightDistance > 0 ? LessThanThreshold(index + height) : false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected int CalculateLightRange(Vec3 color)
+        => Math.Clamp(
+            (int)Math.Ceiling(
+                (
+                    _logBrightnessCutoff
+                    - MathF.Log(Math.Max(color.X, Math.Max(color.Y, color.Z)))
+                ) * _reciprocalLogSlowestDecay
+            ) + 1,
+            1,
+            MAX_LIGHT_RANGE
+        );
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected static void SetLight(ref Vector3 light, Vec3 value)
+    {
+        if (value.X > light.X)
+        {
+            light.X = value.X;
+        }
+        if (value.Y > light.Y)
+        {
+            light.Y = value.Y;
+        }
+        if (value.Z > light.Z)
+        {
+            light.Z = value.Z;
+        }
+    }
+
+    protected void SpreadLightLine(
+        Vector3[] lightMap,
+        Vec3 color,
+        int index,
+        int distance,
+        int indexChange
+    )
+    {
+        // Performance optimization
+        float[][] lightMask = _lightMask;
+        float[] airDecay = _lightAirDecay;
+        float[] solidDecay = _lightSolidDecay;
+        float lightLoss = _lightLossExitingSolid;
+
+        index += indexChange;
+        SetLight(ref lightMap[index], color);
+
+        // Would multiply by (distance + 1), but we already incremented index once
+        int endIndex = index + distance * indexChange;
+        float[] prevMask = lightMask[index];
+        while (true)
+        {
+            index += indexChange;
+            if (index == endIndex)
+            {
+                break;
+            }
+
+            float[] mask = lightMask[index];
+            if (prevMask == solidDecay && mask == airDecay)
+            {
+                color *= lightLoss * prevMask[DISTANCE_TICKS];
+            }
+            else
+            {
+                color *= prevMask[DISTANCE_TICKS];
+            }
+            prevMask = mask;
+
+            SetLight(ref lightMap[index], color);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void UpdateTemporalData(
+        Vec3 color,
+        bool doUp,
+        bool doDown,
+        bool doLeft,
+        bool doRight,
+        bool doUpperLeft,
+        bool doUpperRight,
+        bool doLowerLeft,
+        bool doLowerRight
+    )
+    {
+        const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
+
+        int baseWork = Math.Clamp(
+            (int)Math.Ceiling(
+                (
+                    LOG_BASE_DECAY
+                    - MathF.Log(Math.Max(color.X, Math.Max(color.Y, color.Z)))
+                ) * _reciprocalLogSlowestDecay
+            ) + 1,
+            1,
+            MAX_LIGHT_RANGE
+        );
+
+        int approximateWorkDone
+            = 1
+            + (
+                    (doUp ? 1 : 0)
+                    + (doDown ? 1 : 0)
+                    + (doLeft ? 1 : 0)
+                    + (doRight ? 1 : 0)
+                ) * baseWork
+            + (
+                    (doUpperLeft ? 1 : 0)
+                    + (doUpperRight ? 1 : 0)
+                    + (doLowerLeft ? 1 : 0)
+                    + (doLowerRight ? 1 : 0)
+                ) * (baseWork * baseWork);
+
+        Interlocked.Add(ref _temporalData, approximateWorkDone);
     }
 }

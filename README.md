@@ -26,6 +26,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Optimized the fancy lighting engine
 - Improved temporal optimization for the fancy lighting engine
 - Slightly improved the quality of the fancy lighting engine in camera mode
+- Slightly improved how light spreads when using the fancy lighting engine
 - Reduced visual disruption after updating settings
 - Made some minor optimizations
 - Updated the description
