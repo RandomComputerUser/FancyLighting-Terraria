@@ -29,7 +29,7 @@ float2 AmbientOcclusionCoordMult;
 
 float3 GammaToLinear(float3 color)
 {
-    return color * color;
+    return pow(color, 2.2);
 }
 
 float4 GammaToLinear(float4 color)
@@ -76,7 +76,7 @@ float3 OverbrightLightAt(float2 coords)
 float3 OverbrightLightAtHiDef(float2 coords)
 {
     float3 color = tex2D(LightSampler, coords).rgb;
-    return SrgbToLinear((65535.0 / 16384) * color);
+    return GammaToLinear((65535.0 / 16384) * color);
 }
 
 float3 Dither(float2 coords)
@@ -346,7 +346,7 @@ float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COL
     color.rgb *= 1.125;
 
     return SurfaceColor(
-        GammaToLinear(color)
+        SrgbToLinear(color)
         * SrgbToLinear(tex2D(TextureSampler, coords))
     );
 }

@@ -72,7 +72,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
             for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
             {
                 ++index;
-                double distance = MathUtil.Hypot(row, col);
+                double distance = MathUtil.Hypot(col, row);
                 value = ref values[index];
                 value = CalculateTileLightSpread(
                     row, col, distances[row].Right - distance, distances[row - 1].Top - distance

@@ -176,8 +176,11 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
         if (LightingConfig.Instance.DoGammaCorrection())
         {
-            _initialBrightnessCutoff *= _initialBrightnessCutoff;
-            cutoff *= cutoff;
+            _initialBrightnessCutoff *= 1.125f;
+            cutoff *= 1.125f;
+
+            GammaConverter.GammaToLinear(ref _initialBrightnessCutoff);
+            GammaConverter.GammaToLinear(ref cutoff);
         }
 
         _logBrightnessCutoff = MathF.Log(cutoff);
@@ -216,12 +219,12 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
         if (LightingConfig.Instance.DoGammaCorrection())
         {
-            lightAirDecayBaseline *= lightAirDecayBaseline;
-            lightSolidDecayBaseline *= lightSolidDecayBaseline;
-            lightWaterDecayBaseline *= lightWaterDecayBaseline;
-            lightHoneyDecayBaseline *= lightHoneyDecayBaseline;
+            GammaConverter.GammaToLinear(ref lightAirDecayBaseline);
+            GammaConverter.GammaToLinear(ref lightSolidDecayBaseline);
+            GammaConverter.GammaToLinear(ref lightWaterDecayBaseline);
+            GammaConverter.GammaToLinear(ref lightHoneyDecayBaseline);
 
-            _lightLossExitingSolid *= _lightLossExitingSolid;
+            GammaConverter.GammaToLinear(ref _lightLossExitingSolid);
         }
 
         const float THRESHOLD_MULT_EXPONENT = 0.41421354f; // sqrt(2) - 1
@@ -286,7 +289,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 int i = height * x;
                 for (int y = 0; y < height; ++y)
                 {
-                    GammaConverter.GammaToLinear(ref colors[i++]);
+                    GammaConverter.SrgbToLinear(ref colors[i++]);
                 }
             }
         );
@@ -488,7 +491,10 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         float giMult = GI_MULT;
         if (LightingConfig.Instance.DoGammaCorrection())
         {
-            giMult *= giMult;
+            // Gamma correction darkens dark colors, so this helps compensate
+            giMult *= 1.1f;
+
+            GammaConverter.GammaToLinear(ref giMult);
         }
 
         Parallel.For(

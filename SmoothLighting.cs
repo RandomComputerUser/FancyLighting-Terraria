@@ -299,17 +299,19 @@ internal sealed class SmoothLighting
         _smoothLightingForeComplete = false;
         _smoothLightingBackComplete = false;
 
-        if (_lights is null || _lights.Length < height * width)
+        int length = width * height;
+
+        if (_lights is null || _lights.Length < length)
         {
-            _lights = new Vector3[height * width];
+            _lights = new Vector3[length];
         }
-        if (_whiteLights is null || _whiteLights.Length < height * width)
+        if (_whiteLights is null || _whiteLights.Length < length)
         {
-            _whiteLights = new Vector3[height * width];
+            _whiteLights = new Vector3[length];
         }
-        if (_hasLight is null || _hasLight.Length < height * width)
+        if (_hasLight is null || _hasLight.Length < length)
         {
-            _hasLight = new byte[height * width];
+            _hasLight = new byte[length];
         }
 
         if (width == 0 || height == 0)
@@ -317,7 +319,7 @@ internal sealed class SmoothLighting
             return;
         }
 
-        if (colors.Length < height * width)
+        if (colors.Length < length)
         {
             return;
         }
@@ -339,8 +341,7 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
-                            GammaConverter.GammaToLinear(ref colors[i]);
-                            ++i;
+                            GammaConverter.SrgbToLinear(ref colors[i++]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -529,7 +530,14 @@ internal sealed class SmoothLighting
 
         if (doGammaCorrection)
         {
-            Vector3[] lightColors = blurLightMap ? _lights : colors;
+            if (blurLightMap)
+            {
+                Array.Copy(_lights, colors, length);
+            }
+            else
+            {
+                Array.Copy(colors, _lights, length);
+            }
 
             Parallel.For(
                 0,
@@ -542,7 +550,35 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
-                            GammaConverter.LinearToSrgb(ref lightColors[i++]);
+                            GammaConverter.LinearToSrgb(ref colors[i++]);
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            Interlocked.Exchange(ref caughtException, 1);
+                            break;
+                        }
+                    }
+                }
+            );
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
+            }
+
+            Parallel.For(
+                0,
+                width,
+                new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                (x) =>
+                {
+                    int i = height * x;
+                    for (int y = 0; y < height; ++y)
+                    {
+                        try
+                        {
+                            GammaConverter.LinearToGamma(ref _lights[i++]);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -559,14 +595,16 @@ internal sealed class SmoothLighting
                 return;
             }
         }
-
-        if (blurLightMap)
-        {
-            Array.Copy(_lights, colors, height * width);
-        }
         else
         {
-            Array.Copy(colors, _lights, height * width);
+            if (blurLightMap)
+            {
+                Array.Copy(_lights, colors, length);
+            }
+            else
+            {
+                Array.Copy(colors, _lights, length);
+            }
         }
 
         LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
@@ -575,7 +613,11 @@ internal sealed class SmoothLighting
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
         _isSpelunkerActive = Main.LocalPlayer.findTreasure;
 
-        const float LOW = 0.25f / 255f;
+        float low = 0.49f / 255f;
+        if (doGammaCorrection)
+        {
+            GammaConverter.SrgbToLinear(ref low);
+        }
 
         int ymax = lightMapTileArea.Y + lightMapTileArea.Height;
         Parallel.For(
@@ -592,7 +634,7 @@ internal sealed class SmoothLighting
                     try
                     {
                         ref Vector3 color = ref _lights[i];
-                        if (color.X > LOW || color.Y > LOW || color.Z > LOW)
+                        if (color.X > low || color.Y > low || color.Z > low)
                         {
                             _hasLight[i++] = 2;
                             continue;
@@ -667,9 +709,9 @@ internal sealed class SmoothLighting
                         }
                         else
                         {
-                            whiteLight.X = LOW;
-                            whiteLight.Y = LOW;
-                            whiteLight.Z = LOW;
+                            whiteLight.X = 0f;
+                            whiteLight.Y = 0f;
+                            whiteLight.Z = 0f;
                         }
                     }
                     catch (IndexOutOfRangeException)
@@ -832,10 +874,13 @@ internal sealed class SmoothLighting
         bool cameraMode
     )
     {
-        if (_finalLightsHiDef is null || _finalLightsHiDef.Length < height * width)
+        int length = width * height;
+
+        if (_finalLightsHiDef is null || _finalLightsHiDef.Length < length)
         {
-            _finalLightsHiDef = new Rgba64[height * width];
+            _finalLightsHiDef = new Rgba64[length];
         }
+        _finalLights = null; // Save some memory
 
         int caughtException = 0;
 
@@ -908,7 +953,7 @@ internal sealed class SmoothLighting
 
             TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
 
-            _colorsBackground.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, height * width);
+            _colorsBackground.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, length);
 
             _smoothLightingBackComplete = !cameraMode;
         }
@@ -1007,7 +1052,7 @@ internal sealed class SmoothLighting
 
             TextureMaker.MakeAtLeastSize(ref _colors, height, width);
 
-            _colors.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, height * width);
+            _colors.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, length);
 
             _smoothLightingForeComplete = !cameraMode;
         }
@@ -1026,10 +1071,13 @@ internal sealed class SmoothLighting
         bool cameraMode
     )
     {
-        if (_finalLights is null || _finalLights.Length < height * width)
+        int length = width * height;
+
+        if (_finalLights is null || _finalLights.Length < length)
         {
-            _finalLights = new Color[height * width];
+            _finalLights = new Color[length];
         }
+        _finalLightsHiDef = null; // Save some memory
 
         int caughtException = 0;
 
@@ -1103,7 +1151,7 @@ internal sealed class SmoothLighting
 
             TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
 
-            _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
+            _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, length);
 
             _smoothLightingBackComplete = !cameraMode;
         }
@@ -1196,7 +1244,7 @@ internal sealed class SmoothLighting
 
             TextureMaker.MakeAtLeastSize(ref _colors, height, width);
 
-            _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, height * width);
+            _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, length);
 
             _smoothLightingForeComplete = !cameraMode;
         }
