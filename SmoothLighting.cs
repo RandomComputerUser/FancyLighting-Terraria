@@ -65,13 +65,13 @@ internal sealed class SmoothLighting
     private Shader _qualityNormalsShader;
     private Shader _qualityNormalsOverbrightShader;
     private Shader _qualityNormalsOverbrightAmbientOcclusionShader;
-    private Shader _qualityNormalsOverbrightLightOnlyHiDefShader;
+    private Shader _qualityNormalsOverbrightLightOnlyShader;
     private Shader _normalsShader;
     private Shader _normalsOverbrightShader;
-    private Shader _normalsOverbrightLightOnlyHiDefShader;
+    private Shader _normalsOverbrightLightOnlyShader;
     private Shader _overbrightShader;
     private Shader _overbrightAmbientOcclusionShader;
-    private Shader _overbrightLightOnlyHiDefShader;
+    private Shader _overbrightLightOnlyShader;
     private Shader _overbrightMaxShader;
     private Shader _gammaCorrectionShader;
     private Shader _gammaCorrectionBGShader;
@@ -192,9 +192,10 @@ internal sealed class SmoothLighting
             "QualityNormalsOverbrightAmbientOcclusion",
             true
         );
-        _qualityNormalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+        _qualityNormalsOverbrightLightOnlyShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbrightLightOnlyHiDef"
+            "QualityNormalsOverbrightLightOnly",
+            true
         );
         _normalsShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
@@ -205,9 +206,10 @@ internal sealed class SmoothLighting
             "NormalsOverbright",
             true
         );
-        _normalsOverbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+        _normalsOverbrightLightOnlyShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "NormalsOverbrightLightOnlyHiDef"
+            "NormalsOverbrightLightOnly",
+            true
         );
         _overbrightShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
@@ -219,9 +221,10 @@ internal sealed class SmoothLighting
             "OverbrightAmbientOcclusion",
             true
         );
-        _overbrightLightOnlyHiDefShader = EffectLoader.LoadEffect(
+        _overbrightLightOnlyShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "OverbrightLightOnlyHiDef"
+            "OverbrightLightOnly",
+            true
         );
         _overbrightMaxShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
@@ -258,13 +261,13 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _qualityNormalsShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightAmbientOcclusionShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyHiDefShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyShader);
         EffectLoader.UnloadEffect(ref _normalsShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightShader);
-        EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyHiDefShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyShader);
         EffectLoader.UnloadEffect(ref _overbrightShader);
         EffectLoader.UnloadEffect(ref _overbrightAmbientOcclusionShader);
-        EffectLoader.UnloadEffect(ref _overbrightLightOnlyHiDefShader);
+        EffectLoader.UnloadEffect(ref _overbrightLightOnlyShader);
         EffectLoader.UnloadEffect(ref _overbrightMaxShader);
         EffectLoader.UnloadEffect(ref _gammaCorrectionShader);
         EffectLoader.UnloadEffect(ref _gammaCorrectionBGShader);
@@ -1383,7 +1386,7 @@ internal sealed class SmoothLighting
             && (!background || qualityNormalMaps);
         bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
-        bool doOverbright = LightingConfig.Instance.DrawOverbright() && !(lightOnly && !hiDef);
+        bool doOverbright = LightingConfig.Instance.DrawOverbright();
         bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
         bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
@@ -1467,20 +1470,20 @@ internal sealed class SmoothLighting
                 ? qualityNormalMaps
                     ? doOverbright
                         ? lightOnly
-                            ? _qualityNormalsOverbrightLightOnlyHiDefShader
+                            ? _qualityNormalsOverbrightLightOnlyShader
                             : doAmbientOcclusion
                                 ? _qualityNormalsOverbrightAmbientOcclusionShader
                                 : _qualityNormalsOverbrightShader
-                            : _qualityNormalsShader
+                        : _qualityNormalsShader
                     : doOverbright
                         ? lightOnly
-                            ? _normalsOverbrightLightOnlyHiDefShader
+                            ? _normalsOverbrightLightOnlyShader
                             : _normalsOverbrightShader
                         : _normalsShader
                 : doScaling // doOverbright is guaranteed to be true here
                     ? _overbrightMaxShader // if doScaling is true we're rendering tile entities
                     : lightOnly
-                        ? _overbrightLightOnlyHiDefShader
+                        ? _overbrightLightOnlyShader
                         : doAmbientOcclusion
                             ? _overbrightAmbientOcclusionShader
                             : _overbrightShader;

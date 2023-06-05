@@ -238,6 +238,13 @@ float4 QualityNormalsOverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) 
     return SurfaceColorWithLighting(color * AmbientOcclusion(coords));
 }
 
+float4 QualityNormalsOverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
+
+    return float4(OverbrightLightAt(coords + gradient), 1);
+}
+
 float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
@@ -265,6 +272,13 @@ float4 NormalsOverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
     float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
     return SurfaceColorWithLighting(OverbrightLightAtHiDef(coords + gradient));
+}
+
+float4 NormalsOverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
+
+    return float4(OverbrightLightAt(coords + gradient), 1);
 }
 
 float4 NormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -296,6 +310,11 @@ float4 OverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
     return SurfaceColorWithLighting(
         OverbrightLightAtHiDef(coords) * AmbientOcclusion(coords)
     );
+}
+
+float4 OverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
+{
+    return float4(OverbrightLightAt(coords), 1);
 }
 
 float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -364,6 +383,11 @@ technique Technique1
         PixelShader = compile ps_3_0 QualityNormalsOverbrightAmbientOcclusionHiDef();
     }
 
+    pass QualityNormalsOverbrightLightOnly
+    {
+        PixelShader = compile ps_2_0 QualityNormalsOverbrightLightOnly();
+    }
+
     pass QualityNormalsOverbrightLightOnlyHiDef
     {
         PixelShader = compile ps_3_0 QualityNormalsOverbrightLightOnlyHiDef();
@@ -382,6 +406,11 @@ technique Technique1
     pass NormalsOverbrightHiDef
     {
         PixelShader = compile ps_3_0 NormalsOverbrightHiDef();
+    }
+
+    pass NormalsOverbrightLightOnly
+    {
+        PixelShader = compile ps_2_0 NormalsOverbrightLightOnly();
     }
 
     pass NormalsOverbrightLightOnlyHiDef
@@ -407,6 +436,11 @@ technique Technique1
     pass OverbrightAmbientOcclusionHiDef
     {
         PixelShader = compile ps_3_0 OverbrightAmbientOcclusionHiDef();
+    }
+
+    pass OverbrightLightOnly
+    {
+        PixelShader = compile ps_2_0 OverbrightLightOnly();
     }
 
     pass OverbrightLightOnlyHiDef
