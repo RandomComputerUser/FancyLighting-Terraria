@@ -440,8 +440,8 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        TextureMaker.MakeSize(ref _screenTarget1, target.Width, target.Height);
-        TextureMaker.MakeSize(ref _screenTarget2, target.Width, target.Height);
+        TextureUtil.MakeSize(ref _screenTarget1, target.Width, target.Height);
+        TextureUtil.MakeSize(ref _screenTarget2, target.Width, target.Height);
 
         Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget1);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);

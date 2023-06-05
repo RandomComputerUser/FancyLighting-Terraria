@@ -340,10 +340,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         {
             for (int i = 0; i < taskCount; ++i)
             {
-                if (_workingLightMaps[i].Length < lightMapSize)
-                {
-                    _workingLightMaps[i] = new Vec3[lightMapSize];
-                }
+                ArrayUtil.MakeAtLeastSize(ref _workingLightMaps[i], lightMapSize);
             }
         }
     }

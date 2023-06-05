@@ -261,11 +261,8 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
 
         int length = width * height;
 
-        if (_tmp is null || _tmp.Length < length)
-        {
-            _tmp = new Vector3[length];
-            _lightMask = new float[length][];
-        }
+        ArrayUtil.MakeAtLeastSize(ref _tmp, length);
+        ArrayUtil.MakeAtLeastSize(ref _lightMask, length);
 
         Array.Copy(colors, _tmp, length);
         UpdateLightMasks(lightMasks, width, height);
@@ -290,10 +287,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
 
         if (LightingConfig.Instance.SimulateGlobalIllumination)
         {
-            if (_skipGI is null || _skipGI.Length < length)
-            {
-                _skipGI = new bool[length];
-            }
+            ArrayUtil.MakeAtLeastSize(ref _skipGI, length);
 
             GetLightsForGlobalIllumination(
                 _tmp, colors, colors, _skipGI, lightMasks, width, height

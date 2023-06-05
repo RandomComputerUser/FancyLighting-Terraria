@@ -63,8 +63,8 @@ internal sealed class AmbientOcclusion
 
     private void InitSurfaces()
     {
-        TextureMaker.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
-        TextureMaker.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+        TextureUtil.MakeSize(ref _drawTarget1, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
+        TextureUtil.MakeSize(ref _drawTarget2, Main.instance.tileTarget.Width, Main.instance.tileTarget.Height);
     }
 
     internal RenderTarget2D ApplyAmbientOcclusion(bool doDraw = true)
@@ -115,9 +115,9 @@ internal sealed class AmbientOcclusion
         bool doDraw = true
     )
     {
-        TextureMaker.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
-        TextureMaker.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
-        TextureMaker.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
+        TextureUtil.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+        TextureUtil.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
+        TextureUtil.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
 
         Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
         Main.instance.GraphicsDevice.Clear(Color.Transparent);
@@ -279,7 +279,7 @@ internal sealed class AmbientOcclusion
         {
             if (drawTileEntities)
             {
-                TextureMaker.MakeSize(
+                TextureUtil.MakeSize(
                     ref _tileEntityTarget,
                     Main.instance.tileTarget.Width,
                     Main.instance.tileTarget.Height

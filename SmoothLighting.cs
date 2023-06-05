@@ -301,18 +301,9 @@ internal sealed class SmoothLighting
 
         int length = width * height;
 
-        if (_lights is null || _lights.Length < length)
-        {
-            _lights = new Vector3[length];
-        }
-        if (_whiteLights is null || _whiteLights.Length < length)
-        {
-            _whiteLights = new Vector3[length];
-        }
-        if (_hasLight is null || _hasLight.Length < length)
-        {
-            _hasLight = new byte[length];
-        }
+        ArrayUtil.MakeAtLeastSize(ref _lights, length);
+        ArrayUtil.MakeAtLeastSize(ref _whiteLights, length);
+        ArrayUtil.MakeAtLeastSize(ref _hasLight, length);
 
         if (width == 0 || height == 0)
         {
@@ -876,10 +867,7 @@ internal sealed class SmoothLighting
     {
         int length = width * height;
 
-        if (_finalLightsHiDef is null || _finalLightsHiDef.Length < length)
-        {
-            _finalLightsHiDef = new Rgba64[length];
-        }
+        ArrayUtil.MakeAtLeastSize(ref _finalLightsHiDef, length);
         _finalLights = null; // Save some memory
 
         int caughtException = 0;
@@ -951,7 +939,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
+            TextureUtil.MakeAtLeastSize(ref _colorsBackground, height, width);
 
             _colorsBackground.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, length);
 
@@ -1050,7 +1038,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureMaker.MakeAtLeastSize(ref _colors, height, width);
+            TextureUtil.MakeAtLeastSize(ref _colors, height, width);
 
             _colors.SetData(0, _lightMapRenderArea, _finalLightsHiDef, 0, length);
 
@@ -1073,10 +1061,7 @@ internal sealed class SmoothLighting
     {
         int length = width * height;
 
-        if (_finalLights is null || _finalLights.Length < length)
-        {
-            _finalLights = new Color[length];
-        }
+        ArrayUtil.MakeAtLeastSize(ref _finalLights, length);
         _finalLightsHiDef = null; // Save some memory
 
         int caughtException = 0;
@@ -1149,7 +1134,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureMaker.MakeAtLeastSize(ref _colorsBackground, height, width);
+            TextureUtil.MakeAtLeastSize(ref _colorsBackground, height, width);
 
             _colorsBackground.SetData(0, _lightMapRenderArea, _finalLights, 0, length);
 
@@ -1242,7 +1227,7 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            TextureMaker.MakeAtLeastSize(ref _colors, height, width);
+            TextureUtil.MakeAtLeastSize(ref _colors, height, width);
 
             _colors.SetData(0, _lightMapRenderArea, _finalLights, 0, length);
 
@@ -1277,7 +1262,7 @@ internal sealed class SmoothLighting
         Vector2 offset;
         if (tempTarget is null)
         {
-            TextureMaker.MakeSize(ref _drawTarget1, target.Width, target.Height);
+            TextureUtil.MakeSize(ref _drawTarget1, target.Width, target.Height);
             tempTarget = _drawTarget1;
             offset = new Vector2(Main.offScreenRange);
         }
@@ -1293,7 +1278,7 @@ internal sealed class SmoothLighting
             || LightingConfig.Instance.DrawOverbright()
         )
         {
-            TextureMaker.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
+            TextureUtil.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
         }
 
         ApplySmoothLighting(
@@ -1324,7 +1309,7 @@ internal sealed class SmoothLighting
 
     internal RenderTarget2D GetCameraModeRenderTarget(RenderTarget2D screenTarget)
     {
-        TextureMaker.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
+        TextureUtil.MakeSize(ref _cameraModeTarget1, screenTarget.Width, screenTarget.Height);
         return _cameraModeTarget1;
     }
 
@@ -1340,8 +1325,8 @@ internal sealed class SmoothLighting
     {
         Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-        TextureMaker.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
-        TextureMaker.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+        TextureUtil.MakeAtLeastSize(ref _cameraModeTarget2, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
+        TextureUtil.MakeAtLeastSize(ref _cameraModeTarget3, 16 * lightMapTexture.Height, 16 * lightMapTexture.Width);
 
         if (LightingConfig.Instance.SmoothLightingEnabled())
         {

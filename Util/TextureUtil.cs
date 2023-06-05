@@ -5,7 +5,7 @@ using Terraria;
 
 namespace FancyLighting.Util;
 
-internal static class TextureMaker
+internal static class TextureUtil
 {
     public static SurfaceFormat TextureSurfaceFormat
         => LightingConfig.Instance.HiDefFeaturesEnabled()
