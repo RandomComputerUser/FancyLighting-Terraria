@@ -342,8 +342,9 @@ float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR
 
 float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
 {
-    // Multiply by 1.125 to partly compensate for global brightness of 1.2
-    color.rgb *= 1.125;
+    // Multiply by 1.1 to partly compensate for global brightness of 1.2
+    // Multiplying by 1.2 makes clouds too bright
+    color.rgb *= 1.1;
 
     return SurfaceColor(
         SrgbToLinear(color)
