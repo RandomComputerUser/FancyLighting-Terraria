@@ -17,8 +17,8 @@ public sealed class LightingConfig : ModConfig
 
     internal bool ModifyCameraModeRendering() => SmoothLightingEnabled() || AmbientOcclusionEnabled();
     internal bool SmoothLightingEnabled() => UseSmoothLighting && Lighting.UsingNewLighting;
-    internal bool UseBicubicScaling() => LightMapRenderMode != RenderMode.Bilinear;
-    internal bool DrawOverbright() => LightMapRenderMode == RenderMode.BicubicOverbright;
+    internal bool UseBicubicScaling() => LightMapRenderMode is not RenderMode.Bilinear;
+    internal bool DrawOverbright() => LightMapRenderMode is RenderMode.BicubicOverbright;
     internal bool UseNormalMaps() => NormalMapsStrength != 0;
     internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
     internal bool AmbientOcclusionEnabled() => UseAmbientOcclusion && Lighting.UsingNewLighting;
@@ -28,7 +28,7 @@ public sealed class LightingConfig : ModConfig
     internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
-        => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile == GraphicsProfile.HiDef;
+        => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile is GraphicsProfile.HiDef;
     internal bool DoGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
 
