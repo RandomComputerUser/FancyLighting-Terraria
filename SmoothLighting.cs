@@ -1240,7 +1240,10 @@ internal sealed class SmoothLighting
 
         Texture2D lightMapTexture = background ? _colorsBackground : _colors;
 
-        if (LightingConfig.Instance.UseNormalMaps() || LightingConfig.Instance.DrawOverbright())
+        if (
+            LightingConfig.Instance.UseNormalMaps() && !disableNormalMaps
+            || LightingConfig.Instance.DrawOverbright()
+        )
         {
             TextureMaker.MakeAtLeastSize(ref _drawTarget2, tempTarget.Width, tempTarget.Height);
         }
