@@ -18,7 +18,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Added an option to use enhanced light map blurring
 - Improved ambient occlusion when using overbright rendering
-- Improved render only lighting when paired with overbright rendering without enhanced shaders and colors
+- Improved render only light when paired with overbright rendering
 - Changed sky color profile 1
 - Added support for more glowing effects
 - Tweaked some pre-existing glowing effects

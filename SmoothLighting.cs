@@ -66,14 +66,19 @@ internal sealed class SmoothLighting
     private Shader _qualityNormalsOverbrightShader;
     private Shader _qualityNormalsOverbrightAmbientOcclusionShader;
     private Shader _qualityNormalsOverbrightLightOnlyShader;
+    private Shader _qualityNormalsOverbrightLightOnlyOpaqueShader;
+    private Shader _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader;
     private Shader _normalsShader;
     private Shader _normalsOverbrightShader;
     private Shader _normalsOverbrightLightOnlyShader;
     private Shader _overbrightShader;
     private Shader _overbrightAmbientOcclusionShader;
     private Shader _overbrightLightOnlyShader;
+    private Shader _overbrightLightOnlyOpaqueShader;
+    private Shader _overbrightLightOnlyOpaqueAmbientOcclusionShader;
     private Shader _overbrightMaxShader;
     private Shader _gammaCorrectionShader;
+    private Shader _gammaCorrectionLightOnlyShader;
     private Shader _gammaCorrectionBGShader;
 
     public SmoothLighting(FancyLightingMod mod)
@@ -197,6 +202,16 @@ internal sealed class SmoothLighting
             "QualityNormalsOverbrightLightOnly",
             true
         );
+        _qualityNormalsOverbrightLightOnlyOpaqueShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "QualityNormalsOverbrightLightOnlyOpaque",
+            true
+        );
+        _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion",
+            true
+        );
         _normalsShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
             "Normals"
@@ -226,6 +241,16 @@ internal sealed class SmoothLighting
             "OverbrightLightOnly",
             true
         );
+        _overbrightLightOnlyOpaqueShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "OverbrightLightOnlyOpaque",
+            true
+        );
+        _overbrightLightOnlyOpaqueAmbientOcclusionShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "OverbrightLightOnlyOpaqueAmbientOcclusion",
+            true
+        );
         _overbrightMaxShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
             "OverbrightMax",
@@ -234,6 +259,10 @@ internal sealed class SmoothLighting
         _gammaCorrectionShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
             "GammaCorrection"
+        );
+        _gammaCorrectionLightOnlyShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "GammaCorrectionLightOnly"
         );
         _gammaCorrectionBGShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
@@ -262,18 +291,27 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyOpaqueShader);
+        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _normalsShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyShader);
         EffectLoader.UnloadEffect(ref _overbrightShader);
         EffectLoader.UnloadEffect(ref _overbrightAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _overbrightLightOnlyShader);
+        EffectLoader.UnloadEffect(ref _overbrightLightOnlyOpaqueShader);
+        EffectLoader.UnloadEffect(ref _overbrightLightOnlyOpaqueAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _overbrightMaxShader);
         EffectLoader.UnloadEffect(ref _gammaCorrectionShader);
+        EffectLoader.UnloadEffect(ref _gammaCorrectionLightOnlyShader);
         EffectLoader.UnloadEffect(ref _gammaCorrectionBGShader);
     }
 
-    internal void ApplyGammaCorrectionShader() => _gammaCorrectionShader.Apply();
+    internal void ApplyGammaCorrectionShader()
+        => (LightingConfig.Instance.RenderOnlyLight
+            ? _gammaCorrectionLightOnlyShader
+            : _gammaCorrectionShader
+        ).Apply();
 
     internal void ApplyGammaCorrectionBGShader() => _gammaCorrectionBGShader.Apply();
 
@@ -1310,8 +1348,8 @@ internal sealed class SmoothLighting
             ambientOcclusionTarget
         );
 
-        Main.instance.GraphicsDevice.SetRenderTarget(target);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(target);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(
             tempTarget,
@@ -1319,7 +1357,7 @@ internal sealed class SmoothLighting
             Color.White
         );
         Main.spriteBatch.End();
-        Main.instance.GraphicsDevice.SetRenderTarget(null);
+        Main.graphics.GraphicsDevice.SetRenderTarget(null);
     }
 
     internal RenderTarget2D GetCameraModeRenderTarget(RenderTarget2D screenTarget)
@@ -1361,8 +1399,8 @@ internal sealed class SmoothLighting
         }
         else
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
-            Main.instance.GraphicsDevice.Clear(Color.White);
+            Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
+            Main.graphics.GraphicsDevice.Clear(Color.White);
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -1383,8 +1421,8 @@ internal sealed class SmoothLighting
             return;
         }
 
-        Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(
             screenTarget,
@@ -1393,8 +1431,8 @@ internal sealed class SmoothLighting
         );
         Main.spriteBatch.End();
 
-        Main.instance.GraphicsDevice.SetRenderTarget(screenTarget);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(screenTarget);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(
             _cameraModeTarget1,
@@ -1423,11 +1461,6 @@ internal sealed class SmoothLighting
         RenderTarget2D ambientOcclusionTarget
     )
     {
-        if (LightingConfig.Instance.RenderOnlyLight && background)
-        {
-            return;
-        }
-
         bool qualityNormalMaps = LightingConfig.Instance.QualityNormalMaps;
         bool fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
         bool doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
@@ -1442,8 +1475,8 @@ internal sealed class SmoothLighting
         bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
 
-        Main.instance.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
-        Main.instance.GraphicsDevice.Clear(Color.White);
+        Main.graphics.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
+        Main.graphics.GraphicsDevice.Clear(Color.White);
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
             FancyLightingMod.MultiplyBlend,
@@ -1474,8 +1507,8 @@ internal sealed class SmoothLighting
                         16f * lightMapTexture.Width / _ditherMask.Width,
                         16f * lightMapTexture.Height / _ditherMask.Height))
                     .Apply();
-                Main.instance.GraphicsDevice.Textures[1] = _ditherMask;
-                Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[1] = _ditherMask;
+                Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
             }
         }
 
@@ -1509,8 +1542,8 @@ internal sealed class SmoothLighting
         {
             Main.spriteBatch.End();
 
-            Main.instance.GraphicsDevice.SetRenderTarget(target1);
-            Main.instance.GraphicsDevice.Clear(Color.White);
+            Main.graphics.GraphicsDevice.SetRenderTarget(target1);
+            Main.graphics.GraphicsDevice.Clear(Color.White);
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 FancyLightingMod.MultiplyBlend
@@ -1521,7 +1554,11 @@ internal sealed class SmoothLighting
                 ? qualityNormalMaps
                     ? doOverbright
                         ? lightOnly
-                            ? _qualityNormalsOverbrightLightOnlyShader
+                            ? background
+                                ? doAmbientOcclusion
+                                    ? _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader
+                                    : _qualityNormalsOverbrightLightOnlyOpaqueShader
+                                : _qualityNormalsOverbrightLightOnlyShader
                             : doAmbientOcclusion
                                 ? _qualityNormalsOverbrightAmbientOcclusionShader
                                 : _qualityNormalsOverbrightShader
@@ -1534,7 +1571,11 @@ internal sealed class SmoothLighting
                 : doScaling // doOverbright is guaranteed to be true here
                     ? _overbrightMaxShader // if doScaling is true we're rendering tile entities
                     : lightOnly
-                        ? _overbrightLightOnlyShader
+                        ? background
+                            ? doAmbientOcclusion
+                                ? _overbrightLightOnlyOpaqueAmbientOcclusionShader
+                                : _overbrightLightOnlyOpaqueShader
+                            : _overbrightLightOnlyShader
                         : doAmbientOcclusion
                             ? _overbrightAmbientOcclusionShader
                             : _overbrightShader;
@@ -1571,23 +1612,23 @@ internal sealed class SmoothLighting
                     (float)target2.Height / worldTarget.Height))
                 .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength)
                 .SetParameter("HiDefNormalMapExp", hiDefNormalMapExp);
-            Main.instance.GraphicsDevice.Textures[1] = worldTarget;
-            Main.instance.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
+            Main.graphics.GraphicsDevice.Textures[1] = worldTarget;
+            Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
             if (noDithering)
             {
                 shader.SetParameter("DitherCoordMult", new Vector2(
                     (float)target2.Width / _ditherMask.Width,
                     (float)target2.Height / _ditherMask.Height));
-                Main.instance.GraphicsDevice.Textures[2] = _ditherMask;
-                Main.instance.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[2] = _ditherMask;
+                Main.graphics.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
             }
             if (doAmbientOcclusion)
             {
                 shader.SetParameter("AmbientOcclusionCoordMult", new Vector2(
                     (float)target2.Width / ambientOcclusionTarget.Width,
                     (float)target2.Height / ambientOcclusionTarget.Height));
-                Main.instance.GraphicsDevice.Textures[3] = ambientOcclusionTarget;
-                Main.instance.GraphicsDevice.SamplerStates[3] = SamplerState.PointClamp;
+                Main.graphics.GraphicsDevice.Textures[3] = ambientOcclusionTarget;
+                Main.graphics.GraphicsDevice.SamplerStates[3] = SamplerState.PointClamp;
             }
             shader.Apply();
 
@@ -1603,7 +1644,7 @@ internal sealed class SmoothLighting
             _noFilterShader.Apply();
         }
 
-        if (!doOverbright && !LightingConfig.Instance.RenderOnlyLight)
+        if (!doOverbright && !lightOnly)
         {
             Main.spriteBatch.Draw(
                 worldTarget,

@@ -242,14 +242,50 @@ float4 QualityNormalsOverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(OverbrightLightAt(coords + gradient), 1);
+    return float4(OverbrightLightAt(coords + gradient), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
 }
 
 float4 QualityNormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
+    return float4(SurfaceColor(color) + Dither(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
+}
+
+float4 QualityNormalsOverbrightLightOnlyOpaque(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
+
+    return float4(OverbrightLightAt(coords + gradient), 1);
+}
+
+float4 QualityNormalsOverbrightLightOnlyOpaqueHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
+
     return float4(SurfaceColor(color) + Dither(coords), 1);
+}
+
+float4 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
+{
+    float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
+
+    return float4(OverbrightLightAt(coords + gradient), 1)
+        * float4(lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a), 1);
+}
+
+float4 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
+
+    return float4(
+        SurfaceColor(color)
+            * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a)
+            + Dither(coords),
+        1
+    );
 }
 
 float4 Normals(float2 coords : TEXCOORD0) : COLOR0
@@ -278,14 +314,16 @@ float4 NormalsOverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(OverbrightLightAt(coords + gradient), 1);
+    return float4(OverbrightLightAt(coords + gradient), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
 }
 
 float4 NormalsOverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float2 gradient = NormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(SurfaceColor(OverbrightLightAtHiDef(coords + gradient)) + Dither(coords), 1);
+    return float4(SurfaceColor(OverbrightLightAtHiDef(coords + gradient)) + Dither(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
 }
 
 float4 Overbright(float2 coords : TEXCOORD0) : COLOR0
@@ -314,12 +352,40 @@ float4 OverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 OverbrightLightOnly(float2 coords : TEXCOORD0) : COLOR0
 {
-    return float4(OverbrightLightAt(coords), 1);
+    return float4(OverbrightLightAt(coords), 1) * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
 }
 
 float4 OverbrightLightOnlyHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
+    return float4(SurfaceColor(OverbrightLightAtHiDef(coords)) + Dither(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS).a;
+}
+
+float4 OverbrightLightOnlyOpaque(float2 coords : TEXCOORD0) : COLOR0
+{
+    return float4(OverbrightLightAt(coords), 1);
+}
+
+float4 OverbrightLightOnlyOpaqueHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
     return float4(SurfaceColor(OverbrightLightAtHiDef(coords)) + Dither(coords), 1);
+}
+
+float4 OverbrightLightOnlyOpaqueAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
+{
+    return float4(OverbrightLightAt(coords), 1)
+        * float4(lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a), 1);
+}
+
+float4 OverbrightLightOnlyOpaqueAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
+{
+    return float4(
+        SurfaceColor(
+                OverbrightLightAtHiDef(coords)
+                * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a)
+            ) + Dither(coords),
+        1
+    );
 }
 
 float4 OverbrightMax(float2 coords : TEXCOORD0) : COLOR0
@@ -338,6 +404,11 @@ float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR
         SrgbToLinear(color)
         * SrgbToLinear(tex2D(TextureSampler, coords))
     );
+}
+
+float4 GammaCorrectionLightOnly(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
+{
+    return color * tex2D(TextureSampler, coords).a;
 }
 
 float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
@@ -392,6 +463,26 @@ technique Technique1
     pass QualityNormalsOverbrightLightOnlyHiDef
     {
         PixelShader = compile ps_3_0 QualityNormalsOverbrightLightOnlyHiDef();
+    }
+
+    pass QualityNormalsOverbrightLightOnlyOpaque
+    {
+        PixelShader = compile ps_2_0 QualityNormalsOverbrightLightOnlyOpaque();
+    }
+
+    pass QualityNormalsOverbrightLightOnlyOpaqueHiDef
+    {
+        PixelShader = compile ps_3_0 QualityNormalsOverbrightLightOnlyOpaqueHiDef();
+    }
+
+    pass QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion
+    {
+        PixelShader = compile ps_2_0 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion();
+    }
+
+    pass QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionHiDef
+    {
+        PixelShader = compile ps_3_0 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionHiDef();
     }
 
     pass Normals
@@ -449,6 +540,26 @@ technique Technique1
         PixelShader = compile ps_3_0 OverbrightLightOnlyHiDef();
     }
 
+    pass OverbrightLightOnlyOpaque
+    {
+        PixelShader = compile ps_2_0 OverbrightLightOnlyOpaque();
+    }
+
+    pass OverbrightLightOnlyOpaqueHiDef
+    {
+        PixelShader = compile ps_3_0 OverbrightLightOnlyOpaqueHiDef();
+    }
+
+    pass OverbrightLightOnlyOpaqueAmbientOcclusion
+    {
+        PixelShader = compile ps_2_0 OverbrightLightOnlyOpaqueAmbientOcclusion();
+    }
+
+    pass OverbrightLightOnlyOpaqueAmbientOcclusionHiDef
+    {
+        PixelShader = compile ps_3_0 OverbrightLightOnlyOpaqueAmbientOcclusionHiDef();
+    }
+
     pass OverbrightMax
     {
         PixelShader = compile ps_2_0 OverbrightMax();
@@ -463,6 +574,12 @@ technique Technique1
     {
         PixelShader = compile ps_3_0 GammaCorrection();
     }
+
+    pass GammaCorrectionLightOnly
+    {
+        PixelShader = compile ps_3_0 GammaCorrectionLightOnly();
+    }
+
 
     pass GammaCorrectionBG
     {

@@ -407,11 +407,22 @@ public sealed class FancyLightingMod : Mod
         bool intoRenderTargets
     )
     {
-        if (intoRenderTargets
+        if (
+            !_ambientOcclusionInstance._drawingTileEntities
+            && LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DoGammaCorrection()
+        )
+        {
+            return;
+        }
+
+        if (
+            intoRenderTargets
             || !LightingConfig.Instance.DrawOverbright()
             || !LightingConfig.Instance.SmoothLightingEnabled()
-            || LightingConfig.Instance.RenderOnlyLight
-            || _ambientOcclusionInstance._drawingTileEntities)
+            || _ambientOcclusionInstance._drawingTileEntities
+        )
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets);
             return;
@@ -419,10 +430,10 @@ public sealed class FancyLightingMod : Mod
 
         if (_inCameraMode)
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(
+            Main.graphics.GraphicsDevice.SetRenderTarget(
                 _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
             );
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
 
             _smoothLightingInstance.CalculateSmoothLighting(false, true);
@@ -443,21 +454,21 @@ public sealed class FancyLightingMod : Mod
         TextureUtil.MakeSize(ref _screenTarget1, target.Width, target.Height);
         TextureUtil.MakeSize(ref _screenTarget2, target.Width, target.Height);
 
-        Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget1);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(_screenTarget1);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(target, Vector2.Zero, Color.White);
         Main.spriteBatch.End();
 
-        Main.instance.GraphicsDevice.SetRenderTarget(_screenTarget2);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(_screenTarget2);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
 
         _smoothLightingInstance.CalculateSmoothLighting(false, false);
         _smoothLightingInstance.DrawSmoothLighting(_screenTarget2, false, true, target);
 
-        Main.instance.GraphicsDevice.SetRenderTarget(target);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(target);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         Main.spriteBatch.Draw(_screenTarget1, Vector2.Zero, Color.White);
         Main.spriteBatch.Draw(_screenTarget2, Vector2.Zero, Color.White);
@@ -472,9 +483,11 @@ public sealed class FancyLightingMod : Mod
         bool intoRenderTargets
     )
     {
-        if (solidLayer
+        if (
+            solidLayer
             || intoRenderTargets
-            || !LightingConfig.Instance.DoGammaCorrection())
+            || !LightingConfig.Instance.DoGammaCorrection()
+        )
         {
             orig(self, solidLayer, forRenderTargets, intoRenderTargets);
             return;
@@ -511,7 +524,10 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (!LightingConfig.Instance.DoGammaCorrection() || LightingConfig.Instance.RenderOnlyLight)
+        if (
+            !LightingConfig.Instance.DoGammaCorrection()
+            || LightingConfig.Instance.RenderOnlyLight
+        )
         {
             orig(self);
             return;
@@ -556,11 +572,15 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
-        if (LightingConfig.Instance.RenderOnlyLight && LightingConfig.Instance.SmoothLightingEnabled())
+        if (
+            LightingConfig.Instance.RenderOnlyLight
+            && LightingConfig.Instance.SmoothLightingEnabled()
+            && !LightingConfig.Instance.DrawOverbright()
+        )
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(Main.waterTarget);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
-            Main.instance.GraphicsDevice.SetRenderTarget(null);
+            Main.graphics.GraphicsDevice.SetRenderTarget(Main.waterTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(null);
             return;
         }
 
@@ -587,6 +607,15 @@ public sealed class FancyLightingMod : Mod
         bool isBackground
     )
     {
+        if (
+            LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DrawOverbright()
+        )
+        {
+            return;
+        }
+
         if (_inCameraMode || !LightingConfig.Instance.SmoothLightingEnabled())
         {
             orig(self, isBackground);
@@ -618,6 +647,16 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
+        if (LightingConfig.Instance.RenderOnlyLight)
+        {
+            Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.backgroundTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.backWaterTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(null);
+            return;
+        }
+
         _smoothLightingInstance.CalculateSmoothLighting(true);
         orig(self);
 
@@ -641,6 +680,15 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
+        if (
+            _inCameraMode
+            && LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
+        )
+        {
+            return;
+        }
+
         if (_inCameraMode)
         {
             _smoothLightingInstance.CalculateSmoothLighting(true, true);
@@ -648,10 +696,10 @@ public sealed class FancyLightingMod : Mod
 
             Main.tileBatch.End();
             Main.spriteBatch.End();
-            Main.instance.GraphicsDevice.SetRenderTarget(
+            Main.graphics.GraphicsDevice.SetRenderTarget(
                 _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
             );
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             Main.tileBatch.Begin();
             Main.spriteBatch.Begin();
             try
@@ -691,6 +739,17 @@ public sealed class FancyLightingMod : Mod
         Terraria.Main self
     )
     {
+        if (!LightingConfig.Instance.SmoothLightingEnabled())
+        {
+            orig(self);
+            return;
+        }
+
+        if (LightingConfig.Instance.RenderOnlyLight)
+        {
+            return;
+        }
+
         bool initialLightingOverride = OverrideLightingColor;
         OverrideLightingColor = false;
         try
@@ -775,6 +834,17 @@ public sealed class FancyLightingMod : Mod
             {
                 _ambientOcclusionInstance.ApplyAmbientOcclusion();
             }
+            return;
+        }
+
+        if (
+            LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DrawOverbright()
+        )
+        {
+            Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(null);
             return;
         }
 
@@ -884,14 +954,22 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
+        if (
+            LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DrawOverbright()
+        )
+        {
+            return;
+        }
+
         _smoothLightingInstance.CalculateSmoothLighting(bg, true);
         OverrideLightingColor = true;
 
         Main.spriteBatch.End();
-        Main.instance.GraphicsDevice.SetRenderTarget(
+        Main.graphics.GraphicsDevice.SetRenderTarget(
             _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
         );
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.spriteBatch.Begin();
         try
         {
@@ -921,6 +999,15 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
+        if (
+            LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DrawOverbright()
+        )
+        {
+            return;
+        }
+
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
         OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
 
@@ -928,8 +1015,8 @@ public sealed class FancyLightingMod : Mod
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
-        Main.instance.GraphicsDevice.SetRenderTarget(wallTarget);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(wallTarget);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
         try
@@ -994,8 +1081,8 @@ public sealed class FancyLightingMod : Mod
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
-        Main.instance.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
         try

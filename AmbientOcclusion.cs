@@ -90,8 +90,8 @@ internal sealed class AmbientOcclusion
 
         if (doDraw)
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
                 useTarget2 ? _drawTarget1 : _drawTarget2,
@@ -101,7 +101,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.End();
         }
 
-        Main.instance.GraphicsDevice.SetRenderTarget(null);
+        Main.graphics.GraphicsDevice.SetRenderTarget(null);
 
         return doDraw
             ? null
@@ -119,8 +119,8 @@ internal sealed class AmbientOcclusion
         TextureUtil.MakeSize(ref _cameraModeTarget2, screenTarget.Width, screenTarget.Height);
         TextureUtil.MakeSize(ref _cameraModeTarget3, screenTarget.Width, screenTarget.Height);
 
-        Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-        Main.instance.GraphicsDevice.Clear(Color.Transparent);
+        Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
+        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.instance.TilesRenderer.PreDrawTiles(true, false, false);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
@@ -142,8 +142,8 @@ internal sealed class AmbientOcclusion
 
         if (extraLayer)
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         }
         if (LightingConfig.Instance.DoNonSolidAmbientOcclusion)
         {
@@ -176,8 +176,8 @@ internal sealed class AmbientOcclusion
 
         if (doDraw)
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
                 screenTarget,
@@ -186,8 +186,8 @@ internal sealed class AmbientOcclusion
             );
             Main.spriteBatch.End();
 
-            Main.instance.GraphicsDevice.SetRenderTarget(screenTarget);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(screenTarget);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             Main.spriteBatch.Begin();
             Main.spriteBatch.Draw(
                 _cameraModeTarget1,
@@ -224,7 +224,7 @@ internal sealed class AmbientOcclusion
             RenderTarget2D surfaceDestination = useTarget2 ? target2 : target1;
             RenderTarget2D surfaceSource = useTarget2 ? target1 : target2;
 
-            Main.instance.GraphicsDevice.SetRenderTarget(surfaceDestination);
+            Main.graphics.GraphicsDevice.SetRenderTarget(surfaceDestination);
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -257,8 +257,8 @@ internal sealed class AmbientOcclusion
 
         if (!(drawNonSolidTiles || drawTileEntities))
         {
-            Main.instance.GraphicsDevice.SetRenderTarget(target1);
-            Main.instance.GraphicsDevice.Clear(Color.Transparent);
+            Main.graphics.GraphicsDevice.SetRenderTarget(target1);
+            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
@@ -285,8 +285,8 @@ internal sealed class AmbientOcclusion
                     Main.instance.tileTarget.Height
                 );
 
-                Main.instance.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
-                Main.instance.GraphicsDevice.Clear(Color.Transparent);
+                Main.graphics.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
+                Main.graphics.GraphicsDevice.Clear(Color.Transparent);
                 Vector2 currentZoom = Main.GameViewMatrix.Zoom;
                 Main.GameViewMatrix.Zoom = Vector2.One;
 
@@ -303,8 +303,8 @@ internal sealed class AmbientOcclusion
                 }
             }
 
-            Main.instance.GraphicsDevice.SetRenderTarget(target1);
-            Main.instance.GraphicsDevice.Clear(Color.White);
+            Main.graphics.GraphicsDevice.SetRenderTarget(target1);
+            Main.graphics.GraphicsDevice.Clear(Color.White);
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,

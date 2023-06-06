@@ -102,7 +102,7 @@ Mods: {
 				}
 
 				RenderOnlyLight: {
-					Label: (Debug) Render Only Lighting
+					Label: (Debug) Render Only Light
 					Tooltip: When enabled, tile, wall, and background textures are not rendered
 				}
 

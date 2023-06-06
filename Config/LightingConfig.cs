@@ -28,7 +28,7 @@ public sealed class LightingConfig : ModConfig
     internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
     internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
     internal bool HiDefFeaturesEnabled()
-        => UseHiDefFeatures && Main.instance.GraphicsDevice.GraphicsProfile is GraphicsProfile.HiDef;
+        => UseHiDefFeatures && Main.graphics.GraphicsProfile is GraphicsProfile.HiDef;
     internal bool DoGammaCorrection()
         => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
 
