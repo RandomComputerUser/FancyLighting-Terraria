@@ -1,4 +1,4 @@
-Fancy Lighting makes lighting look fancier. A variety of options and presets are available to configure the performance and quality of this mod.
+Fancy Lighting makes light look fancier. A variety of options and presets are available to configure the performance and quality of this mod.
 
 Features:
 - Smooth lighting
