@@ -144,7 +144,7 @@ internal sealed class SmoothLighting
         _glowingTileColors[TileID.XenonMoss]
             = _glowingTileColors[TileID.XenonMossBrick]
             = _glowingTileColors[TileID.XenonMossBlock]
-            = new(0, 186, 255);
+            = new(0, 181, 255);
         _glowingTileColors[TileID.VioletMoss] // Neon Moss
             = _glowingTileColors[TileID.VioletMossBrick]
             = _glowingTileColors[TileID.VioletMossBlock]
