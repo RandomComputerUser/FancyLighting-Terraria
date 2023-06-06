@@ -20,6 +20,7 @@ Mods: {
 					Tooltip:
 						'''
 						A preset for the settings below may be chosen
+						With very high or ultra, do not set waves quality to off except in camera mode
 						Lower presets have better performance but lower quality
 						'''
 				}
@@ -66,6 +67,7 @@ Mods: {
 						Affects the smoothness of lighting
 						Bicubic upscaling is smoother than bilinear upscaling
 						Overbright rendering increases the maximum brightness of light
+						With overbright rendering, do not set waves quality to off except in camera mode
 						Settings farther to the right may reduce performance
 						'''
 				}

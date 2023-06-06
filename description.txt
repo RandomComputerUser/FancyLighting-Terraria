@@ -10,7 +10,7 @@ Features:
 - Simulated global illumination
 - Gamma correction
 
-This mod only takes effect when the lighting mode is set to color.
+This mod only takes effect when the lighting mode is set to color. For best results, waves quality should not be set to off except in camera mode, when it should be set to off.
 
 It is recommended to test performance by pressing F7 while in-game to help select a preset. The Total Render time is increased by smooth lighting and ambient occlusion, and the Total Lighting time is increased by the fancy lighting engine.
 
