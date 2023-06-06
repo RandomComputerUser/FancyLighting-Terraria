@@ -19,7 +19,8 @@ public sealed class FancyLightingMod : Mod
 {
     public static BlendState MultiplyBlend { get; private set; }
 
-    internal static bool _overrideLightingColor;
+    internal static bool _overrideLightColor;
+    internal static bool _overrideLightColorGamma;
     internal static bool _inCameraMode;
 
     private SmoothLighting _smoothLightingInstance;
@@ -52,12 +53,12 @@ public sealed class FancyLightingMod : Mod
     private static RenderTarget2D _screenTarget1;
     private static RenderTarget2D _screenTarget2;
 
-    public bool OverrideLightingColor
+    public bool OverrideLightColor
     {
-        get => _overrideLightingColor;
+        get => _overrideLightColor;
         internal set
         {
-            if (value == _overrideLightingColor)
+            if (value == _overrideLightColor)
             {
                 return;
             }
@@ -85,7 +86,44 @@ public sealed class FancyLightingMod : Mod
                 value ? _smoothLightingInstance._whiteLights : _smoothLightingInstance._tmpLights
             );
 
-            _overrideLightingColor = value;
+            _overrideLightColor = value;
+        }
+    }
+
+    public bool OverrideLightColorGamma
+    {
+        get => _overrideLightColorGamma;
+        internal set
+        {
+            if (value == _overrideLightColorGamma)
+            {
+                return;
+            }
+
+            if (!LightingConfig.Instance.DoGammaCorrection())
+            {
+                return;
+            }
+
+            object activeEngine = field_activeEngine.GetValue(null);
+            if (activeEngine is not LightingEngine lightingEngine)
+            {
+                return;
+            }
+
+            LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue(lightingEngine);
+
+            if (value)
+            {
+                _smoothLightingInstance._tmpLights = (Vector3[])field_colors.GetValue(lightMapInstance);
+            }
+
+            field_colors.SetValue(
+                lightMapInstance,
+                value ? _smoothLightingInstance._lights : _smoothLightingInstance._tmpLights
+            );
+
+            _overrideLightColorGamma = value;
         }
     }
 
@@ -96,7 +134,8 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        _overrideLightingColor = false;
+        _overrideLightColor = false;
+        _overrideLightColorGamma = false;
         _inCameraMode = false;
 
         BlendState blend = new()
@@ -291,7 +330,7 @@ public sealed class FancyLightingMod : Mod
         Vector2 position
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             return orig(position);
         }
@@ -307,7 +346,7 @@ public sealed class FancyLightingMod : Mod
         float scale
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             orig(centerX, centerY, out vertices, scale);
             return;
@@ -323,7 +362,7 @@ public sealed class FancyLightingMod : Mod
        ref Vector3[] slices
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             orig(x, y, ref slices);
             return;
@@ -345,7 +384,7 @@ public sealed class FancyLightingMod : Mod
         ref Vector3[] slices
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             orig(x, y, ref slices);
             return;
@@ -367,7 +406,7 @@ public sealed class FancyLightingMod : Mod
        ref Color[] slices
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             orig(x, y, ref slices);
             return;
@@ -386,7 +425,7 @@ public sealed class FancyLightingMod : Mod
         ref Color[] slices
     )
     {
-        if (!_overrideLightingColor)
+        if (!_overrideLightColor)
         {
             orig(x, y, ref slices);
             return;
@@ -444,10 +483,11 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        RenderTarget2D target = MainRenderTarget.Get();
+        RenderTarget2D target
+            = LightingConfig.Instance.RenderOnlyLight ? null : MainRenderTarget.Get();
         if (target is null)
         {
-            orig(self, solidLayer, forRenderTargets, intoRenderTargets);
+            _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
             return;
         }
 
@@ -503,18 +543,27 @@ public sealed class FancyLightingMod : Mod
             Main.Transform
         );
 
-        _smoothLightingInstance.ApplyGammaCorrectionShader();
+        try
+        {
+            OverrideLightColorGamma = true;
 
-        method_DrawMultiTileVines(self);
-        method_DrawMultiTileGrass(self);
-        method_DrawVoidLenses(self);
-        method_DrawTeleportationPylons(self);
-        method_DrawMasterTrophies(self);
-        method_DrawGrass(self);
-        method_DrawAnyDirectionalGrass(self);
-        method_DrawTrees(self);
-        method_DrawVines(self);
-        method_DrawReverseVines(self);
+            _smoothLightingInstance.ApplyGammaCorrectionShader();
+
+            method_DrawMultiTileVines(self);
+            method_DrawMultiTileGrass(self);
+            method_DrawVoidLenses(self);
+            method_DrawTeleportationPylons(self);
+            method_DrawMasterTrophies(self);
+            method_DrawGrass(self);
+            method_DrawAnyDirectionalGrass(self);
+            method_DrawTrees(self);
+            method_DrawVines(self);
+            method_DrawReverseVines(self);
+        }
+        finally
+        {
+            OverrideLightColorGamma = false;
+        }
 
         Main.spriteBatch.End();
     }
@@ -622,7 +671,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        OverrideLightingColor = isBackground
+        OverrideLightColor = isBackground
             ? _smoothLightingInstance.DrawSmoothLightingBack
             : _smoothLightingInstance.DrawSmoothLightingFore;
         try
@@ -631,7 +680,7 @@ public sealed class FancyLightingMod : Mod
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
     }
 
@@ -692,7 +741,7 @@ public sealed class FancyLightingMod : Mod
         if (_inCameraMode)
         {
             _smoothLightingInstance.CalculateSmoothLighting(true, true);
-            OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+            OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingBack;
 
             Main.tileBatch.End();
             Main.spriteBatch.End();
@@ -708,7 +757,7 @@ public sealed class FancyLightingMod : Mod
             }
             finally
             {
-                OverrideLightingColor = false;
+                OverrideLightColor = false;
             }
             Main.tileBatch.End();
             Main.spriteBatch.End();
@@ -722,14 +771,14 @@ public sealed class FancyLightingMod : Mod
         }
         else
         {
-            OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+            OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingBack;
             try
             {
                 orig(self);
             }
             finally
             {
-                OverrideLightingColor = false;
+                OverrideLightColor = false;
             }
         }
     }
@@ -750,15 +799,15 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        bool initialLightingOverride = OverrideLightingColor;
-        OverrideLightingColor = false;
+        bool initialLightingOverride = OverrideLightColor;
+        OverrideLightColor = false;
         try
         {
             orig(self);
         }
         finally
         {
-            OverrideLightingColor = initialLightingOverride;
+            OverrideLightColor = initialLightingOverride;
         }
     }
 
@@ -774,14 +823,14 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false);
-        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+        OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingFore;
         try
         {
             orig(self);
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
 
         if (Main.drawToScreen)
@@ -804,14 +853,14 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false);
-        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingFore;
+        OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingFore;
         try
         {
             orig(self);
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
 
         if (Main.drawToScreen)
@@ -849,14 +898,14 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(true);
-        OverrideLightingColor = _smoothLightingInstance.DrawSmoothLightingBack;
+        OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingBack;
         try
         {
             orig(self);
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
 
         if (Main.drawToScreen)
@@ -963,7 +1012,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(bg, true);
-        OverrideLightingColor = true;
+        OverrideLightColor = true;
 
         Main.spriteBatch.End();
         Main.graphics.GraphicsDevice.SetRenderTarget(
@@ -977,7 +1026,7 @@ public sealed class FancyLightingMod : Mod
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
         Main.spriteBatch.End();
 
@@ -1009,7 +1058,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
-        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+        OverrideLightColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         RenderTarget2D wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget);
 
@@ -1025,7 +1074,7 @@ public sealed class FancyLightingMod : Mod
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -1077,7 +1126,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         _smoothLightingInstance.CalculateSmoothLighting(false, true);
-        OverrideLightingColor = LightingConfig.Instance.SmoothLightingEnabled();
+        OverrideLightColor = LightingConfig.Instance.SmoothLightingEnabled();
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -1091,7 +1140,7 @@ public sealed class FancyLightingMod : Mod
         }
         finally
         {
-            OverrideLightingColor = false;
+            OverrideLightColor = false;
         }
         Main.tileBatch.End();
         Main.spriteBatch.End();

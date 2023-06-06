@@ -401,14 +401,14 @@ float4 OverbrightMaxHiDef(float2 coords : TEXCOORD0) : COLOR0
 float4 GammaCorrection(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
 {
     return SurfaceColor(
-        SrgbToLinear(color)
+        GammaToLinear(color)
         * SrgbToLinear(tex2D(TextureSampler, coords))
     );
 }
 
 float4 GammaCorrectionLightOnly(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
 {
-    return color * tex2D(TextureSampler, coords).a;
+    return SurfaceColor(GammaToLinear(color)) * tex2D(TextureSampler, coords).a;
 }
 
 float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0

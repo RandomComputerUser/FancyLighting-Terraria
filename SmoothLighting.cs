@@ -28,7 +28,7 @@ internal sealed class SmoothLighting
     private RenderTarget2D _drawTarget1;
     private RenderTarget2D _drawTarget2;
 
-    private Vector3[] _lights;
+    internal Vector3[] _lights;
     private byte[] _hasLight;
     private Color[] _finalLights;
     private Rgba64[] _finalLightsHiDef;
@@ -743,7 +743,8 @@ internal sealed class SmoothLighting
                     {
                         ref Vector3 whiteLight = ref _whiteLights[++i];
 
-                        if (_hasLight[i] != 0
+                        if (
+                            _hasLight[i] != 0
                             || _hasLight[i - 1] != 0
                             || _hasLight[i + 1] != 0
                             || _hasLight[i - height] != 0
@@ -751,7 +752,8 @@ internal sealed class SmoothLighting
                             || _hasLight[i - height + 1] != 0
                             || _hasLight[i + height] != 0
                             || _hasLight[i + height - 1] != 0
-                            || _hasLight[i + height + 1] != 0)
+                            || _hasLight[i + height + 1] != 0
+                        )
                         {
                             whiteLight.X = 1f;
                             whiteLight.Y = 1f;
