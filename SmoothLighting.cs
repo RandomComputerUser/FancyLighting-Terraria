@@ -144,11 +144,11 @@ internal sealed class SmoothLighting
         _glowingTileColors[TileID.XenonMoss]
             = _glowingTileColors[TileID.XenonMossBrick]
             = _glowingTileColors[TileID.XenonMossBlock]
-            = new(0, 227, 255);
+            = new(0, 186, 255);
         _glowingTileColors[TileID.VioletMoss] // Neon Moss
             = _glowingTileColors[TileID.VioletMossBrick]
             = _glowingTileColors[TileID.VioletMossBlock]
-            = new(152, 6, 255);
+            = new(166, 9, 255);
         // Rainbow Moss and Bricks are handled separately
 
         _glowingTileColors[TileID.MeteoriteBrick] = new(219, 104, 19);
@@ -273,6 +273,12 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _gammaCorrectionBGShader);
     }
 
+    internal void ApplyGammaCorrectionShader() => _gammaCorrectionShader.Apply();
+
+    internal void ApplyGammaCorrectionBGShader() => _gammaCorrectionBGShader.Apply();
+
+    internal void ApplyNoFilterShader() => _noFilterShader.Apply();
+
     private void PrintException()
     {
         LightingConfig.Instance.UseSmoothLighting = false;
@@ -286,11 +292,26 @@ internal sealed class SmoothLighting
         );
     }
 
-    internal void ApplyGammaCorrectionShader() => _gammaCorrectionShader.Apply();
+    private static Color MartianConduitPlatingGlowColor()
+        => new(new Vector3(
+            (float)(0.4 - 0.4 * Math.Cos(
+                (int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1
+                    ? 0.08 * Main.timeForVisualEffects
+                    : 0.0
+                )
+            )
+        ));
 
-    internal void ApplyGammaCorrectionBGShader() => _gammaCorrectionBGShader.Apply();
-
-    internal void ApplyNoFilterShader() => _noFilterShader.Apply();
+    private static Color RainbowGlowColor()
+    {
+        Color color = Main.DiscoColor;
+        Vector3 vector = new(color.R / 255f, color.G / 255f, color.B / 255f);
+        vector.X = MathF.Sqrt(vector.X);
+        vector.Y = MathF.Sqrt(vector.Y);
+        vector.Z = MathF.Sqrt(vector.Z);
+        VectorToColor.Assign(ref color, 1f, vector);
+        return color;
+    }
 
     internal void GetAndBlurLightMap(Vector3[] colors, LightMaskMode[] lightMasks, int width, int height)
     {
@@ -947,20 +968,14 @@ internal sealed class SmoothLighting
         }
         else
         {
-            _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
-                (float)(0.4 - 0.4 * Math.Cos(
-                    (int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1
-                        ? 0.08 * Main.timeForVisualEffects
-                        : 0.0
-                    )
-                )
-            ));
+            _glowingTileColors[TileID.MartianConduitPlating]
+                = MartianConduitPlatingGlowColor();
 
             _glowingTileColors[TileID.RainbowMoss]
                 = _glowingTileColors[TileID.RainbowMossBrick]
                 = _glowingTileColors[TileID.RainbowMossBlock]
                 = _glowingTileColors[TileID.RainbowBrick]
-                = Main.DiscoColor;
+                = RainbowGlowColor();
 
             Parallel.For(
                 clampedStart,
@@ -1142,14 +1157,14 @@ internal sealed class SmoothLighting
         }
         else
         {
-            _glowingTileColors[TileID.MartianConduitPlating] = new Color(new Vector3(
-                (float)(0.4 - 0.4 * Math.Cos(
-                    (int)(0.08 * Main.timeForVisualEffects / 6.283) % 3 == 1
-                        ? 0.08 * Main.timeForVisualEffects
-                        : 0.0
-                    )
-                )
-            ));
+            _glowingTileColors[TileID.MartianConduitPlating]
+                = MartianConduitPlatingGlowColor();
+
+            _glowingTileColors[TileID.RainbowMoss]
+                = _glowingTileColors[TileID.RainbowMossBrick]
+                = _glowingTileColors[TileID.RainbowMossBlock]
+                = _glowingTileColors[TileID.RainbowBrick]
+                = RainbowGlowColor();
 
             Parallel.For(
                 clampedStart,
