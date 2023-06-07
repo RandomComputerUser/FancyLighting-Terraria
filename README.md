@@ -24,7 +24,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added support for more glow effects when using smooth lighting
 - Tweaked some pre-existing glow effects
 - Tweaked simulated normal map strength
-- Increased the default ambient occlusion radius
+- Tweaked the default ambient occlusion settings
 - Increased the maximum thread count to 32, but capped the default value to 16
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Optimized the fancy lighting engine
