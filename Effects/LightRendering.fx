@@ -285,9 +285,9 @@ float4 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionHiDef(float2 coord
     float3 color = QualityNormalsColorOverbrightHiDef(coords, WORLD_TEX_COORDS);
 
     return float4(
-        SurfaceColor(color)
-            * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a)
-            + Dither(coords),
+        SurfaceColor(
+                color * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a)
+            ) + Dither(coords),
         1
     );
 }
