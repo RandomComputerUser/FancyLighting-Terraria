@@ -24,8 +24,10 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     private const float LOW_LIGHT_LEVEL = 0.03f;
 
     protected float _initialBrightnessCutoff;
-    protected float _thresholdMult;
     protected float _logBrightnessCutoff;
+    protected float _logBasicWorkCutoff;
+
+    protected float _thresholdMult;
     protected float _reciprocalLogSlowestDecay;
     protected float _lightLossExitingSolid;
 
@@ -174,16 +176,20 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                     )
                 : baseCutoff;
 
+        float basicWorkCutoff = baseCutoff;
+
         if (LightingConfig.Instance.DoGammaCorrection())
         {
-            _initialBrightnessCutoff *= 1.125f;
-            cutoff *= 1.125f;
+            GammaConverter.SrgbToLinear(ref _initialBrightnessCutoff);
 
-            GammaConverter.GammaToLinear(ref _initialBrightnessCutoff);
             GammaConverter.GammaToLinear(ref cutoff);
+            cutoff *= 1.25f; // Gamma is darker than sRGB for dark colors
+
+            GammaConverter.SrgbToLinear(ref basicWorkCutoff);
         }
 
         _logBrightnessCutoff = MathF.Log(cutoff);
+        _logBasicWorkCutoff = MathF.Log(basicWorkCutoff);
     }
 
     protected void UpdateDecays(LightMap lightMap)
@@ -642,12 +648,10 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         bool doLowerRight
     )
     {
-        const float LOG_BASE_DECAY = -3.218876f; // log(0.04)
-
         int baseWork = Math.Clamp(
             (int)Math.Ceiling(
                 (
-                    LOG_BASE_DECAY
+                    _logBasicWorkCutoff
                     - MathF.Log(Math.Max(color.X, Math.Max(color.Y, color.Z)))
                 ) * _reciprocalLogSlowestDecay
             ) + 1,
