@@ -118,13 +118,15 @@ float2 QualityNormalsGradientBase(float2 coords, float2 worldTexCoords)
     float4 right = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, 0));
     float4 up = tex2D(WorldSampler, worldTexCoords - float2(0, NormalMapResolution.y));
     float4 down = tex2D(WorldSampler, worldTexCoords + float2(0, NormalMapResolution.y));
-    float3 upLeft = tex2D(WorldSampler, worldTexCoords - NormalMapResolution).rgb;
-    float3 downRight = tex2D(WorldSampler, worldTexCoords + NormalMapResolution).rgb;
-    float3 upRight = tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
-    float3 downLeft = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb;
+    float3 positiveDiagonal
+        = tex2D(WorldSampler, worldTexCoords - NormalMapResolution).rgb // up left
+        - tex2D(WorldSampler, worldTexCoords + NormalMapResolution).rgb; // down right
+    float3 negativeDiagonal
+        = tex2D(WorldSampler, worldTexCoords - float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb // down left
+        - tex2D(WorldSampler, worldTexCoords + float2(NormalMapResolution.x, -NormalMapResolution.y)).rgb; // up right
 
-    float3 horizontalColorDiff = 0.5 * ((upLeft - downRight) + (downLeft - upRight)) + (left.rgb - right.rgb);
-    float3 verticalColorDiff = 0.5 * ((upLeft - downRight) - (downLeft - upRight)) + (up.rgb - down.rgb);
+    float3 horizontalColorDiff = 0.5 * (positiveDiagonal + negativeDiagonal) + (left.rgb - right.rgb);
+    float3 verticalColorDiff = 0.5 * (positiveDiagonal - negativeDiagonal) + (up.rgb - down.rgb);
 
     return Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
 }
@@ -204,7 +206,7 @@ float4 QualityNormalsHiDef(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = QualityNormalsColorHiDef(coords, WORLD_TEX_COORDS);
 
-    return float4(color, 1) + float4(Dither(coords), 0);
+    return float4(color + Dither(coords), 1);
 }
 
 float4 QualityNormalsOverbright(float2 coords : TEXCOORD0) : COLOR0
@@ -226,9 +228,8 @@ float4 QualityNormalsOverbrightAmbientOcclusion(float2 coords : TEXCOORD0) : COL
 {
     float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(OverbrightLightAt(coords + gradient), 1)
-        * tex2D(WorldSampler, WORLD_TEX_COORDS)
-        * float4(AmbientOcclusion(coords), 1);
+    return float4(OverbrightLightAt(coords + gradient) * AmbientOcclusion(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 QualityNormalsOverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -272,8 +273,11 @@ float4 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion(float2 coords : T
 {
     float2 gradient = QualityNormalsGradient(coords, WORLD_TEX_COORDS);
 
-    return float4(OverbrightLightAt(coords + gradient), 1)
-        * float4(lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a), 1);
+    return float4(
+        OverbrightLightAt(coords + gradient)
+            * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a),
+        1
+    );
 }
 
 float4 QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -338,9 +342,8 @@ float4 OverbrightHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 OverbrightAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
 {
-    return float4(OverbrightLightAt(coords), 1)
-        * tex2D(WorldSampler, WORLD_TEX_COORDS)
-        * float4(AmbientOcclusion(coords), 1);
+    return float4(OverbrightLightAt(coords) * AmbientOcclusion(coords), 1)
+        * tex2D(WorldSampler, WORLD_TEX_COORDS);
 }
 
 float4 OverbrightAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
@@ -373,8 +376,11 @@ float4 OverbrightLightOnlyOpaqueHiDef(float2 coords : TEXCOORD0) : COLOR0
 
 float4 OverbrightLightOnlyOpaqueAmbientOcclusion(float2 coords : TEXCOORD0) : COLOR0
 {
-    return float4(OverbrightLightAt(coords), 1)
-        * float4(lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a), 1);
+    return float4(
+        OverbrightLightAt(coords)
+            * lerp(1, AmbientOcclusion(coords), tex2D(WorldSampler, WORLD_TEX_COORDS).a),
+        1
+    );
 }
 
 float4 OverbrightLightOnlyOpaqueAmbientOcclusionHiDef(float2 coords : TEXCOORD0) : COLOR0
