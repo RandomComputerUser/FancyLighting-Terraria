@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
@@ -40,11 +39,8 @@ internal sealed class SmoothLighting
     private readonly bool[] _glowingTiles;
     private readonly Color[] _glowingTileColors;
 
-    private FieldInfo field_shimmerShine;
-
     private bool _isDangersenseActive;
     private bool _isSpelunkerActive;
-    private Vector3 _shimmerShine;
 
     private bool _smoothLightingLightMapValid;
     private bool _smoothLightingPositionValid;
@@ -171,10 +167,6 @@ internal sealed class SmoothLighting
         _glowingTileColors[TileID.ShimmerMonolith] = new(213, 196, 252);
         _glowingTileColors[TileID.PixelBox] = new(255, 255, 255);
         _glowingTileColors[TileID.LavaLamp] = new(255, 90, 2);
-
-        field_shimmerShine = typeof(Main).GetField(
-            "shimmerShine", BindingFlags.NonPublic | BindingFlags.Static
-        );
 
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
@@ -498,10 +490,9 @@ internal sealed class SmoothLighting
         float shimmer = Main.shimmerAlpha;
         if (shimmer > 0f)
         {
-            shimmer = 1f - shimmer;
-            color.X *= shimmer + _shimmerShine.X * Main.shimmerAlpha;
-            color.Y *= shimmer + _shimmerShine.Y * Main.shimmerAlpha;
-            color.Z *= shimmer + _shimmerShine.Z * Main.shimmerAlpha;
+            float tmp = 1f - shimmer;
+            color.X *= tmp + 1.2f * shimmer;
+            color.Z *= tmp + 1.6f * shimmer;
         }
     }
 
@@ -814,10 +805,6 @@ internal sealed class SmoothLighting
         LightingEngine lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
         Rectangle lightMapTileArea = (Rectangle)_modInstance.field_workingProcessedArea.GetValue(lightEngine);
 
-        _isDangersenseActive = Main.LocalPlayer.dangerSense;
-        _isSpelunkerActive = Main.LocalPlayer.findTreasure;
-        _shimmerShine = (Vector3)field_shimmerShine.GetValue(null);
-
         float low = 0.49f / 255f;
         if (doGammaCorrection)
         {
@@ -1034,6 +1021,12 @@ internal sealed class SmoothLighting
         if (offset < 0 || offset >= height)
         {
             return;
+        }
+
+        if (!background)
+        {
+            _isDangersenseActive = Main.LocalPlayer.dangerSense;
+            _isSpelunkerActive = Main.LocalPlayer.findTreasure;
         }
 
         if (LightingConfig.Instance.HiDefFeaturesEnabled())
