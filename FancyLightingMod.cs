@@ -74,10 +74,7 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            if (
-                value && _smoothLightingInstance._whiteLights is null
-                || !value && _smoothLightingInstance._tmpLights is null
-            )
+            if (value && _smoothLightingInstance._whiteLights is null)
             {
                 return;
             }
@@ -118,10 +115,7 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            if (
-                value && _smoothLightingInstance._lights is null
-                || !value && _smoothLightingInstance._tmpLights is null
-            )
+            if (value && _smoothLightingInstance._lights is null)
             {
                 return;
             }
