@@ -20,8 +20,9 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Improved ambient occlusion when using overbright rendering
 - Improved render only light when paired with overbright rendering
 - Changed sky color profile 1
-- Added support for more glowing effects
-- Tweaked some pre-existing glowing effects
+- Added support for tile shine effects
+- Added support for more glow effects
+- Tweaked some pre-existing glow effects
 - Tweaked simulated normal map strength
 - Increased the default ambient occlusion radius
 - Increased the maximum thread count to 32, but capped the default value to 16

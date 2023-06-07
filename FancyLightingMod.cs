@@ -304,6 +304,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array += _GetColor4Slice_int_int_refVector3Array;
         Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray += _GetColor9Slice_int_int_refColorArray;
         Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray += _GetColor4Slice_int_int_refColorArray;
+        Terraria.GameContent.Drawing.On_TileDrawing.ShouldTileShine += _ShouldTileShine;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
         Terraria.On_Main.DrawSurfaceBG += _DrawSurfaceBG;
         Terraria.On_Main.RenderWater += _RenderWater;
@@ -436,6 +437,13 @@ public sealed class FancyLightingMod : Mod
             slices[i].PackedValue = 0xFFFFFFFF; // White
         }
     }
+
+    private bool _ShouldTileShine(
+        Terraria.GameContent.Drawing.On_TileDrawing.orig_ShouldTileShine orig,
+        ushort type,
+        short frameX
+    )
+        => !_overrideLightColor && orig(type, frameX);
 
     // Tile entities
     private void _PostDrawTiles(

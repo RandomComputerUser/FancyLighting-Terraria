@@ -16,9 +16,9 @@ It is recommended to test performance by pressing F7 while in-game to help selec
 
 Some features may significantly lower frame rates at resolutions above 1920x1200 on machines with less powerful GPUs. If you are experiencing performance issues and are running the game at a resolution above 1920x1200, try lowering the resolution.
 
-Because smooth lighting overrides the built-in tile lighting, tile glow masks and other glowing effects must be re-implemented. Most, but not all, glowing effects and tiles from vanilla are supported. Modded glowing effects and tiles may not work. Tile glow masks from resource packs are not supported. Glowing effects and tiles may look significantly different from vanilla.
+Because smooth lighting overrides the built-in tile lighting, tile glow masks and other glow effects must be re-implemented. Most glow effects and tile glow masks from vanilla are supported, but those from resource packs and other mods are not supported. Glow effects may look significantly different from vanilla.
 
-Supported Glowing Effects and Tiles:
+Supported Glow Effects and Glowing Tiles:
 - Aether Monolith
 - Ash Grass
 - Crystal Shard and Gelatin Crystal
@@ -35,6 +35,8 @@ Supported Glowing Effects and Tiles:
 - Shimmer
 - Spelunker Potion
 - Void Monolith
+
+Additionally, some tiles shine different colors. Smooth lighting re-implements all tile shine effects from vanilla.
 
 Glowing tile entities should work correctly because smooth lighting is not applied to tile entities except for overbright lighting. This mod does not alter the lighting of NPCs and projectiles.
 

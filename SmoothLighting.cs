@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
@@ -39,8 +40,11 @@ internal sealed class SmoothLighting
     private readonly bool[] _glowingTiles;
     private readonly Color[] _glowingTileColors;
 
+    private FieldInfo field_shimmerShine;
+
     private bool _isDangersenseActive;
     private bool _isSpelunkerActive;
+    private Vector3 _shimmerShine;
 
     private bool _smoothLightingLightMapValid;
     private bool _smoothLightingPositionValid;
@@ -165,6 +169,10 @@ internal sealed class SmoothLighting
         _glowingTileColors[TileID.ShimmerMonolith] = new(213, 196, 252);
         _glowingTileColors[TileID.PixelBox] = new(255, 255, 255);
         _glowingTileColors[TileID.LavaLamp] = new(255, 90, 2);
+
+        field_shimmerShine = typeof(Main).GetField(
+            "shimmerShine", BindingFlags.NonPublic | BindingFlags.Static
+        );
 
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
@@ -349,6 +357,150 @@ internal sealed class SmoothLighting
         vector.Z = MathF.Sqrt(vector.Z);
         VectorToColor.Assign(ref color, 1f, vector);
         return color;
+    }
+
+    private static bool ShouldTileGlow(ushort type, short frameX)
+    {
+        // We could use the method from vanilla, but that's
+        //   private and using reflection to get a delegate
+        //   might reduce performance
+
+        if (
+            Main.shimmerAlpha > 0f && Main.tileSolid[type]
+            || type == TileID.Stalactite
+        )
+        {
+            return true;
+        }
+
+        if (!Main.tileShine2[type])
+        {
+            return false;
+        }
+
+        switch (type)
+        {
+        case TileID.Containers:
+        case TileID.FakeContainers:
+            if (frameX >= 36)
+            {
+                return frameX < 178;
+            }
+            return false;
+
+        case TileID.Containers2:
+        case TileID.FakeContainers2:
+            if (frameX >= 144)
+            {
+                return frameX < 178;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    private void TileShine(ref Vector3 color, Tile tile)
+    {
+        // Method from vanilla limits brightness to 1f,
+        //   which we don't want
+
+        ushort type = tile.TileType;
+        short frameX = tile.TileFrameX;
+
+        if (!ShouldTileGlow(type, frameX))
+        {
+            return;
+        }
+
+        float brightness;
+
+        switch (type)
+        {
+        case TileID.Ebonstone:
+            color.X *= 0.95f;
+            color.Y *= 0.85f;
+            color.Z *= 1.1f;
+            break;
+
+        case TileID.Pearlstone:
+            color.X *= 1.1f;
+            color.Z *= 1.2f;
+            break;
+
+        case TileID.SnowBlock:
+        case TileID.IceBlock:
+            color.X *= 1.1f;
+            color.Y *= 1.12f;
+            color.Z *= 1.15f;
+            break;
+
+        case TileID.CorruptIce:
+            color.X *= 1.05f;
+            color.Y *= 1.1f;
+            color.Z *= 1.15f;
+            break;
+
+        case TileID.HallowedIce:
+            color.X *= 1.1f;
+            color.Y *= 1.1f;
+            color.Z *= 1.2f;
+            break;
+
+        case TileID.ExposedGems:
+            color.X *= 1.5f;
+            color.Y *= 1.5f;
+            color.Z *= 1.5f;
+            break;
+
+        case TileID.SmallPiles:
+        case TileID.LargePiles:
+            color.X *= 1.3f;
+            color.Y *= 1.3f;
+            color.Z *= 1.3f;
+            break;
+
+        case TileID.Crimtane:
+            brightness = 0.3f + Main.mouseTextColor * (1f / 300f);
+            color.X *= 1.3f * brightness;
+            return;
+
+        case TileID.Chlorophyte:
+            brightness = 0.3f + Main.mouseTextColor * (1f / 300f);
+            color.Y *= 1.5f * brightness;
+            color.Z *= 1.1f * brightness;
+            break;
+
+        case TileID.AmethystGemspark:
+        case TileID.TopazGemspark:
+        case TileID.SapphireGemspark:
+        case TileID.EmeraldGemspark:
+        case TileID.RubyGemspark:
+        case TileID.DiamondGemspark:
+        case TileID.AmberGemspark:
+            color.X += 100f / 255f;
+            color.Y += 100f / 255f;
+            color.Z += 100f / 255f;
+            break;
+
+        default:
+            if (Main.tileShine2[type])
+            {
+                color.X *= 1.6f;
+                color.Y *= 1.6f;
+                color.Z *= 1.6f;
+            }
+            break;
+        }
+
+        float shimmer = Main.shimmerAlpha;
+        if (shimmer > 0f)
+        {
+            shimmer = 1f - shimmer;
+            color.X *= shimmer + _shimmerShine.X * Main.shimmerAlpha;
+            color.Y *= shimmer + _shimmerShine.Y * Main.shimmerAlpha;
+            color.Z *= shimmer + _shimmerShine.Z * Main.shimmerAlpha;
+        }
     }
 
     internal void GetAndBlurLightMap(Vector3[] colors, LightMaskMode[] lightMasks, int width, int height)
@@ -662,6 +814,7 @@ internal sealed class SmoothLighting
 
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
         _isSpelunkerActive = Main.LocalPlayer.findTreasure;
+        _shimmerShine = (Vector3)field_shimmerShine.GetValue(null);
 
         float low = 0.49f / 255f;
         if (doGammaCorrection)
@@ -933,24 +1086,13 @@ internal sealed class SmoothLighting
 
         int caughtException = 0;
 
-        const int overbrightWhite = 16384;
-        const float overbrightMult = overbrightWhite / 65535f;
+        const int OVERBRIGHT_WHITE = 16384;
+        const float OVERBRIGHT_MULT = OVERBRIGHT_WHITE / 65535f;
 
-        Rgba64 whiteLight = new(Vector4.One);
         float brightness = Lighting.GlobalBrightness;
         float glowMult = brightness / 255f;
-        float fullBrightness = brightness;
-        float multFromOverbright;
-        if (LightingConfig.Instance.DrawOverbright())
-        {
-            VectorToColor.Assign(ref whiteLight, brightness, new Vector3(overbrightMult));
-            fullBrightness *= overbrightMult;
-            multFromOverbright = overbrightMult;
-        }
-        else
-        {
-            multFromOverbright = 1f;
-        }
+        float multFromOverbright
+            = LightingConfig.Instance.DrawOverbright() ? OVERBRIGHT_MULT : 1f;
 
         if (background)
         {
@@ -966,23 +1108,19 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
+
                             Tile tile = Main.tile[x, y];
 
-                            // Illuminant Paint
-                            if (tile.IsWallFullbright)
+                            // Illuminant Paint and Shimmer
+                            if (tile.IsWallFullbright || tile.LiquidType is LiquidID.Shimmer)
                             {
-                                _finalLightsHiDef[i++] = whiteLight;
-                                continue;
+                                lightColor.X = Math.Max(lightColor.X, brightness);
+                                lightColor.Y = Math.Max(lightColor.Y, brightness);
+                                lightColor.Z = Math.Max(lightColor.Z, brightness);
                             }
 
-                            // Shimmer
-                            if (tile.LiquidType == LiquidID.Shimmer)
-                            {
-                                _finalLightsHiDef[i++] = whiteLight;
-                                continue;
-                            }
-
-                            VectorToColor.Assign(ref _finalLightsHiDef[i], fullBrightness, _lights[i]);
+                            VectorToColor.Assign(ref _finalLightsHiDef[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -1029,26 +1167,19 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
-                            Tile tile = Main.tile[x, y];
-
-                            // Illuminant Paint
-                            if (tile.IsTileFullbright)
-                            {
-                                _finalLightsHiDef[i++] = whiteLight;
-                                continue;
-                            }
-
-                            // Shimmer
-                            if (tile.LiquidType == LiquidID.Shimmer)
-                            {
-                                _finalLightsHiDef[i++] = whiteLight;
-                                continue;
-                            }
-
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
+                            Tile tile = Main.tile[x, y];
+
+                            // Illuminant Paint and Shimmer
+                            if (tile.IsTileFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            {
+                                lightColor.X = Math.Max(lightColor.X, brightness);
+                                lightColor.Y = Math.Max(lightColor.Y, brightness);
+                                lightColor.Z = Math.Max(lightColor.Z, brightness);
+                            }
                             // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
-                            if (_glowingTiles[tile.TileType])
+                            else if (_glowingTiles[tile.TileType])
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
@@ -1056,7 +1187,6 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
                                 lightColor.Z = Math.Max(lightColor.Z, glowMult * glow.B);
                             }
-
                             // Dangersense Potion
                             else if (
                                 _isDangersenseActive
@@ -1067,13 +1197,14 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 50f / 255f);
                                 lightColor.Z = Math.Max(lightColor.Z, 50f / 255f);
                             }
-
                             // Spelunker Potion
                             else if (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
+
+                            TileShine(ref lightColor, tile);
 
                             VectorToColor.Assign(ref _finalLightsHiDef[i], multFromOverbright, lightColor);
                         }
@@ -1121,25 +1252,13 @@ internal sealed class SmoothLighting
 
         int caughtException = 0;
 
-        const int overbrightWhite = 128;
-        const float overbrightMult = overbrightWhite / 255f;
+        const int OVERBRIGHT_WHITE = 128;
+        const float OVERBRIGHT_MULT = OVERBRIGHT_WHITE / 255f;
 
-        Color whiteLight;
         float brightness = Lighting.GlobalBrightness;
         float glowMult = brightness / 255f;
-        float fullBrightness = brightness;
-        float multFromOverbright;
-        if (LightingConfig.Instance.DrawOverbright())
-        {
-            whiteLight = new Color(new Vector3(overbrightMult * brightness));
-            fullBrightness *= overbrightMult;
-            multFromOverbright = overbrightMult;
-        }
-        else
-        {
-            whiteLight = Color.White;
-            multFromOverbright = 1f;
-        }
+        float multFromOverbright
+            = LightingConfig.Instance.DrawOverbright() ? OVERBRIGHT_MULT : 1f;
 
         if (background)
         {
@@ -1155,23 +1274,19 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
+                            Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
+
                             Tile tile = Main.tile[x, y];
 
-                            // Illuminant Paint
-                            if (tile.IsWallFullbright)
+                            // Illuminant Paint and Shimmer
+                            if (tile.IsWallFullbright || tile.LiquidType is LiquidID.Shimmer)
                             {
-                                _finalLights[i++] = whiteLight;
-                                continue;
+                                lightColor.X = Math.Max(lightColor.X, brightness);
+                                lightColor.Y = Math.Max(lightColor.Y, brightness);
+                                lightColor.Z = Math.Max(lightColor.Z, brightness);
                             }
 
-                            // Shimmer
-                            if (tile.LiquidType == LiquidID.Shimmer)
-                            {
-                                _finalLights[i++] = whiteLight;
-                                continue;
-                            }
-
-                            VectorToColor.Assign(ref _finalLights[i], fullBrightness, _lights[i]);
+                            VectorToColor.Assign(ref _finalLights[i], multFromOverbright, lightColor);
                         }
                         catch (IndexOutOfRangeException)
                         {
@@ -1218,26 +1333,19 @@ internal sealed class SmoothLighting
                     {
                         try
                         {
-                            Tile tile = Main.tile[x, y];
-
-                            // Illuminant Paint
-                            if (tile.IsTileFullbright)
-                            {
-                                _finalLights[i++] = whiteLight;
-                                continue;
-                            }
-
-                            // Shimmer
-                            if (tile.LiquidType == LiquidID.Shimmer)
-                            {
-                                _finalLights[i++] = whiteLight;
-                                continue;
-                            }
-
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
 
-                            // Glowing Tiles
-                            if (_glowingTiles[tile.TileType])
+                            Tile tile = Main.tile[x, y];
+
+                            // Illuminant Paint and Shimmer
+                            if (tile.IsTileFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            {
+                                lightColor.X = Math.Max(lightColor.X, brightness);
+                                lightColor.Y = Math.Max(lightColor.Y, brightness);
+                                lightColor.Z = Math.Max(lightColor.Z, brightness);
+                            }
+                            // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
+                            else if (_glowingTiles[tile.TileType])
                             {
                                 ref Color glow = ref _glowingTileColors[tile.TileType];
 
@@ -1245,7 +1353,6 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
                                 lightColor.Z = Math.Max(lightColor.Z, glowMult * glow.B);
                             }
-
                             // Dangersense Potion
                             else if (
                                 _isDangersenseActive
@@ -1256,13 +1363,14 @@ internal sealed class SmoothLighting
                                 lightColor.Y = Math.Max(lightColor.Y, 50f / 255f);
                                 lightColor.Z = Math.Max(lightColor.Z, 50f / 255f);
                             }
-
                             // Spelunker Potion
                             else if (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
                             }
+
+                            TileShine(ref lightColor, tile);
 
                             VectorToColor.Assign(ref _finalLights[i], multFromOverbright, lightColor);
                         }
