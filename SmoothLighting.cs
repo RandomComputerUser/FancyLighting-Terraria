@@ -1699,14 +1699,9 @@ internal sealed class SmoothLighting
             {
                 normalMapRadius *= 1.4f;
             }
-            if (background)
-            {
-                normalMapRadius *= 0.75f;
-            }
 
             float normalMapResolution = fineNormalMaps ? 1f : 2f;
-            float hiDefNormalMapStrength = background ? 0.44f : 0.9f;
-            float hiDefNormalMapExp = background ? 1 / 3f : 1 / 2f;
+            float hiDefNormalMapStrength = background ? 0.75f : 0.9f;
             if (doGamma)
             {
                 hiDefNormalMapStrength *= 1.4f;
@@ -1722,8 +1717,7 @@ internal sealed class SmoothLighting
                 .SetParameter("WorldCoordMult", new Vector2(
                     (float)target2.Width / worldTarget.Width,
                     (float)target2.Height / worldTarget.Height))
-                .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength)
-                .SetParameter("HiDefNormalMapExp", hiDefNormalMapExp);
+                .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
             Main.graphics.GraphicsDevice.Textures[1] = worldTarget;
             Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
             if (noDithering)

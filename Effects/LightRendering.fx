@@ -8,7 +8,6 @@ sampler AmbientOcclusionSampler : register(s3);
 float2 NormalMapResolution;
 float2 NormalMapRadius;
 float HiDefNormalMapStrength;
-float HiDefNormalMapExp;
 float2 WorldCoordMult;
 float2 DitherCoordMult;
 float2 AmbientOcclusionCoordMult;
@@ -151,7 +150,7 @@ float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = tex2D(LightSampler, coords);
     float3 colorDiff = tex2D(LightSampler, coords + gradient).rgb - originalColor;
 
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * pow(abs(colorDiff), HiDefNormalMapExp));
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
@@ -168,7 +167,7 @@ float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = OverbrightLightAtHiDef(coords);
     float3 colorDiff = OverbrightLightAtHiDef(coords + gradient) - originalColor;
 
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * pow(abs(colorDiff), HiDefNormalMapExp));
+    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
     float multiplier = 1 - dot(color, 0.29);
