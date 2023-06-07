@@ -97,6 +97,8 @@ internal sealed class SmoothLighting
         _smoothLightingForeComplete = false;
         _smoothLightingBackComplete = false;
 
+        _tmpLights = null;
+
         _glowingTiles = new bool[ushort.MaxValue + 1];
         foreach (ushort id in new ushort[] {
             TileID.Crystals, // Crystal Shards and Gelatin Crystal

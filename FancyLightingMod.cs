@@ -74,6 +74,14 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
+            if (
+                value && _smoothLightingInstance._whiteLights is null
+                || !value && _smoothLightingInstance._tmpLights is null
+            )
+            {
+                return;
+            }
+
             LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue(lightingEngine);
 
             if (value)
@@ -85,6 +93,11 @@ public sealed class FancyLightingMod : Mod
                 lightMapInstance,
                 value ? _smoothLightingInstance._whiteLights : _smoothLightingInstance._tmpLights
             );
+
+            if (!value)
+            {
+                _smoothLightingInstance._tmpLights = null;
+            }
 
             _overrideLightColor = value;
         }
@@ -101,6 +114,14 @@ public sealed class FancyLightingMod : Mod
             }
 
             if (!LightingConfig.Instance.DoGammaCorrection())
+            {
+                return;
+            }
+
+            if (
+                value && _smoothLightingInstance._lights is null
+                || !value && _smoothLightingInstance._tmpLights is null
+            )
             {
                 return;
             }
@@ -122,6 +143,11 @@ public sealed class FancyLightingMod : Mod
                 lightMapInstance,
                 value ? _smoothLightingInstance._lights : _smoothLightingInstance._tmpLights
             );
+
+            if (!value)
+            {
+                _smoothLightingInstance._tmpLights = null;
+            }
 
             _overrideLightColorGamma = value;
         }
@@ -571,9 +597,9 @@ public sealed class FancyLightingMod : Mod
         finally
         {
             OverrideLightColorGamma = false;
-        }
 
-        Main.spriteBatch.End();
+            Main.spriteBatch.End();
+        }
     }
 
     private void _DrawSurfaceBG(
