@@ -587,7 +587,6 @@ technique Technique1
         PixelShader = compile ps_3_0 GammaCorrectionLightOnly();
     }
 
-
     pass GammaCorrectionBG
     {
         PixelShader = compile ps_3_0 GammaCorrectionBG();

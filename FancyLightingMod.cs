@@ -158,13 +158,12 @@ public sealed class FancyLightingMod : Mod
         _overrideLightColorGamma = false;
         _inCameraMode = false;
 
-        BlendState blend = new()
+        MultiplyBlend = new()
         {
             ColorBlendFunction = BlendFunction.Add,
             ColorSourceBlend = Blend.Zero,
             ColorDestinationBlend = Blend.SourceColor
         };
-        MultiplyBlend = blend;
 
         _smoothLightingInstance = new SmoothLighting(this);
         _ambientOcclusionInstance = new AmbientOcclusion();
@@ -278,30 +277,32 @@ public sealed class FancyLightingMod : Mod
     private void SetFancyLightingEngineInstance()
     {
         LightingEngineMode mode = LightingConfig.Instance?.FancyLightingEngineMode ?? LightingEngineMode.One;
-
-        if (mode is LightingEngineMode.Four)
+        switch (mode)
         {
-            if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
-            {
-                _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new UltraFancyLightingEngine();
-            }
-        }
-        else if (mode is LightingEngineMode.Two)
-        {
-            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
-            {
-                _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
-            }
-        }
-        else
-        {
+        default:
+        case LightingEngineMode.One:
             if (_fancyLightingEngineInstance is not FancyLightingEngine)
             {
                 _fancyLightingEngineInstance?.Unload();
                 _fancyLightingEngineInstance = new FancyLightingEngine();
             }
+            break;
+
+        case LightingEngineMode.Two:
+            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
+            {
+                _fancyLightingEngineInstance?.Unload();
+                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
+            }
+            break;
+
+        case LightingEngineMode.Four:
+            if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
+            {
+                _fancyLightingEngineInstance?.Unload();
+                _fancyLightingEngineInstance = new UltraFancyLightingEngine();
+            }
+            break;
         }
     }
 
