@@ -23,7 +23,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added support for tile shine effects when using smooth lighting
 - Added support for more glow effects when using smooth lighting
 - Tweaked some pre-existing glow effects
-- Tweaked simulated normal map strength
+- Tweaked and slightly optimized simulated normal maps
 - Tweaked the default ambient occlusion settings
 - Increased the maximum thread count to 32, but capped the default value to 16
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled

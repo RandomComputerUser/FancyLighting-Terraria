@@ -102,8 +102,8 @@ float2 Gradient(
     float2 gradient = float2(horizontal, vertical);
 
     gradient *= float2(
-        (leftAlpha * rightAlpha >= 1) * (1 / (2.0 * 3)),
-        (upAlpha * downAlpha >= 1) * (1 / (2.0 * 3))
+        (leftAlpha * rightAlpha) * (1 / (2.0 * 3)),
+        (upAlpha * downAlpha) * (1 / (2.0 * 3))
     );
 
     return gradient;
@@ -135,9 +135,9 @@ float2 QualityNormalsGradient(float2 coords, float2 worldTexCoords)
     float2 gradient = QualityNormalsGradientBase(coords, worldTexCoords);
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
-    float multiplier = 1 - dot(color, 1.0 / 4);
+    float multiplier = 25.0 - dot(color, 25.0 / 3.2);
 
-    gradient = sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient)));
+    gradient = sign(gradient) * (1.0 - rsqrt(abs(multiplier * gradient) + 1.0));
 
     return gradient * NormalMapRadius;
 }
@@ -150,10 +150,10 @@ float3 QualityNormalsColorHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = tex2D(LightSampler, coords);
     float3 colorDiff = tex2D(LightSampler, coords + gradient).rgb - originalColor;
 
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
+    colorDiff = sign(colorDiff) * 0.6 * (1.0 - rsqrt(abs(HiDefNormalMapStrength * colorDiff) + 1.0));
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
-    float multiplier = 1 - dot(color, 0.29);
+    float multiplier = 1 - dot(color, 1.0 / 3.2);
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff;
@@ -167,10 +167,10 @@ float3 QualityNormalsColorOverbrightHiDef(float2 coords, float2 worldTexCoords)
     float3 originalColor = OverbrightLightAtHiDef(coords);
     float3 colorDiff = OverbrightLightAtHiDef(coords + gradient) - originalColor;
 
-    colorDiff = sign(colorDiff) * min(0.4, HiDefNormalMapStrength * sqrt(abs(colorDiff)));
+    colorDiff = sign(colorDiff) * 0.6 * (1.0 - rsqrt(abs(HiDefNormalMapStrength * colorDiff) + 1.0));
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
-    float multiplier = 1 - dot(color, 0.29);
+    float multiplier = 1 - dot(color, 1.0 / 3.2);
     colorDiff *= multiplier * sqrt(originalColor);
 
     return originalColor + colorDiff;
@@ -189,9 +189,11 @@ float2 NormalsGradient(float2 coords, float2 worldTexCoords)
     float2 gradient = Gradient(horizontalColorDiff, verticalColorDiff, left.a, right.a, up.a, down.a);
 
     float3 color = tex2D(WorldSampler, worldTexCoords).rgb;
-    float multiplier = 1 - dot(color, 1.0 / 4);
+    float multiplier = 25.0 - dot(color, 25.0 / 3.2);
 
-    return sign(gradient) * min(0.4, multiplier * sqrt(abs(gradient))) * NormalMapRadius;
+    gradient = sign(gradient) * (1.0 - rsqrt(abs(multiplier * gradient) + 1.0));
+
+    return gradient * NormalMapRadius;
 }
 
 float4 QualityNormals(float2 coords : TEXCOORD0) : COLOR0

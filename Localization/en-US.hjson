@@ -84,7 +84,7 @@ Mods: {
 				}
 
 				QualityNormalMaps: {
-					Label: Use Enhanced Simulated Normal Maps
+					Label: Use Enhanced Normal Maps
 					Tooltip:
 						'''
 						Toggles between regular and enhanced simulated normal map shaders
