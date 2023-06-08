@@ -1454,8 +1454,13 @@ internal sealed class SmoothLighting
         );
 
         Main.graphics.GraphicsDevice.SetRenderTarget(target);
-        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.Opaque,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
+        );
         Main.spriteBatch.Draw(
             tempTarget,
             Vector2.Zero,
@@ -1508,8 +1513,11 @@ internal sealed class SmoothLighting
             Main.graphics.GraphicsDevice.Clear(Color.White);
 
             Main.spriteBatch.Begin(
-                SpriteSortMode.Immediate,
-                FancyLightingMod.MultiplyBlend
+                SpriteSortMode.Deferred,
+                FancyLightingMod.MultiplyBlend,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
             );
 
             Main.spriteBatch.Draw(
@@ -1527,8 +1535,13 @@ internal sealed class SmoothLighting
         }
 
         Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.Opaque,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
+        );
         Main.spriteBatch.Draw(
             screenTarget,
             Vector2.Zero,
@@ -1538,7 +1551,13 @@ internal sealed class SmoothLighting
 
         Main.graphics.GraphicsDevice.SetRenderTarget(screenTarget);
         Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
+        );
         Main.spriteBatch.Draw(
             _cameraModeTarget1,
             Vector2.Zero,
@@ -1579,12 +1598,16 @@ internal sealed class SmoothLighting
         bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
         bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
+        bool doMultiply = !(simulateNormalMaps || doOverbright);
 
-        Main.graphics.GraphicsDevice.SetRenderTarget(simulateNormalMaps || doOverbright ? target2 : target1);
-        Main.graphics.GraphicsDevice.Clear(Color.White);
+        Main.graphics.GraphicsDevice.SetRenderTarget(doMultiply ? target1 : target2);
+        if (doMultiply)
+        {
+            Main.graphics.GraphicsDevice.Clear(Color.White);
+        }
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
-            FancyLightingMod.MultiplyBlend,
+            doMultiply ? FancyLightingMod.MultiplyBlend : BlendState.Opaque,
             SamplerState.LinearClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
@@ -1643,15 +1666,21 @@ internal sealed class SmoothLighting
             0f
         );
 
-        if (simulateNormalMaps || doOverbright)
+        if (!doMultiply)
         {
             Main.spriteBatch.End();
 
             Main.graphics.GraphicsDevice.SetRenderTarget(target1);
-            Main.graphics.GraphicsDevice.Clear(Color.White);
+            if (!doOverbright)
+            {
+                Main.graphics.GraphicsDevice.Clear(Color.White);
+            }
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
-                FancyLightingMod.MultiplyBlend
+                doOverbright ? BlendState.Opaque : FancyLightingMod.MultiplyBlend,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
             );
 
             Shader shader
@@ -1754,7 +1783,7 @@ internal sealed class SmoothLighting
             _noFilterShader.Apply();
         }
 
-        if (!doOverbright && !lightOnly)
+        if (!(doOverbright || lightOnly))
         {
             Main.spriteBatch.Draw(
                 worldTarget,

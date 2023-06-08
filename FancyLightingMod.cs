@@ -524,8 +524,13 @@ public sealed class FancyLightingMod : Mod
         TextureUtil.MakeSize(ref _screenTarget2, target.Width, target.Height);
 
         Main.graphics.GraphicsDevice.SetRenderTarget(_screenTarget1);
-        Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.Opaque,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
+        );
         Main.spriteBatch.Draw(target, Vector2.Zero, Color.White);
         Main.spriteBatch.End();
 
@@ -538,7 +543,13 @@ public sealed class FancyLightingMod : Mod
 
         Main.graphics.GraphicsDevice.SetRenderTarget(target);
         Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-        Main.spriteBatch.Begin();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            SamplerState.LinearClamp,
+            DepthStencilState.None,
+            RasterizerState.CullNone
+        );
         Main.spriteBatch.Draw(_screenTarget1, Vector2.Zero, Color.White);
         Main.spriteBatch.Draw(_screenTarget2, Vector2.Zero, Color.White);
         Main.spriteBatch.End();

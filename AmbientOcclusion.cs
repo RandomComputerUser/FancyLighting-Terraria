@@ -103,8 +103,13 @@ internal sealed class AmbientOcclusion
         if (doDraw)
         {
             Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.wallTarget);
-            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-            Main.spriteBatch.Begin();
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.Opaque,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
+            );
             Main.spriteBatch.Draw(
                 useTarget2 ? _drawTarget1 : _drawTarget2,
                 Vector2.Zero,
@@ -189,8 +194,13 @@ internal sealed class AmbientOcclusion
         if (doDraw)
         {
             Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget1);
-            Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-            Main.spriteBatch.Begin();
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.Opaque,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
+            );
             Main.spriteBatch.Draw(
                 screenTarget,
                 Vector2.Zero,
@@ -200,7 +210,13 @@ internal sealed class AmbientOcclusion
 
             Main.graphics.GraphicsDevice.SetRenderTarget(screenTarget);
             Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-            Main.spriteBatch.Begin();
+            Main.spriteBatch.Begin(
+                SpriteSortMode.Deferred,
+                BlendState.AlphaBlend,
+                SamplerState.LinearClamp,
+                DepthStencilState.None,
+                RasterizerState.CullNone
+            );
             Main.spriteBatch.Draw(
                 _cameraModeTarget1,
                 Vector2.Zero,
@@ -243,7 +259,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.Opaque,
-                SamplerState.PointClamp,
+                SamplerState.LinearClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -276,7 +292,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.Opaque,
-                SamplerState.PointClamp,
+                SamplerState.LinearClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -322,7 +338,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 FancyLightingMod.MultiplyBlend,
-                SamplerState.PointClamp,
+                SamplerState.LinearClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -404,9 +420,9 @@ internal sealed class AmbientOcclusion
         }
 
         Main.spriteBatch.Begin(
-            SpriteSortMode.Immediate,
+            SpriteSortMode.Deferred,
             FancyLightingMod.MultiplyBlend,
-            SamplerState.PointClamp,
+            SamplerState.LinearClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
