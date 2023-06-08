@@ -327,6 +327,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.GameContent.Drawing.On_TileDrawing.ShouldTileShine += _ShouldTileShine;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
         Terraria.On_Main.DrawSurfaceBG += _DrawSurfaceBG;
+        Terraria.On_WaterfallManager.Draw += _Draw;
         Terraria.On_Main.RenderWater += _RenderWater;
         Terraria.On_Main.DrawWaters += _DrawWaters;
         Terraria.On_Main.RenderBackground += _RenderBackground;
@@ -644,14 +645,75 @@ public sealed class FancyLightingMod : Mod
         orig(self);
     }
 
+    // Waterfalls
+    private void _Draw(
+        Terraria.On_WaterfallManager.orig_Draw orig,
+        Terraria.WaterfallManager self,
+        SpriteBatch spriteBatch
+    )
+    {
+        if (
+            LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
+            && !LightingConfig.Instance.DoGammaCorrection()
+        )
+        {
+            return;
+        }
+
+        if (!LightingConfig.Instance.DoGammaCorrection())
+        {
+            orig(self, spriteBatch);
+            return;
+        }
+
+        spriteBatch.End();
+
+        if (_inCameraMode)
+        {
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                Main.Rasterizer
+            );
+        }
+        else
+        {
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.None,
+                Main.Rasterizer,
+                null,
+                Main.Transform
+            );
+        }
+
+        try
+        {
+            OverrideLightColorGamma = true;
+
+            _smoothLightingInstance.ApplyGammaCorrectionShader();
+
+            orig(self, spriteBatch);
+        }
+        finally
+        {
+            OverrideLightColorGamma = false;
+        }
+    }
+
     private void _RenderWater(
         Terraria.On_Main.orig_RenderWater orig,
         Terraria.Main self
     )
     {
         if (
-            LightingConfig.Instance.RenderOnlyLight
-            && LightingConfig.Instance.SmoothLightingEnabled()
+            LightingConfig.Instance.SmoothLightingEnabled()
+            && LightingConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
