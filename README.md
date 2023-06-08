@@ -17,14 +17,14 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added an option to change the internal resolution of the fancy lighting engine
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Added an option to use enhanced light map blurring
-- Improved ambient occlusion when using overbright rendering
+- Tweaked and slightly optimized simulated normal maps
+- Improved ambient occlusion
 - Improved render only light when paired with overbright rendering
 - Changed sky color profile 1
 - Added support for tile shine effects when using smooth lighting
 - Added support for more glow effects when using smooth lighting
 - Tweaked some pre-existing glow effects
-- Tweaked and slightly optimized simulated normal maps
-- Tweaked the default ambient occlusion settings
+- Tweaked some default ambient occlusion settings
 - Increased the maximum thread count to 32, but capped the default value to 16
 - Cave backgrounds and water now always use custom rendering when smooth lighting is enabled
 - Optimized the fancy lighting engine

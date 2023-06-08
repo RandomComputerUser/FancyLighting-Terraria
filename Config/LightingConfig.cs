@@ -22,7 +22,7 @@ public sealed class LightingConfig : ModConfig
     internal bool UseNormalMaps() => NormalMapsStrength != 0;
     internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
     internal bool AmbientOcclusionEnabled() => UseAmbientOcclusion && Lighting.UsingNewLighting;
-    internal float AmbientOcclusionAlpha() => 1f - AmbientOcclusionIntensity / 100f;
+    internal float AmbientOcclusionPower() => AmbientOcclusionIntensity / 50f;
     internal bool FancyLightingEngineEnabled() => UseFancyLightingEngine && Lighting.UsingNewLighting;
     internal float FancyLightingEngineExitMultiplier() => 1f - FancyLightingEngineLightLoss / 100f;
     internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
