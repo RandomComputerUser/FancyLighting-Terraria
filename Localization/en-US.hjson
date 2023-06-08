@@ -149,16 +149,16 @@ Mods: {
 					Tooltip:
 						'''
 						Controls the radius of blur used in ambient occlusion
-						Higher values correspond to a larger blur radius
-						Values greater than 1 may reduce performance
+						Higher values correspond to larger ambient occlusion shadows
+						Higher values may reduce performance
 						'''
 				}
 
 				AmbientOcclusionIntensity: {
-					Label: Ambient Occlusion Intensity
+					Label: Ambient Occlusion Strength
 					Tooltip:
 						'''
-						Controls the intensity of shadows in ambient occlusion
+						Controls the strength of shadows in ambient occlusion
 						Higher values correspond to darker ambient occlusion shadows
 						'''
 				}
@@ -182,7 +182,7 @@ Mods: {
 					Tooltip:
 						'''
 						Toggles whether to use temporal optimization with the fancy lighting engine
-						When enabled, uses data from the previous update to optimize lighting calculations
+						When enabled, optimizes lighting using data from the previous lighting update
 						Makes lighting quicker in more intensly lit areas
 						May sometimes cause lighting quality to be slightly reduced
 						'''
@@ -228,7 +228,7 @@ Mods: {
 				}
 
 				SimulateGlobalIllumination: {
-					Label: Simulate Global Illumination
+					Label: Approximate Global Illumination
 					Tooltip:
 						'''
 						Toggles whether to simulate a basic form of global illumination

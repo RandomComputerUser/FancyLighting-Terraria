@@ -7,7 +7,7 @@ Features:
 - New sky colors
 - Overbright rendering
 - Simulated normal maps
-- Simulated global illumination
+- Basic global illumination
 - Gamma correction
 
 This mod only takes effect when the lighting mode is set to color. For best results, waves quality should not be set to off except in camera mode, when it should be set to off.
@@ -16,27 +16,9 @@ It is recommended to test performance by pressing F7 while in-game to help selec
 
 Some features may significantly lower frame rates at resolutions above 1920x1200 on machines with less powerful GPUs. If you are experiencing performance issues and are running the game at a resolution above 1920x1200, try lowering the resolution.
 
-Because smooth lighting overrides the built-in tile lighting, tile glow masks and other glow effects must be re-implemented. Most glow effects and tile glow masks from vanilla are supported, but those from resource packs and other mods are not supported. Glow effects may look significantly different from vanilla.
+Because smooth lighting overrides vanilla tile lighting, tile glow masks and other glow effects must be re-implemented. For example, illuminant paint and the spelunker potion cause affected tiles to glow without illuminating surrounding tiles, and glowing moss glows brightly without emitting much light. Most glow effects and tile glow masks from vanilla are supported, but those from resource packs and other mods are not supported. Glow effects may look significantly different from vanilla.
 
-Supported Glow Effects and Glowing Tiles:
-- Aether Monolith
-- Ash Grass
-- Crystal Shard and Gelatin Crystal
-- Dangersense Potion
-- Glowing Moss
-- Glowing Moss Brick
-- Lava Lamp
-- Lihzahrd Altar
-- Lunar Monoliths
-- Martian Conduit Plating
-- Meteorite Brick
-- Pixel Box
-- Rainbow Brick
-- Shimmer
-- Spelunker Potion
-- Void Monolith
-
-Additionally, some tiles shine different colors. Smooth lighting re-implements all tile shine effects from vanilla.
+Additionally, some tiles shine different colors, modifying their own lighting. For example, pearlstone modifies its lighting to be slightly more pink. Smooth lighting re-implements all tile shine effects from vanilla. Modded tile shine effects are not supported.
 
 Glowing tile entities should work correctly because smooth lighting is not applied to tile entities except for overbright lighting. This mod does not alter the lighting of NPCs and projectiles.
 
