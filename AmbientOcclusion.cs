@@ -20,30 +20,25 @@ internal sealed class AmbientOcclusion
 
     internal bool _drawingTileEntities;
 
-    private Shader _alphaToMonochromeShader;
-    private Shader _alphaToLightMonochromeShader;
-    private Shader _semicircleBlurShader;
-    private Shader _largeSemicircleBlurShader;
+    private Shader _alphaToRedShader;
+    private Shader _alphaToLightRedShader;
+    private Shader _hemisphereBlurShader;
     private Shader _blurShader;
     private Shader _finalBlurShader;
 
     public AmbientOcclusion()
     {
-        _alphaToMonochromeShader = EffectLoader.LoadEffect(
+        _alphaToRedShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/AmbientOcclusion",
-            "AlphaToMonochrome"
+            "AlphaToRed"
         );
-        _alphaToLightMonochromeShader = EffectLoader.LoadEffect(
+        _alphaToLightRedShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/AmbientOcclusion",
-            "AlphaToLightMonochrome"
+            "AlphaToLightRed"
         );
-        _semicircleBlurShader = EffectLoader.LoadEffect(
+        _hemisphereBlurShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/AmbientOcclusion",
-            "SemicircleBlur"
-        );
-        _largeSemicircleBlurShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/AmbientOcclusion",
-            "LargeSemicircleBlur"
+            "HemisphereBlur"
         );
         _blurShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/AmbientOcclusion",
@@ -65,10 +60,9 @@ internal sealed class AmbientOcclusion
         _cameraModeTarget2?.Dispose();
         _cameraModeTarget3?.Dispose();
         _tileEntityTarget?.Dispose();
-        EffectLoader.UnloadEffect(ref _alphaToMonochromeShader);
-        EffectLoader.UnloadEffect(ref _alphaToLightMonochromeShader);
-        EffectLoader.UnloadEffect(ref _semicircleBlurShader);
-        EffectLoader.UnloadEffect(ref _largeSemicircleBlurShader);
+        EffectLoader.UnloadEffect(ref _alphaToRedShader);
+        EffectLoader.UnloadEffect(ref _alphaToLightRedShader);
+        EffectLoader.UnloadEffect(ref _hemisphereBlurShader);
         EffectLoader.UnloadEffect(ref _blurShader);
         EffectLoader.UnloadEffect(ref _finalBlurShader);
     }
@@ -248,7 +242,7 @@ internal sealed class AmbientOcclusion
     )
     {
         void ApplyBlurPass(
-            ref bool useTarget2, int dx, int dy, Shader shader, float blurPower = 0f
+            ref bool useTarget2, float dx, float dy, Shader shader, float blurPower = 0f
         )
         {
             RenderTarget2D surfaceDestination = useTarget2 ? target2 : target1;
@@ -266,8 +260,8 @@ internal sealed class AmbientOcclusion
 
             shader
                 .SetParameter("BlurSize", new Vector2(
-                    (float)dx / surfaceSource.Width,
-                    (float)dy / surfaceSource.Height))
+                    dx / surfaceSource.Width,
+                    dy / surfaceSource.Height))
                 .SetParameter("BlurPower", blurPower)
                 .Apply();
 
@@ -296,7 +290,7 @@ internal sealed class AmbientOcclusion
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
-            _alphaToMonochromeShader.Apply();
+            _alphaToRedShader.Apply();
             Main.spriteBatch.Draw(
                 tileTarget,
                 tileTargetPosition,
@@ -343,14 +337,14 @@ internal sealed class AmbientOcclusion
                 RasterizerState.CullNone
             );
 
-            _alphaToMonochromeShader.Apply();
+            _alphaToRedShader.Apply();
             Main.spriteBatch.Draw(
                 tileTarget,
                 tileTargetPosition,
                 Color.White
             );
 
-            _alphaToLightMonochromeShader.Apply();
+            _alphaToLightRedShader.Apply();
 
             if (drawNonSolidTiles && tile2Target is not null)
             {
@@ -386,33 +380,23 @@ internal sealed class AmbientOcclusion
         }
 
         int radius = LightingConfig.Instance.AmbientOcclusionRadius;
-        Shader firstShader = radius switch
+        float firstShaderBlurStep = radius switch
         {
-            1 => _semicircleBlurShader,
-            2 => _semicircleBlurShader,
-            3 => _semicircleBlurShader,
-            4 => _semicircleBlurShader,
-            5 => _largeSemicircleBlurShader,
-            6 => _largeSemicircleBlurShader,
-            _ => _semicircleBlurShader,
-        };
-        int firstShaderBlurStep = radius switch
-        {
-            1 => 1, // 7 * 1 = 7
-            2 => 2, // 7 * 2 = 14
-            3 => 3, // 7 * 3 = 21
-            4 => 4, // 7 * 4 = 28
-            5 => 3, // 11 * 3 = 33
-            6 => 4, // 11 * 4 = 44
-            _ => 3,
+            1 => 1.5f,
+            2 => 2.0f,
+            3 => 2.5f,
+            4 => 3.0f,
+            5 => 3.5f,
+            6 => 4.0f,
+            _ => 3.0f,
         };
 
         // We need to switch between render targets
         useTarget2 = true;
-        ApplyBlurPass(ref useTarget2, firstShaderBlurStep, 0, firstShader);
-        ApplyBlurPass(ref useTarget2, 0, firstShaderBlurStep, firstShader);
-        ApplyBlurPass(ref useTarget2, 1, 0, _blurShader);
-        ApplyBlurPass(ref useTarget2, 0, 1, _finalBlurShader, power);
+        ApplyBlurPass(ref useTarget2, firstShaderBlurStep, 0, _hemisphereBlurShader);
+        ApplyBlurPass(ref useTarget2, 0, firstShaderBlurStep, _hemisphereBlurShader);
+        ApplyBlurPass(ref useTarget2, 1f, 0, _blurShader);
+        ApplyBlurPass(ref useTarget2, 0, 1f, _finalBlurShader, power);
 
         if (!doDraw)
         {

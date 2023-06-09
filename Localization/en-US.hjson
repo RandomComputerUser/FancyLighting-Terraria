@@ -150,7 +150,6 @@ Mods: {
 						'''
 						Controls the radius of blur used in ambient occlusion
 						Higher values correspond to larger ambient occlusion shadows
-						Higher values may reduce performance
 						'''
 				}
 
