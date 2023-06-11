@@ -9,8 +9,8 @@ function main() {
     const canvas = document.querySelector("#output")
     const ctx = canvas.getContext("2d")
 
-    canvas.width = 128
-    canvas.height = 128
+    canvas.width = 64
+    canvas.height = 64
 
     const tileSize = 4
     const numSteps = tileSize * tileSize

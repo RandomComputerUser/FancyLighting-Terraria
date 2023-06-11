@@ -528,7 +528,7 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.Opaque,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
@@ -547,7 +547,7 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.AlphaBlend,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
@@ -646,7 +646,7 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
             BlendState.AlphaBlend,
-            SamplerState.AnisotropicClamp,
+            _inCameraMode ? SamplerState.AnisotropicClamp : SamplerState.LinearClamp,
             DepthStencilState.Default,
             RasterizerState.CullNone,
             null,
@@ -686,7 +686,7 @@ public sealed class FancyLightingMod : Mod
             spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.AlphaBlend,
-                SamplerState.PointClamp,
+                Main.DefaultSamplerState,
                 DepthStencilState.None,
                 Main.Rasterizer
             );
@@ -696,7 +696,7 @@ public sealed class FancyLightingMod : Mod
             spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.AlphaBlend,
-                SamplerState.PointClamp,
+                Main.DefaultSamplerState,
                 DepthStencilState.None,
                 Main.Rasterizer,
                 null,

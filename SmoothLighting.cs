@@ -18,7 +18,7 @@ internal sealed class SmoothLighting
     private Texture2D _colors;
     private Texture2D _colorsBackground;
 
-    private readonly Texture2D _ditherMask;
+    private readonly Texture2D _ditherNoise;
 
     private Vector2 _lightMapPosition;
     private Vector2 _lightMapPositionFlipped;
@@ -59,7 +59,7 @@ internal sealed class SmoothLighting
 
     private readonly FancyLightingMod _modInstance;
 
-    private Shader _bicubicShader;
+    private Shader _bicubicDitherShader;
     private Shader _bicubicNoDitherHiDefShader;
     private Shader _noFilterShader;
     private Shader _qualityNormalsShader;
@@ -171,9 +171,9 @@ internal sealed class SmoothLighting
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
 
-        _bicubicShader = EffectLoader.LoadEffect(
+        _bicubicDitherShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
-            "Bicubic"
+            "BicubicDither"
         );
         _bicubicNoDitherHiDefShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
@@ -271,8 +271,8 @@ internal sealed class SmoothLighting
             "GammaCorrectionBG"
         );
 
-        _ditherMask = ModContent.Request<Texture2D>(
-            "FancyLighting/Effects/DitheringMask", ReLogic.Content.AssetRequestMode.ImmediateLoad
+        _ditherNoise = ModContent.Request<Texture2D>(
+            "FancyLighting/Effects/DitherNoise", ReLogic.Content.AssetRequestMode.ImmediateLoad
         ).Value;
     }
 
@@ -285,8 +285,8 @@ internal sealed class SmoothLighting
         _cameraModeTarget1?.Dispose();
         _cameraModeTarget2?.Dispose();
         _cameraModeTarget3?.Dispose();
-        _ditherMask?.Dispose();
-        EffectLoader.UnloadEffect(ref _bicubicShader);
+        _ditherNoise?.Dispose();
+        EffectLoader.UnloadEffect(ref _bicubicDitherShader);
         EffectLoader.UnloadEffect(ref _bicubicNoDitherHiDefShader);
         EffectLoader.UnloadEffect(ref _noFilterShader);
         EffectLoader.UnloadEffect(ref _qualityNormalsShader);
@@ -1457,7 +1457,7 @@ internal sealed class SmoothLighting
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.Opaque,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
@@ -1510,12 +1510,11 @@ internal sealed class SmoothLighting
         else
         {
             Main.graphics.GraphicsDevice.SetRenderTarget(_cameraModeTarget2);
-            Main.graphics.GraphicsDevice.Clear(Color.White);
 
             Main.spriteBatch.Begin(
                 SpriteSortMode.Deferred,
-                FancyLightingMod.MultiplyBlend,
-                SamplerState.LinearClamp,
+                BlendState.Opaque,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -1538,7 +1537,7 @@ internal sealed class SmoothLighting
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.Opaque,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
@@ -1554,7 +1553,7 @@ internal sealed class SmoothLighting
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.AlphaBlend,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );
@@ -1595,19 +1594,19 @@ internal sealed class SmoothLighting
         bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright();
-        bool noDithering = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
+        bool doDitheringSecond = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
         bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
-        bool doMultiply = !(simulateNormalMaps || doOverbright);
+        bool doOneStepOnly = !(simulateNormalMaps || doOverbright);
 
-        Main.graphics.GraphicsDevice.SetRenderTarget(doMultiply ? target1 : target2);
-        if (doMultiply)
+        Main.graphics.GraphicsDevice.SetRenderTarget(doOneStepOnly ? target1 : target2);
+        if (doOneStepOnly)
         {
             Main.graphics.GraphicsDevice.Clear(Color.White);
         }
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
-            doMultiply ? FancyLightingMod.MultiplyBlend : BlendState.Opaque,
+            doOneStepOnly ? FancyLightingMod.MultiplyBlend : BlendState.Opaque,
             SamplerState.LinearClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
@@ -1615,7 +1614,7 @@ internal sealed class SmoothLighting
 
         if (doBicubicUpscaling)
         {
-            if (noDithering)
+            if (doDitheringSecond)
             {
                 _bicubicNoDitherHiDefShader
                     .SetParameter("LightMapSize", lightMapTexture.Size())
@@ -1626,16 +1625,16 @@ internal sealed class SmoothLighting
             }
             else
             {
-                _bicubicShader
+                _bicubicDitherShader
                     .SetParameter("LightMapSize", lightMapTexture.Size())
                     .SetParameter("PixelSize", new Vector2(
                         1f / lightMapTexture.Width,
                         1f / lightMapTexture.Height))
                     .SetParameter("DitherCoordMult", new Vector2(
-                        16f * lightMapTexture.Width / _ditherMask.Width,
-                        16f * lightMapTexture.Height / _ditherMask.Height))
+                        16f * lightMapTexture.Width / _ditherNoise.Width,
+                        16f * lightMapTexture.Height / _ditherNoise.Height))
                     .Apply();
-                Main.graphics.GraphicsDevice.Textures[1] = _ditherMask;
+                Main.graphics.GraphicsDevice.Textures[1] = _ditherNoise;
                 Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
             }
         }
@@ -1666,7 +1665,7 @@ internal sealed class SmoothLighting
             0f
         );
 
-        if (!doMultiply)
+        if (!doOneStepOnly)
         {
             Main.spriteBatch.End();
 
@@ -1678,7 +1677,7 @@ internal sealed class SmoothLighting
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 doOverbright ? BlendState.Opaque : FancyLightingMod.MultiplyBlend,
-                SamplerState.LinearClamp,
+                simulateNormalMaps ? SamplerState.LinearClamp : SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -1753,12 +1752,12 @@ internal sealed class SmoothLighting
                 .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
             Main.graphics.GraphicsDevice.Textures[1] = worldTarget;
             Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
-            if (noDithering)
+            if (doDitheringSecond)
             {
                 shader.SetParameter("DitherCoordMult", new Vector2(
-                    (float)target2.Width / _ditherMask.Width,
-                    (float)target2.Height / _ditherMask.Height));
-                Main.graphics.GraphicsDevice.Textures[2] = _ditherMask;
+                    (float)target2.Width / _ditherNoise.Width,
+                    (float)target2.Height / _ditherNoise.Height));
+                Main.graphics.GraphicsDevice.Textures[2] = _ditherNoise;
                 Main.graphics.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
             }
             if (doAmbientOcclusion)
@@ -1778,13 +1777,13 @@ internal sealed class SmoothLighting
             );
         }
 
-        if (doBicubicUpscaling || simulateNormalMaps)
-        {
-            _noFilterShader.Apply();
-        }
-
         if (!(doOverbright || lightOnly))
         {
+            if (doBicubicUpscaling || simulateNormalMaps)
+            {
+                _noFilterShader.Apply();
+            }
+
             Main.spriteBatch.Draw(
                 worldTarget,
                 Vector2.Zero,

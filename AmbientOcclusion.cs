@@ -100,7 +100,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Deferred,
                 BlendState.Opaque,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -191,7 +191,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Deferred,
                 BlendState.Opaque,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -207,7 +207,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Deferred,
                 BlendState.AlphaBlend,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -242,7 +242,7 @@ internal sealed class AmbientOcclusion
     )
     {
         void ApplyBlurPass(
-            ref bool useTarget2, float dx, float dy, Shader shader, float blurPower = 0f
+            ref bool useTarget2, int dx, int dy, Shader shader, float blurPower = 0f
         )
         {
             RenderTarget2D surfaceDestination = useTarget2 ? target2 : target1;
@@ -253,15 +253,15 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.Opaque,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
 
             shader
                 .SetParameter("BlurSize", new Vector2(
-                    dx / surfaceSource.Width,
-                    dy / surfaceSource.Height))
+                    (float)dx / surfaceSource.Width,
+                    (float)dy / surfaceSource.Height))
                 .SetParameter("BlurPower", blurPower)
                 .Apply();
 
@@ -286,7 +286,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 BlendState.Opaque,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -332,7 +332,7 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.Begin(
                 SpriteSortMode.Immediate,
                 FancyLightingMod.MultiplyBlend,
-                SamplerState.LinearClamp,
+                SamplerState.PointClamp,
                 DepthStencilState.None,
                 RasterizerState.CullNone
             );
@@ -380,23 +380,21 @@ internal sealed class AmbientOcclusion
         }
 
         int radius = LightingConfig.Instance.AmbientOcclusionRadius;
-        float firstShaderBlurStep = radius switch
+        int firstShaderBlurStep = radius switch
         {
-            1 => 1.5f,
-            2 => 2.0f,
-            3 => 2.5f,
-            4 => 3.0f,
-            5 => 3.5f,
-            6 => 4.0f,
-            _ => 3.0f,
+            2 => 1,
+            3 => 2,
+            4 => 3,
+            5 => 4,
+            _ => 2,
         };
 
         // We need to switch between render targets
         useTarget2 = true;
         ApplyBlurPass(ref useTarget2, firstShaderBlurStep, 0, _hemisphereBlurShader);
         ApplyBlurPass(ref useTarget2, 0, firstShaderBlurStep, _hemisphereBlurShader);
-        ApplyBlurPass(ref useTarget2, 1f, 0, _blurShader);
-        ApplyBlurPass(ref useTarget2, 0, 1f, _finalBlurShader, power);
+        ApplyBlurPass(ref useTarget2, 1, 0, _blurShader);
+        ApplyBlurPass(ref useTarget2, 0, 1, _finalBlurShader, power);
 
         if (!doDraw)
         {
@@ -406,7 +404,7 @@ internal sealed class AmbientOcclusion
         Main.spriteBatch.Begin(
             SpriteSortMode.Deferred,
             FancyLightingMod.MultiplyBlend,
-            SamplerState.LinearClamp,
+            SamplerState.PointClamp,
             DepthStencilState.None,
             RasterizerState.CullNone
         );

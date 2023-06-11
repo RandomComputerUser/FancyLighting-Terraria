@@ -49,7 +49,7 @@ float3 BicubicColor(float2 coords)
     return lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
 }
 
-float4 Bicubic(float2 coords : TEXCOORD0) : COLOR0
+float4 BicubicDither(float2 coords : TEXCOORD0) : COLOR0
 {
     float3 color = BicubicColor(coords);
 
@@ -76,9 +76,9 @@ float4 NoFilter(float2 coords : TEXCOORD0) : COLOR0
 
 technique Technique1
 {
-    pass Bicubic
+    pass BicubicDither
     {
-        PixelShader = compile ps_2_0 Bicubic();
+        PixelShader = compile ps_2_0 BicubicDither();
     }
 
     pass BicubicNoDitherHiDef

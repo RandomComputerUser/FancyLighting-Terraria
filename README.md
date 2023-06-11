@@ -19,6 +19,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added an option to use enhanced light map blurring
 - Tweaked simulated normal maps
 - Improved ambient occlusion
+- Changed the minimum and maximum ambient occlusion radius to 2 and 5 (from 1 and 6)
 - Changed some default ambient occlusion settings
 - Changed sky color profile 1
 - Improved render only light when paired with overbright rendering

@@ -18,7 +18,7 @@ public static class DefaultOptions
     public const bool UseAmbientOcclusion = true;
     public const bool DoNonSolidAmbientOcclusion = true;
     public const bool DoTileEntityAmbientOcclusion = false;
-    public const int AmbientOcclusionRadius = 2;
+    public const int AmbientOcclusionRadius = 3;
     public const int AmbientOcclusionIntensity = 25;
 
     public const bool UseFancyLightingEngine = true;
