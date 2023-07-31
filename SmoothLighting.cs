@@ -298,7 +298,7 @@ internal sealed class SmoothLighting
     internal void ApplyGammaCorrectionBGShader()
         => _gammaCorrectionBGShader.SetParameter(
             "BackgroundBrightnessMult",
-            LightingConfig.Instance.UseLightMapToneMapping ? 1.03f : 1.1f
+            LightingConfig.Instance.UseLightMapToneMapping ? 1.05f : 1.1f
         ).Apply();
 
     internal void ApplyNoFilterShader() => _noFilterShader.Apply();

@@ -5,7 +5,7 @@ namespace FancyLighting.Util;
 
 internal static class ToneMapper
 {
-    public const float WHITE_POINT = 1.4f;
+    public const float WHITE_POINT = 1.25f;
 
     // Extended Reinhard Tone Mapping using luminance
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
