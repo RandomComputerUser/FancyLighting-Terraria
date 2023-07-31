@@ -256,7 +256,7 @@ public sealed class LightingConfig : ModConfig
     }
     private bool _doTileEntityAmbientOcclusion;
 
-    [Range(2, 5)]
+    [Range(1, 4)]
     [Increment(1)]
     [DefaultValue(DefaultOptions.AmbientOcclusionRadius)]
     [Slider]

@@ -387,10 +387,10 @@ internal sealed class AmbientOcclusion
         int radius = LightingConfig.Instance.AmbientOcclusionRadius;
         int firstShaderBlurStep = radius switch
         {
-            2 => 1,
-            3 => 2,
-            4 => 3,
-            5 => 4,
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
             _ => 2,
         };
 
