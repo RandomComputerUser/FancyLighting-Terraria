@@ -35,6 +35,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Reduced visual disruption after updating settings
 - Made some minor optimizations
 - Removed shadow paint blocking all light when using the fancy lighting engine
+- Removed the option to toggle higher-quality normal maps, which are always used now
 - Updated the mod description
 - Fixed a visual issue with blocks adjacent to glowing blocks when using smooth lighting
 - Fixed a camera mode bug where overbright lighting was not applied to tile entities

@@ -62,15 +62,12 @@ internal sealed class SmoothLighting
     private Shader _bicubicDitherShader;
     private Shader _bicubicNoDitherHiDefShader;
     private Shader _noFilterShader;
-    private Shader _qualityNormalsShader;
-    private Shader _qualityNormalsOverbrightShader;
-    private Shader _qualityNormalsOverbrightAmbientOcclusionShader;
-    private Shader _qualityNormalsOverbrightLightOnlyShader;
-    private Shader _qualityNormalsOverbrightLightOnlyOpaqueShader;
-    private Shader _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader;
     private Shader _normalsShader;
     private Shader _normalsOverbrightShader;
+    private Shader _normalsOverbrightAmbientOcclusionShader;
     private Shader _normalsOverbrightLightOnlyShader;
+    private Shader _normalsOverbrightLightOnlyOpaqueShader;
+    private Shader _normalsOverbrightLightOnlyOpaqueAmbientOcclusionShader;
     private Shader _overbrightShader;
     private Shader _overbrightAmbientOcclusionShader;
     private Shader _overbrightLightOnlyShader;
@@ -184,48 +181,34 @@ internal sealed class SmoothLighting
             "NoFilter"
         );
 
-        _qualityNormalsShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormals",
-            true
-        );
-        _qualityNormalsOverbrightShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbright",
-            true
-        );
-        _qualityNormalsOverbrightAmbientOcclusionShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbrightAmbientOcclusion",
-            true
-        );
-        _qualityNormalsOverbrightLightOnlyShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbrightLightOnly",
-            true
-        );
-        _qualityNormalsOverbrightLightOnlyOpaqueShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbrightLightOnlyOpaque",
-            true
-        );
-        _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader = EffectLoader.LoadEffect(
-            "FancyLighting/Effects/LightRendering",
-            "QualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusion",
-            true
-        );
         _normalsShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
-            "Normals"
+            "Normals",
+            true
         );
         _normalsOverbrightShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
             "NormalsOverbright",
             true
         );
+        _normalsOverbrightAmbientOcclusionShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "NormalsOverbrightAmbientOcclusion",
+            true
+        );
         _normalsOverbrightLightOnlyShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/LightRendering",
             "NormalsOverbrightLightOnly",
+            true
+        );
+        _normalsOverbrightLightOnlyOpaqueShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "NormalsOverbrightLightOnlyOpaque",
+            true
+        );
+        _normalsOverbrightLightOnlyOpaqueAmbientOcclusionShader = EffectLoader.LoadEffect(
+            "FancyLighting/Effects/LightRendering",
+            "NormalsOverbrightLightOnlyOpaqueAmbientOcclusion",
             true
         );
         _overbrightShader = EffectLoader.LoadEffect(
@@ -289,15 +272,12 @@ internal sealed class SmoothLighting
         EffectLoader.UnloadEffect(ref _bicubicDitherShader);
         EffectLoader.UnloadEffect(ref _bicubicNoDitherHiDefShader);
         EffectLoader.UnloadEffect(ref _noFilterShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightAmbientOcclusionShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyOpaqueShader);
-        EffectLoader.UnloadEffect(ref _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _normalsShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyOpaqueShader);
+        EffectLoader.UnloadEffect(ref _normalsOverbrightLightOnlyOpaqueAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _overbrightShader);
         EffectLoader.UnloadEffect(ref _overbrightAmbientOcclusionShader);
         EffectLoader.UnloadEffect(ref _overbrightLightOnlyShader);
@@ -1584,17 +1564,13 @@ internal sealed class SmoothLighting
         RenderTarget2D ambientOcclusionTarget
     )
     {
-        bool qualityNormalMaps = LightingConfig.Instance.QualityNormalMaps;
         bool fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
         bool doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
-        bool simulateNormalMaps =
-            !disableNormalMaps
-            && LightingConfig.Instance.UseNormalMaps()
-            && (!background || qualityNormalMaps);
+        bool simulateNormalMaps = !disableNormalMaps && LightingConfig.Instance.UseNormalMaps();
         bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
         bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
         bool doOverbright = LightingConfig.Instance.DrawOverbright();
-        bool doDitheringSecond = ((simulateNormalMaps && qualityNormalMaps) || doOverbright) && hiDef;
+        bool doDitheringSecond = (simulateNormalMaps || doOverbright) && hiDef;
         bool doGamma = LightingConfig.Instance.DoGammaCorrection();
         bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
         bool doOneStepOnly = !(simulateNormalMaps || doOverbright);
@@ -1684,23 +1660,17 @@ internal sealed class SmoothLighting
 
             Shader shader
             = simulateNormalMaps
-                ? qualityNormalMaps
-                    ? doOverbright
-                        ? lightOnly
-                            ? background
-                                ? doAmbientOcclusion
-                                    ? _qualityNormalsOverbrightLightOnlyOpaqueAmbientOcclusionShader
-                                    : _qualityNormalsOverbrightLightOnlyOpaqueShader
-                                : _qualityNormalsOverbrightLightOnlyShader
-                            : doAmbientOcclusion
-                                ? _qualityNormalsOverbrightAmbientOcclusionShader
-                                : _qualityNormalsOverbrightShader
-                        : _qualityNormalsShader
-                    : doOverbright
-                        ? lightOnly
-                            ? _normalsOverbrightLightOnlyShader
+                ? doOverbright
+                    ? lightOnly
+                        ? background
+                            ? doAmbientOcclusion
+                                ? _normalsOverbrightLightOnlyOpaqueAmbientOcclusionShader
+                                : _normalsOverbrightLightOnlyOpaqueShader
+                            : _normalsOverbrightLightOnlyShader
+                        : doAmbientOcclusion
+                            ? _normalsOverbrightAmbientOcclusionShader
                             : _normalsOverbrightShader
-                        : _normalsShader
+                    : _normalsShader
                 : doScaling // doOverbright is guaranteed to be true here
                     ? _overbrightMaxShader // if doScaling is true we're rendering tile entities
                     : lightOnly
@@ -1714,13 +1684,9 @@ internal sealed class SmoothLighting
                             : _overbrightShader;
 
             float normalMapRadius = hiDef ? 32f : 24f;
-            if (!(hiDef && qualityNormalMaps))
+            if (!hiDef)
             {
                 normalMapRadius *= 0.6f * LightingConfig.Instance.NormalMapsMultiplier();
-                if (!qualityNormalMaps)
-                {
-                    normalMapRadius *= 1.125f;
-                }
                 if (fineNormalMaps)
                 {
                     normalMapRadius *= 1.4f;

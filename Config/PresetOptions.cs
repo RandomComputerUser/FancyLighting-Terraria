@@ -10,7 +10,6 @@ internal record PresetOptions
     public bool UseEnhancedBlurring { get; init; } = DefaultOptions.UseEnhancedBlurring;
     public RenderMode LightMapRenderMode { get; init; } = DefaultOptions.LightMapRenderMode;
     public int NormalMapsStrength { get; init; } = DefaultOptions.NormalMapsStrength;
-    public bool QualityNormalMaps { get; init; } = DefaultOptions.QualityNormalMaps;
     public bool FineNormalMaps { get; init; } = DefaultOptions.FineNormalMaps;
     public bool RenderOnlyLight { get; init; } = DefaultOptions.RenderOnlyLight;
 
@@ -43,7 +42,6 @@ internal record PresetOptions
         UseEnhancedBlurring = config.UseEnhancedBlurring;
         LightMapRenderMode = config.LightMapRenderMode;
         NormalMapsStrength = config.NormalMapsStrength;
-        QualityNormalMaps = config.QualityNormalMaps;
         FineNormalMaps = config.FineNormalMaps;
         RenderOnlyLight = config.RenderOnlyLight;
 
@@ -74,7 +72,6 @@ internal record PresetOptions
         UseEnhancedBlurring = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
-        QualityNormalMaps = false,
         UseAmbientOcclusion = false,
         DoNonSolidAmbientOcclusion = false,
         DoTileEntityAmbientOcclusion = false,
@@ -93,7 +90,6 @@ internal record PresetOptions
         UseEnhancedBlurring = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
-        QualityNormalMaps = false,
         UseAmbientOcclusion = false,
         DoNonSolidAmbientOcclusion = false,
         DoTileEntityAmbientOcclusion = false,
@@ -114,7 +110,6 @@ internal record PresetOptions
         UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.Bicubic,
         NormalMapsStrength = 0,
-        QualityNormalMaps = false,
         UseAmbientOcclusion = true,
         DoNonSolidAmbientOcclusion = true,
         DoTileEntityAmbientOcclusion = true,
@@ -133,7 +128,6 @@ internal record PresetOptions
         UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
-        QualityNormalMaps = true,
         UseAmbientOcclusion = true,
         DoNonSolidAmbientOcclusion = true,
         DoTileEntityAmbientOcclusion = true,
@@ -152,7 +146,6 @@ internal record PresetOptions
         UseEnhancedBlurring = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
-        QualityNormalMaps = true,
         UseAmbientOcclusion = true,
         DoNonSolidAmbientOcclusion = true,
         DoTileEntityAmbientOcclusion = true,

@@ -11,7 +11,6 @@ public static class DefaultOptions
     public const bool UseEnhancedBlurring = false;
     public const RenderMode LightMapRenderMode = RenderMode.Bilinear;
     public const int NormalMapsStrength = 0;
-    public const bool QualityNormalMaps = false;
     public const bool FineNormalMaps = false;
     public const bool RenderOnlyLight = false;
 

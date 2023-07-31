@@ -42,7 +42,6 @@ public sealed class LightingConfig : ModConfig
         _useEnhancedBlurring = options.UseEnhancedBlurring;
         _lightMapRenderMode = options.LightMapRenderMode;
         _normalMapsStrength = options.NormalMapsStrength;
-        _useQualityNormalMaps = options.QualityNormalMaps;
         _useFineNormalMaps = options.FineNormalMaps;
         _renderOnlyLight = options.RenderOnlyLight;
 
@@ -178,18 +177,6 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _normalMapsStrength;
-
-    [DefaultValue(DefaultOptions.QualityNormalMaps)]
-    public bool QualityNormalMaps
-    {
-        get => _useQualityNormalMaps;
-        set
-        {
-            _useQualityNormalMaps = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useQualityNormalMaps;
 
     [DefaultValue(DefaultOptions.FineNormalMaps)]
     public bool FineNormalMaps

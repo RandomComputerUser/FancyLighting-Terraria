@@ -83,18 +83,8 @@ Mods: {
 						'''
 				}
 
-				QualityNormalMaps: {
-					Label: Use Enhanced Normal Maps
-					Tooltip:
-						'''
-						Toggles between regular and enhanced simulated normal map shaders
-						When enabled, uses a higher-quality normal map simulation
-						May reduce performance when enabled
-						'''
-				}
-
 				FineNormalMaps: {
-					Label: Use Fine Normal Maps
+					Label: Simulate Fine Normal Maps
 					Tooltip:
 						'''
 						Toggles between coarse and fine simulated normal maps
