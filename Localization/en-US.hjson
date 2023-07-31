@@ -228,7 +228,7 @@ Mods: {
 				}
 
 				SimulateGlobalIllumination: {
-					Label: Approximate Global Illumination
+					Label: (Experimental) Approximate Global Illumination
 					Tooltip:
 						'''
 						Toggles whether to simulate a basic form of global illumination

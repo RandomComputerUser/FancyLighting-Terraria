@@ -82,7 +82,6 @@ internal record PresetOptions
         FancyLightingEngineMakeBrighter = false,
         FancyLightingEngineLightLoss = 50,
         FancyLightingEngineMode = LightingEngineMode.One,
-        SimulateGlobalIllumination = false,
         UseCustomSkyColors = false,
         UseHiDefFeatures = false,
     };
@@ -101,7 +100,6 @@ internal record PresetOptions
         FancyLightingEngineMakeBrighter = false,
         FancyLightingEngineLightLoss = 50,
         FancyLightingEngineMode = LightingEngineMode.One,
-        SimulateGlobalIllumination = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -122,7 +120,6 @@ internal record PresetOptions
         FancyLightingEngineMakeBrighter = true,
         FancyLightingEngineLightLoss = 50,
         FancyLightingEngineMode = LightingEngineMode.One,
-        SimulateGlobalIllumination = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -139,9 +136,8 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
-        FancyLightingEngineLightLoss = 60,
+        FancyLightingEngineLightLoss = 50,
         FancyLightingEngineMode = LightingEngineMode.Two,
-        SimulateGlobalIllumination = false,
         UseCustomSkyColors = true,
         UseHiDefFeatures = false,
     };
@@ -158,9 +154,8 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = true,
         UseFancyLightingEngine = true,
         FancyLightingEngineMakeBrighter = true,
-        FancyLightingEngineLightLoss = 60,
+        FancyLightingEngineLightLoss = 40,
         FancyLightingEngineMode = LightingEngineMode.Four,
-        SimulateGlobalIllumination = true,
         UseCustomSkyColors = true,
         UseHiDefFeatures = true,
     };

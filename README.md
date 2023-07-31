@@ -13,11 +13,11 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Renamed some presets and added a new preset
 - Renamed some options and updated some tooltips
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
-- Added a basic version of global illumination
 - Added an option to apply a tone mapping curve to the light map
 - Added an option to change the internal resolution of the fancy lighting engine
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Added an option to use enhanced light map blurring
+- Added experimental global illumination
 - Tweaked simulated normal maps
 - Improved ambient occlusion
 - Changed the minimum and maximum ambient occlusion radius to 2 and 5 (from 1 and 6)
