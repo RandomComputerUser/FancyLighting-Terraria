@@ -19,6 +19,7 @@ internal record PresetOptions
     public bool DoTileEntityAmbientOcclusion { get; init; } = DefaultOptions.DoTileEntityAmbientOcclusion;
     public int AmbientOcclusionRadius { get; init; } = DefaultOptions.AmbientOcclusionRadius;
     public int AmbientOcclusionIntensity { get; init; } = DefaultOptions.AmbientOcclusionIntensity;
+    public int AmbientLightProportion { get; init; } = DefaultOptions.AmbientLightProportion;
 
     public bool UseFancyLightingEngine { get; init; } = DefaultOptions.UseFancyLightingEngine;
     public bool FancyLightingEngineUseTemporal { get; init; } = DefaultOptions.FancyLightingEngineUseTemporal;
@@ -52,6 +53,7 @@ internal record PresetOptions
         DoTileEntityAmbientOcclusion = config.DoTileEntityAmbientOcclusion;
         AmbientOcclusionRadius = config.AmbientOcclusionRadius;
         AmbientOcclusionIntensity = config.AmbientOcclusionIntensity;
+        AmbientLightProportion = config.AmbientLightProportion;
 
         UseFancyLightingEngine = config.UseFancyLightingEngine;
         FancyLightingEngineUseTemporal = config.FancyLightingEngineUseTemporal;

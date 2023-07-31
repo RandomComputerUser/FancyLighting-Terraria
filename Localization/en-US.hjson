@@ -159,6 +159,16 @@ Mods: {
 					Tooltip:
 						'''
 						Controls the strength of shadows in ambient occlusion
+						Higher values correspond to darker, larger ambient occlusion shadows
+						'''
+				}
+
+				AmbientLightProportion: {
+					Label: Ambient Light Proportion (%)
+					Tooltip:
+						'''
+						Controls the proportion of light considered to be ambient
+						Ambient occlusion reduces only ambient light, not direct light
 						Higher values correspond to darker ambient occlusion shadows
 						'''
 				}

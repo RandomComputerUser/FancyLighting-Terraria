@@ -242,7 +242,7 @@ internal sealed class AmbientOcclusion
     )
     {
         void ApplyBlurPass(
-            ref bool useTarget2, int dx, int dy, Shader shader, float blurPower = 0f
+            ref bool useTarget2, int dx, int dy, Shader shader, float blurPower = 0f, float blurMult = 0f
         )
         {
             RenderTarget2D surfaceDestination = useTarget2 ? target2 : target1;
@@ -263,6 +263,7 @@ internal sealed class AmbientOcclusion
                     (float)dx / surfaceSource.Width,
                     (float)dy / surfaceSource.Height))
                 .SetParameter("BlurPower", blurPower)
+                .SetParameter("BlurMult", blurMult)
                 .Apply();
 
             Main.spriteBatch.Draw(
@@ -381,6 +382,7 @@ internal sealed class AmbientOcclusion
         {
             power *= 2.2f;
         }
+        float mult = LightingConfig.Instance.AmbientOcclusionMult();
 
         int radius = LightingConfig.Instance.AmbientOcclusionRadius;
         int firstShaderBlurStep = radius switch
@@ -397,7 +399,7 @@ internal sealed class AmbientOcclusion
         ApplyBlurPass(ref useTarget2, firstShaderBlurStep, 0, _hemisphereBlurShader);
         ApplyBlurPass(ref useTarget2, 0, firstShaderBlurStep, _hemisphereBlurShader);
         ApplyBlurPass(ref useTarget2, 1, 0, _blurShader);
-        ApplyBlurPass(ref useTarget2, 0, 1, _finalBlurShader, power);
+        ApplyBlurPass(ref useTarget2, 0, 1, _finalBlurShader, power, mult);
 
         if (!doDraw)
         {

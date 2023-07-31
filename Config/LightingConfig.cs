@@ -23,6 +23,7 @@ public sealed class LightingConfig : ModConfig
     internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
     internal bool AmbientOcclusionEnabled() => UseAmbientOcclusion && Lighting.UsingNewLighting;
     internal float AmbientOcclusionPower() => AmbientOcclusionIntensity / 50f;
+    internal float AmbientOcclusionMult() => AmbientLightProportion / 100f;
     internal bool FancyLightingEngineEnabled() => UseFancyLightingEngine && Lighting.UsingNewLighting;
     internal float FancyLightingEngineExitMultiplier() => 1f - FancyLightingEngineLightLoss / 100f;
     internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
@@ -51,6 +52,7 @@ public sealed class LightingConfig : ModConfig
         _doTileEntityAmbientOcclusion = options.DoTileEntityAmbientOcclusion;
         _ambientOcclusionRadius = options.AmbientOcclusionRadius;
         _ambientOcclusionIntensity = options.AmbientOcclusionIntensity;
+        _ambientLightProportion = options.AmbientLightProportion;
 
         _useFancyLightingEngine = options.UseFancyLightingEngine;
         _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
@@ -285,6 +287,22 @@ public sealed class LightingConfig : ModConfig
         }
     }
     private int _ambientOcclusionIntensity;
+
+    [Range(5, 100)]
+    [Increment(5)]
+    [DefaultValue(DefaultOptions.AmbientLightProportion)]
+    [Slider]
+    [DrawTicks]
+    public int AmbientLightProportion
+    {
+        get => _ambientLightProportion;
+        set
+        {
+            _ambientLightProportion = value;
+            ConfigPreset = Preset.CustomPreset;
+        }
+    }
+    private int _ambientLightProportion;
 
     // Fancy Lighting Engine
     [Header("LightingEngine")]

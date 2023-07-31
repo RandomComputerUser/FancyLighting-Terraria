@@ -17,6 +17,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Added an option to change the internal resolution of the fancy lighting engine
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Added an option to use enhanced light map blurring
+- Added another option controlling the strength of ambient occlusion
 - Added experimental global illumination
 - Tweaked simulated normal maps
 - Improved ambient occlusion

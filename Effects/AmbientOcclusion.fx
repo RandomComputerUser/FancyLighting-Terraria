@@ -2,6 +2,7 @@ sampler OccluderSampler : register(s0);
 
 float2 BlurSize;
 float BlurPower;
+float BlurMult;
 
 float HemisphereKernel[8] =
 {
@@ -55,7 +56,7 @@ float4 AlphaToRed(float2 coords : TEXCOORD0) : COLOR0
 
 float4 AlphaToLightRed(float2 coords : TEXCOORD0) : COLOR0
 {
-    float brightness = -0.75 * tex2D(OccluderSampler, coords).a + 1;
+    float brightness = -0.8 * tex2D(OccluderSampler, coords).a + 1;
     return float4(brightness.x, 0, 0, 0);
 }
 
@@ -76,7 +77,7 @@ float4 Blur(float2 coords : TEXCOORD0) : COLOR0
 float4 FinalBlur(float2 coords : TEXCOORD0) : COLOR0
 {
     float brightness = BlurBrightness(coords);
-    brightness = pow(brightness, BlurPower);
+    brightness = 1 - BlurMult * (1 - pow(brightness, BlurPower));
 
     return float4(brightness.xxx, 1);
 }
