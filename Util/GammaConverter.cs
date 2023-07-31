@@ -10,6 +10,14 @@ internal static class GammaConverter
     public static void GammaToLinear(ref float x) => x = MathF.Pow(x, 2.2f);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void GammaToLinear(ref Vector3 color)
+    {
+        GammaToLinear(ref color.X);
+        GammaToLinear(ref color.Y);
+        GammaToLinear(ref color.Z);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float LinearToGamma(ref float x) => x = MathF.Pow(x, 1f / 2.2f);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

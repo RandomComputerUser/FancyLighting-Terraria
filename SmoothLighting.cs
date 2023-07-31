@@ -295,7 +295,11 @@ internal sealed class SmoothLighting
             : _gammaCorrectionShader
         ).Apply();
 
-    internal void ApplyGammaCorrectionBGShader() => _gammaCorrectionBGShader.Apply();
+    internal void ApplyGammaCorrectionBGShader()
+        => _gammaCorrectionBGShader.SetParameter(
+            "BackgroundBrightnessMult",
+            LightingConfig.Instance.UseLightMapToneMapping ? 1.03f : 1.1f
+        ).Apply();
 
     internal void ApplyNoFilterShader() => _noFilterShader.Apply();
 
@@ -502,6 +506,7 @@ internal sealed class SmoothLighting
         int caughtException = 0;
         bool doGammaCorrection = LightingConfig.Instance.DoGammaCorrection();
         bool blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
+        bool doToneMap = LightingConfig.Instance.UseLightMapToneMapping;
 
         if (doGammaCorrection && !LightingConfig.Instance.FancyLightingEngineEnabled())
         {
@@ -700,6 +705,70 @@ internal sealed class SmoothLighting
                     PrintException();
                     return;
                 }
+            }
+        }
+
+        if (doToneMap)
+        {
+            Vector3[] lights = blurLightMap ? _lights : colors;
+
+            if (doGammaCorrection)
+            {
+                Parallel.For(
+                    0,
+                    width,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 0; y < height; ++y)
+                        {
+                            try
+                            {
+                                ToneMapper.ToneMap(ref lights[i++]);
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                                break;
+                            }
+                        }
+                    }
+                );
+            }
+            else
+            {
+                Parallel.For(
+                    0,
+                    width,
+                    new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
+                    (x) =>
+                    {
+                        int i = height * x;
+                        for (int y = 0; y < height; ++y)
+                        {
+                            try
+                            {
+                                ref Vector3 lightColor = ref lights[i++];
+
+                                GammaConverter.SrgbToLinear(ref lightColor);
+                                ToneMapper.ToneMap(ref lightColor);
+                                GammaConverter.LinearToSrgb(ref lightColor);
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Interlocked.Exchange(ref caughtException, 1);
+                                break;
+                            }
+                        }
+                    }
+                );
+            }
+
+            if (caughtException == 1)
+            {
+                PrintException();
+                return;
             }
         }
 

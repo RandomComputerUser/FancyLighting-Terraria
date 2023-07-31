@@ -14,6 +14,7 @@ Multiple features have been added to the Ultra preset, decreasing performance. T
 - Renamed some options and updated some tooltips
 - Added gamma correction when using overbright rendering and enhanced shaders and colors
 - Added a basic version of global illumination
+- Added an option to apply a tone mapping curve to the light map
 - Added an option to change the internal resolution of the fancy lighting engine
 - Added an option to change the light absorption of solid blocks when using the fancy lighting engine
 - Added an option to use enhanced light map blurring

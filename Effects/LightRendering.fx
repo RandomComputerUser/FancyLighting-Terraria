@@ -11,6 +11,7 @@ float HiDefNormalMapStrength;
 float2 WorldCoordMult;
 float2 DitherCoordMult;
 float2 AmbientOcclusionCoordMult;
+float BackgroundBrightnessMult;
 
 // Gamma correction only applies when both overbright and HiDef are enabled
 
@@ -362,9 +363,7 @@ float4 GammaCorrectionLightOnly(float4 color : COLOR0, float2 coords : TEXCOORD0
 
 float4 GammaCorrectionBG(float4 color : COLOR0, float2 coords : TEXCOORD0) : COLOR0
 {
-    // Multiply by 1.1 to partly compensate for global brightness of 1.2
-    // Multiplying by 1.2 makes clouds too bright
-    color.rgb *= 1.1;
+    color.rgb *= BackgroundBrightnessMult;
 
     return SurfaceColor(
         SrgbToLinear(color)

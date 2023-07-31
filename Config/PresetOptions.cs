@@ -8,6 +8,7 @@ internal record PresetOptions
     public bool UseSmoothLighting { get; init; } = DefaultOptions.UseSmoothLighting;
     public bool UseLightMapBlurring { get; init; } = DefaultOptions.UseLightMapBlurring;
     public bool UseEnhancedBlurring { get; init; } = DefaultOptions.UseEnhancedBlurring;
+    public bool UseLightMapToneMapping { get; init; } = DefaultOptions.UseLightMapToneMapping;
     public RenderMode LightMapRenderMode { get; init; } = DefaultOptions.LightMapRenderMode;
     public int NormalMapsStrength { get; init; } = DefaultOptions.NormalMapsStrength;
     public bool FineNormalMaps { get; init; } = DefaultOptions.FineNormalMaps;
@@ -40,6 +41,7 @@ internal record PresetOptions
         UseSmoothLighting = config.UseSmoothLighting;
         UseLightMapBlurring = config.UseLightMapBlurring;
         UseEnhancedBlurring = config.UseEnhancedBlurring;
+        UseLightMapToneMapping = config.UseLightMapToneMapping;
         LightMapRenderMode = config.LightMapRenderMode;
         NormalMapsStrength = config.NormalMapsStrength;
         FineNormalMaps = config.FineNormalMaps;
@@ -70,6 +72,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = false,
         UseEnhancedBlurring = false,
+        UseLightMapToneMapping = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
         UseAmbientOcclusion = false,
@@ -88,6 +91,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = true,
         UseEnhancedBlurring = false,
+        UseLightMapToneMapping = false,
         LightMapRenderMode = RenderMode.Bilinear,
         NormalMapsStrength = 0,
         UseAmbientOcclusion = false,
@@ -108,6 +112,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = true,
         UseEnhancedBlurring = true,
+        UseLightMapToneMapping = true,
         LightMapRenderMode = RenderMode.Bicubic,
         NormalMapsStrength = 0,
         UseAmbientOcclusion = true,
@@ -126,6 +131,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = true,
         UseEnhancedBlurring = true,
+        UseLightMapToneMapping = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
         UseAmbientOcclusion = true,
@@ -144,6 +150,7 @@ internal record PresetOptions
     {
         UseSmoothLighting = true,
         UseEnhancedBlurring = true,
+        UseLightMapToneMapping = true,
         LightMapRenderMode = RenderMode.BicubicOverbright,
         NormalMapsStrength = 100,
         UseAmbientOcclusion = true,

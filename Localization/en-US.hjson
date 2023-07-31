@@ -59,6 +59,17 @@ Mods: {
 						'''
 				}
 
+				UseLightMapToneMapping: {
+					Label: Use Light Map Tone Mapping
+					Tooltip:
+						'''
+						Toggles whether to apply a tone mapper to the light map
+						Reduces the brightness of brightly lit tiles
+						The tone mapping curve is applied to the light color, not the final tile color
+						May slightly reduce performance when enabled
+						'''
+				}
+
 				LightMapRenderMode: {
 					Label: Light Map Render Mode
 					Tooltip:
