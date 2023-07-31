@@ -63,7 +63,7 @@ Mods: {
 					Label: Use Light Map Tone Mapping
 					Tooltip:
 						'''
-						Toggles whether to apply a tone mapper to the light map
+						Toggles whether to use a tone mapper on the light map
 						Reduces the brightness of brightly lit tiles
 						The tone mapping curve is applied to the light color, not the final tile color
 						May slightly reduce performance when enabled
@@ -274,9 +274,9 @@ Mods: {
 						When enabled, some visual effects are improved:
 						- Increases the precision of colors used in lighting
 						- Increases the maximum overbright light brightness
-						- Improves enhanced simulated normal maps
+						- Improves simulated normal maps
 						- Performs gamma correction when paired with overbright rendering
-						May significantly reduce rendering performance if enabled
+						May significantly reduce rendering performance when enabled
 						'''
 				}
 			}

@@ -7,7 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.7.0 (2023-??-??)**
+**v0.7.0 (2023-07-31)**
 Multiple features have been added to the Ultra preset, decreasing performance. The new Very High preset is roughly equivalent to the old Ultra preset.
 - Updated for Terraria 1.4.4.9
 - Renamed some presets and added a new preset

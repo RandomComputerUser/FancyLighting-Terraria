@@ -7,7 +7,7 @@ Features:
 - New sky colors
 - Overbright rendering
 - Simulated normal maps
-- Basic global illumination
+- Light map tone mapping
 - Gamma correction
 
 This mod only takes effect when the lighting mode is set to color. For best results, waves quality should not be set to off except in camera mode, when it should be set to off.
