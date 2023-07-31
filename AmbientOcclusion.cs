@@ -311,7 +311,9 @@ internal sealed class AmbientOcclusion
                 Main.graphics.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
                 Main.graphics.GraphicsDevice.Clear(Color.Transparent);
                 Vector2 currentZoom = Main.GameViewMatrix.Zoom;
+                Vector2 currentScreenPosition = Main.screenPosition;
                 Main.GameViewMatrix.Zoom = Vector2.One;
+                Main.screenPosition -= new Vector2(Main.offScreenRange);
 
                 _drawingTileEntities = true;
                 try
@@ -323,6 +325,7 @@ internal sealed class AmbientOcclusion
                 {
                     _drawingTileEntities = false;
                     Main.GameViewMatrix.Zoom = currentZoom;
+                    Main.screenPosition = currentScreenPosition;
                 }
             }
 
@@ -359,7 +362,7 @@ internal sealed class AmbientOcclusion
             {
                 Main.spriteBatch.Draw(
                     _tileEntityTarget,
-                    new Vector2(Main.offScreenRange),
+                    Vector2.Zero,
                     null,
                     Color.White,
                     0f,
