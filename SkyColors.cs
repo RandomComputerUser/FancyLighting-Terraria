@@ -13,6 +13,7 @@ public static class SkyColors
     public static Dictionary<SkyColorPreset, ISimpleColorProfile> Profiles { get; private set; }
 
     private static bool _dayTimeTmp;
+    private static double _timeTmp;
     private static bool _dontStarveWorldTmp;
 
     internal static void Initialize() => Profiles = new()
@@ -46,8 +47,10 @@ public static class SkyColors
         orig(info, out sunColor, out moonColor);
 
         _dayTimeTmp = Main.dayTime;
+        _timeTmp = Main.time;
         _dontStarveWorldTmp = Main.dontStarveWorld;
         Main.dayTime = false;
+        Main.time = 0.0;
         Main.dontStarveWorld = true;
         // info is a struct, so we don't have to reset this value
         info.isInGameMenuOrIsServer = false;
@@ -58,6 +61,7 @@ public static class SkyColors
         finally
         {
             Main.dayTime = _dayTimeTmp;
+            Main.time = _timeTmp;
             Main.dontStarveWorld = _dontStarveWorldTmp;
         }
     }
@@ -75,6 +79,7 @@ public static class SkyColors
         }
 
         Main.dayTime = _dayTimeTmp;
+        Main.time = _timeTmp;
         Main.dontStarveWorld = _dontStarveWorldTmp;
         SetBaseSkyColor(ref backColor);
         if (!Main.dayTime && Main.dontStarveWorld)

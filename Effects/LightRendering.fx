@@ -1,9 +1,9 @@
 sampler TextureSampler : register(s0);
 
 sampler LightSampler : register(s0);
-sampler WorldSampler : register(s1);
-sampler DitherSampler : register(s2);
-sampler AmbientOcclusionSampler : register(s3);
+sampler WorldSampler : register(s4);
+sampler DitherSampler : register(s5);
+sampler AmbientOcclusionSampler : register(s6);
 
 float2 NormalMapResolution;
 float2 NormalMapRadius;

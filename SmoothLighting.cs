@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Terraria;
@@ -337,11 +338,17 @@ internal sealed class SmoothLighting
         return color;
     }
 
-    private static bool ShouldTileGlow(ushort type, short frameX)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasShimmer(Tile tile)
+        => tile.LiquidAmount > 0 && tile.LiquidType is LiquidID.Shimmer;
+
+    private static bool ShouldTileShine(ushort type, short frameX)
     {
         // We could use the method from vanilla, but that's
         //   private and using reflection to get a delegate
         //   might reduce performance
+
+        // This code is adapted from vanilla
 
         if (
             Main.shimmerAlpha > 0f && Main.tileSolid[type]
@@ -383,10 +390,12 @@ internal sealed class SmoothLighting
         // Method from vanilla limits brightness to 1f,
         //   which we don't want
 
+        // This code is adapted from vanilla
+
         ushort type = tile.TileType;
         short frameX = tile.TileFrameX;
 
-        if (!ShouldTileGlow(type, frameX))
+        if (!ShouldTileShine(type, frameX))
         {
             return;
         }
@@ -887,7 +896,7 @@ internal sealed class SmoothLighting
 
                             if (tile.IsTileFullbright // Illuminant Paint
                                 || tile.IsWallFullbright
-                                || tile.LiquidType == LiquidID.Shimmer // Shimmer
+                                || HasShimmer(tile) // Shimmer
                                 || _glowingTiles[tile.TileType] // Glowing Tiles
                                 || (
                                     _isDangersenseActive // Dangersense Potion
@@ -1157,7 +1166,7 @@ internal sealed class SmoothLighting
                             Tile tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (tile.IsWallFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            if (tile.IsWallFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1216,7 +1225,7 @@ internal sealed class SmoothLighting
                             Tile tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (tile.IsTileFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            if (tile.IsTileFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1323,7 +1332,7 @@ internal sealed class SmoothLighting
                             Tile tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (tile.IsWallFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            if (tile.IsWallFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1382,7 +1391,7 @@ internal sealed class SmoothLighting
                             Tile tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (tile.IsTileFullbright || tile.LiquidType is LiquidID.Shimmer)
+                            if (tile.IsTileFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1679,8 +1688,8 @@ internal sealed class SmoothLighting
                         16f * lightMapTexture.Width / _ditherNoise.Width,
                         16f * lightMapTexture.Height / _ditherNoise.Height))
                     .Apply();
-                Main.graphics.GraphicsDevice.Textures[1] = _ditherNoise;
-                Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[4] = _ditherNoise;
+                Main.graphics.GraphicsDevice.SamplerStates[4] = SamplerState.PointWrap;
             }
         }
 
@@ -1785,23 +1794,23 @@ internal sealed class SmoothLighting
                     (float)target2.Width / worldTarget.Width,
                     (float)target2.Height / worldTarget.Height))
                 .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
-            Main.graphics.GraphicsDevice.Textures[1] = worldTarget;
-            Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
+            Main.graphics.GraphicsDevice.Textures[4] = worldTarget;
+            Main.graphics.GraphicsDevice.SamplerStates[4] = SamplerState.PointClamp;
             if (doDitheringSecond)
             {
                 shader.SetParameter("DitherCoordMult", new Vector2(
                     (float)target2.Width / _ditherNoise.Width,
                     (float)target2.Height / _ditherNoise.Height));
-                Main.graphics.GraphicsDevice.Textures[2] = _ditherNoise;
-                Main.graphics.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[5] = _ditherNoise;
+                Main.graphics.GraphicsDevice.SamplerStates[5] = SamplerState.PointWrap;
             }
             if (doAmbientOcclusion)
             {
                 shader.SetParameter("AmbientOcclusionCoordMult", new Vector2(
                     (float)target2.Width / ambientOcclusionTarget.Width,
                     (float)target2.Height / ambientOcclusionTarget.Height));
-                Main.graphics.GraphicsDevice.Textures[3] = ambientOcclusionTarget;
-                Main.graphics.GraphicsDevice.SamplerStates[3] = SamplerState.PointClamp;
+                Main.graphics.GraphicsDevice.Textures[6] = ambientOcclusionTarget;
+                Main.graphics.GraphicsDevice.SamplerStates[6] = SamplerState.PointClamp;
             }
             shader.Apply();
 

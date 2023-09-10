@@ -1,6 +1,6 @@
 displayName = Fancy Lighting
 author = RandomComputerUser
-version = 0.7.0
+version = 0.7.1
 side = Client
 homepage = https://github.com/RandomComputerUser/FancyLighting-Terraria
 buildIgnore = Effects/*.config, Effects/*.dll, Effects/*.exe, Effects/*.pdb, Effects/BlurKernelGenerator/*, Effects/DitherNoiseGenerator/*, icon_workshop.png, obj/*, packages/*, Properties/*, README.md
