@@ -7,7 +7,7 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
-**v0.7.1 (2023-09-??)**
+**v0.7.1 (2023-09-09)**
 - Fixed a bug that broke some shader effects when simulated normal maps or overbright rendering were enabled
 - Fixed a bug that caused tiles to erroneously glow under some circumstances
 - Attempted to fix a bug that skipped night when using some combinations of other mods
