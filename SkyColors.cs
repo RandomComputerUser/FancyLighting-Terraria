@@ -15,6 +15,7 @@ public static class SkyColors
     private static bool _dayTimeTmp;
     private static double _timeTmp;
     private static bool _dontStarveWorldTmp;
+    private static bool _modifyNightColor = false;
 
     internal static void Initialize() => Profiles = new()
     {
@@ -44,11 +45,13 @@ public static class SkyColors
             return;
         }
 
+        _modifyNightColor = false;
         orig(info, out sunColor, out moonColor);
 
         _dayTimeTmp = Main.dayTime;
         _timeTmp = Main.time;
         _dontStarveWorldTmp = Main.dontStarveWorld;
+        _modifyNightColor = true;
         Main.dayTime = false;
         Main.time = 0.0;
         Main.dontStarveWorld = true;
@@ -63,6 +66,7 @@ public static class SkyColors
             Main.dayTime = _dayTimeTmp;
             Main.time = _timeTmp;
             Main.dontStarveWorld = _dontStarveWorldTmp;
+            _modifyNightColor = false;
         }
     }
 
@@ -72,7 +76,11 @@ public static class SkyColors
         ref Color moonColor
     )
     {
-        if (Profiles is null || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false))
+        if (
+            !_modifyNightColor
+            || Profiles is null
+            || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false)
+        )
         {
             orig(ref backColor, ref moonColor);
             return;

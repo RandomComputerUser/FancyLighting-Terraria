@@ -8,8 +8,8 @@
     <LangVersion>latest</LangVersion>
     <Title>Fancy Lighting</Title>
     <Authors>RandomComputerUser</Authors>
-    <AssemblyVersion>0.7.1</AssemblyVersion>
-    <Version>0.7.1</Version>
+    <AssemblyVersion>0.7.1.1</AssemblyVersion>
+    <Version>0.7.1.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="localization\en-US.hjson" />

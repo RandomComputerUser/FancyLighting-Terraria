@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.7.1.1 (2023-09-10)**
+- Attempted to fix 7:30 PM bugs in theconstant and getfixedboi worlds when fancy sky colors are enabled (thanks to [Artem00mc](https://steamcommunity.com/id/artem00mc) for discovering the issue)
+
 **v0.7.1 (2023-09-09)**
 - Fixed a bug that broke some shader effects when simulated normal maps or overbright rendering were enabled
 - Fixed a bug that caused tiles to erroneously glow under some circumstances
