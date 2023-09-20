@@ -7,6 +7,10 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+
+**v0.7.1.2 (2023-09-20)**
+- Fixed a bug the caused solar eclipses to not darken the sky when fancy sky colors were enabled
+
 **v0.7.1.1 (2023-09-10)**
 - Attempted to fix 7:30 PM bugs in theconstant and getfixedboi worlds when fancy sky colors are enabled (thanks to [Artem00mc](https://steamcommunity.com/id/artem00mc) for discovering the issue)
 
