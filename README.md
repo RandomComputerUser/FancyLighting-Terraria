@@ -7,6 +7,8 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.7.1.3 (2023-09-22)**
+- Fixed a visual issue that occurred when the cave background changed
 
 **v0.7.1.2 (2023-09-20)**
 - Fixed a bug the caused solar eclipses to not darken the sky when fancy sky colors were enabled
