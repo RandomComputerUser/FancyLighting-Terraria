@@ -42,6 +42,7 @@ internal sealed class SmoothLighting
 
     private bool _isDangersenseActive;
     private bool _isSpelunkerActive;
+    private bool _isBiomeSightActive;
 
     private bool _smoothLightingLightMapValid;
     private bool _smoothLightingPositionValid;
@@ -168,6 +169,7 @@ internal sealed class SmoothLighting
 
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
+        _isBiomeSightActive = false;
 
         _bicubicDitherShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
@@ -385,7 +387,7 @@ internal sealed class SmoothLighting
         return true;
     }
 
-    private void TileShine(ref Vector3 color, Tile tile)
+    private static void TileShine(ref Vector3 color, Tile tile)
     {
         // Method from vanilla limits brightness to 1f,
         //   which we don't want
@@ -876,6 +878,8 @@ internal sealed class SmoothLighting
             new ParallelOptions { MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount },
             (x) =>
             {
+                Color dummyColor = new();
+
                 bool isXInTilemap = x >= 0 && x < Main.tile.Width;
                 ushort tilemapHeight = Main.tile.Height;
                 int i = height * (x - lightMapTileArea.X);
@@ -898,11 +902,13 @@ internal sealed class SmoothLighting
                                 || tile.IsWallFullbright
                                 || HasShimmer(tile) // Shimmer
                                 || _glowingTiles[tile.TileType] // Glowing Tiles
-                                || (
-                                    _isDangersenseActive // Dangersense Potion
-                                    && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(x, y, Main.LocalPlayer)
-                                )
-                                || (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))) // Spelunker Potion
+                                || _isDangersenseActive // Dangersense Potion
+                                    && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(
+                                            x, y, Main.LocalPlayer
+                                        )
+                                || _isSpelunkerActive && Main.IsTileSpelunkable(x, y) // Spelunker Potion
+                                || _isBiomeSightActive && Main.IsTileBiomeSightable(x, y, ref dummyColor) // Biome Sight Potion
+                            )
                             {
                                 _hasLight[i++] = 2;
                                 continue;
@@ -1032,6 +1038,7 @@ internal sealed class SmoothLighting
 
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
         _isSpelunkerActive = Main.LocalPlayer.findTreasure;
+        _isBiomeSightActive = Main.LocalPlayer.biomeSight;
 
         if (!_smoothLightingPositionValid || cameraMode)
         {
@@ -1079,12 +1086,6 @@ internal sealed class SmoothLighting
         if (offset < 0 || offset >= height)
         {
             return;
-        }
-
-        if (!background)
-        {
-            _isDangersenseActive = Main.LocalPlayer.dangerSense;
-            _isSpelunkerActive = Main.LocalPlayer.findTreasure;
         }
 
         if (LightingConfig.Instance.HiDefFeaturesEnabled())
@@ -1221,8 +1222,9 @@ internal sealed class SmoothLighting
                         try
                         {
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
-
                             Tile tile = Main.tile[x, y];
+
+                            Color biomeSightColor = new();
 
                             // Illuminant Paint and Shimmer
                             if (tile.IsTileFullbright || HasShimmer(tile))
@@ -1255,6 +1257,13 @@ internal sealed class SmoothLighting
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
+                            }
+                            // Biome Sight Potion
+                            else if (_isBiomeSightActive && Main.IsTileBiomeSightable(x, y, ref biomeSightColor))
+                            {
+                                lightColor.X = Math.Max(lightColor.X, (1f / 255f) * biomeSightColor.R);
+                                lightColor.Y = Math.Max(lightColor.Y, (1f / 255f) * biomeSightColor.G);
+                                lightColor.Z = Math.Max(lightColor.Z, (1f / 255f) * biomeSightColor.B);
                             }
 
                             TileShine(ref lightColor, tile);
@@ -1387,8 +1396,9 @@ internal sealed class SmoothLighting
                         try
                         {
                             Vector3.Multiply(ref _lights[i], brightness, out Vector3 lightColor);
-
                             Tile tile = Main.tile[x, y];
+
+                            Color biomeSightColor = new();
 
                             // Illuminant Paint and Shimmer
                             if (tile.IsTileFullbright || HasShimmer(tile))
@@ -1421,6 +1431,13 @@ internal sealed class SmoothLighting
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
+                            }
+                            // Biome Sight Potion
+                            else if (_isBiomeSightActive && Main.IsTileBiomeSightable(x, y, ref biomeSightColor))
+                            {
+                                lightColor.X = Math.Max(lightColor.X, (1f / 255f) * biomeSightColor.R);
+                                lightColor.Y = Math.Max(lightColor.Y, (1f / 255f) * biomeSightColor.G);
+                                lightColor.Z = Math.Max(lightColor.Z, (1f / 255f) * biomeSightColor.B);
                             }
 
                             TileShine(ref lightColor, tile);

@@ -7,6 +7,9 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 
 ### Latest Version
 
+**v0.7.1.4 (2023-10-23)**
+- Added support for the biome sight potion when using smooth lighting
+
 **v0.7.1.3 (2023-09-22)**
 - Fixed a visual issue that occurred when the cave background changed
 
