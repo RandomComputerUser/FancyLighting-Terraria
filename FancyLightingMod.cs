@@ -523,11 +523,19 @@ public sealed class FancyLightingMod : Mod
                 );
         }
 
+        SamplerState samplerState;
+        if (ModLoader.TryGetMod("PixelatedBackgrounds", out Mod _))
+        {
+            samplerState = SamplerState.PointClamp;
+        } else {
+            samplerState = _inCameraMode ? SamplerState.AnisotropicClamp : SamplerState.LinearClamp;
+        }
+
         Main.spriteBatch.End();
         Main.spriteBatch.Begin(
             SpriteSortMode.Immediate,
             BlendState.AlphaBlend,
-            _inCameraMode ? SamplerState.AnisotropicClamp : SamplerState.LinearClamp,
+            samplerState,
             DepthStencilState.Default,
             RasterizerState.CullNone,
             null,
