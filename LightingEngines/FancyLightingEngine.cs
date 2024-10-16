@@ -145,11 +145,11 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
             );
         }
 
-        Span<double> lightFrom = stackalloc double[2 * 2];
-        Span<double> area = stackalloc double[2];
+        var lightFrom = (Span<double>)stackalloc double[2 * 2];
+        var area = (Span<double>)stackalloc double[2];
 
-        var x = stackalloc[] { 0.0, 1.0 };
-        var y = stackalloc[] { 0.0, 0.0 };
+        var x = (Span<double>)[0.0, 1.0];
+        var y = (Span<double>)[0.0, 0.0];
         CalculateSubTileLightSpread(in x, in y, ref lightFrom, ref area, row, col);
 
         distanceToTop -=
@@ -331,7 +331,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
             var circle = _circles[lightRange];
-            Span<float> workingLights = stackalloc float[lightRange + 1];
+            var workingLights = (Span<float>)stackalloc float[lightRange + 1];
 
             if (doUpperLeft)
             {
@@ -409,7 +409,7 @@ internal sealed class FancyLightingEngine : FancyLightingEngineBase
 
     private void ProcessQuadrant(
         Vec3[] lightMap,
-        ref Span<float> workingLights,
+        scoped ref Span<float> workingLights,
         int[] circle,
         Vec3 color,
         int index,

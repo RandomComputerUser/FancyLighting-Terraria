@@ -222,14 +222,14 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
             );
         }
 
-        Span<double> lightFrom = stackalloc double[8 * 8];
-        Span<double> area = stackalloc double[8];
+        var lightFrom = (Span<double>)stackalloc double[8 * 8];
+        var area = (Span<double>)stackalloc double[8];
 
-        var x = stackalloc[] { 0.0, 0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0 };
-        var y = stackalloc[] { 0.75, 0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        var x = (Span<double>)[0.0, 0.0, 0.0, 0.0, 0.25, 0.5, 0.75, 1.0];
+        var y = (Span<double>)[0.75, 0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0];
         CalculateSubTileLightSpread(in x, in y, ref lightFrom, ref area, row, col);
 
-        static double QuadrantSum(in Span<double> lightFrom, int index)
+        static double QuadrantSum(scoped in Span<double> lightFrom, int index)
         {
             var result = 0.0;
             var i = index;
@@ -245,7 +245,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
             return result;
         }
 
-        static Vec4 VectorAt(in Span<double> lightFrom, int index) =>
+        static Vec4 VectorAt(scoped in Span<double> lightFrom, int index) =>
             new(
                 (float)lightFrom[index],
                 (float)lightFrom[index + 1],
@@ -253,7 +253,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
                 (float)lightFrom[index + 3]
             );
 
-        static Vec4 ReverseVectorAt(in Span<double> lightFrom, int index) =>
+        static Vec4 ReverseVectorAt(scoped in Span<double> lightFrom, int index) =>
             new(
                 (float)lightFrom[index + 3],
                 (float)lightFrom[index + 2],
@@ -464,7 +464,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
             var circle = _circles[lightRange];
-            Span<Vec4> workingLights = stackalloc Vec4[lightRange + 1];
+            var workingLights = (Span<Vec4>)stackalloc Vec4[lightRange + 1];
 
             if (doUpperLeft)
             {
@@ -542,7 +542,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
 
     private void ProcessQuadrant(
         Vec3[] lightMap,
-        ref Span<Vec4> workingLights,
+        scoped ref Span<Vec4> workingLights,
         int[] circle,
         Vec3 color,
         int index,
