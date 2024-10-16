@@ -23,3 +23,4 @@ Additionally, some tiles shine different colors, modifying their own lighting. F
 Glowing tile entities should work correctly because smooth lighting is not applied to tile entities except for overbright lighting. This mod does not alter the lighting of NPCs and projectiles.
 
 Minimum Graphics API: Direct3D 11 or OpenGL 3.0
+For the best experience, it is recommended to use Direct3D when running this mod. If you are on Linux, run tModloader with Proton Experimental and use the /gldevice:D3D11 launch options if you are experiencing any issues.

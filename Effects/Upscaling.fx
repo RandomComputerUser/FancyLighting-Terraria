@@ -1,5 +1,5 @@
 sampler LightSampler : register(s0);
-sampler DitherSampler : register(s1);
+sampler DitherSampler : register(s4);
 
 float2 LightMapSize;
 float2 PixelSize;

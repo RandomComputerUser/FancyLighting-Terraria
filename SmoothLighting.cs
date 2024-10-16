@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using FancyLighting.Config;
@@ -41,6 +42,7 @@ internal sealed class SmoothLighting
 
     private bool _isDangersenseActive;
     private bool _isSpelunkerActive;
+    private bool _isBiomeSightActive;
 
     private bool _smoothLightingLightMapValid;
     private bool _smoothLightingPositionValid;
@@ -173,6 +175,7 @@ internal sealed class SmoothLighting
 
         _isDangersenseActive = false;
         _isSpelunkerActive = false;
+        _isBiomeSightActive = false;
 
         _bicubicDitherShader = EffectLoader.LoadEffect(
             "FancyLighting/Effects/Upscaling",
@@ -356,11 +359,17 @@ internal sealed class SmoothLighting
         return color;
     }
 
-    private static bool ShouldTileGlow(ushort type, short frameX)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasShimmer(Tile tile) =>
+        tile.LiquidAmount > 0 && tile.LiquidType is LiquidID.Shimmer;
+
+    private static bool ShouldTileShine(ushort type, short frameX)
     {
         // We could use the method from vanilla, but that's
         //   private and using reflection to get a delegate
         //   might reduce performance
+
+        // This code is adapted from vanilla
 
         if (Main.shimmerAlpha > 0f && Main.tileSolid[type] || type == TileID.Stalactite)
         {
@@ -394,15 +403,17 @@ internal sealed class SmoothLighting
         return true;
     }
 
-    private void TileShine(ref Vector3 color, Tile tile)
+    private static void TileShine(ref Vector3 color, Tile tile)
     {
         // Method from vanilla limits brightness to 1f,
         //   which we don't want
 
+        // This code is adapted from vanilla
+
         var type = tile.TileType;
         var frameX = tile.TileFrameX;
 
-        if (!ShouldTileGlow(type, frameX))
+        if (!ShouldTileShine(type, frameX))
         {
             return;
         }
@@ -961,6 +972,8 @@ internal sealed class SmoothLighting
             },
             (x) =>
             {
+                var dummyColor = new Color();
+
                 var isXInTilemap = x >= 0 && x < Main.tile.Width;
                 var tilemapHeight = Main.tile.Height;
                 int i = height * (x - lightMapTileArea.X);
@@ -982,18 +995,18 @@ internal sealed class SmoothLighting
                             if (
                                 tile.IsTileFullbright // Illuminant Paint
                                 || tile.IsWallFullbright
-                                || tile.LiquidType == LiquidID.Shimmer // Shimmer
+                                || HasShimmer(tile) // Shimmer
                                 || _glowingTiles[tile.TileType] // Glowing Tiles
-                                || (
-                                    _isDangersenseActive // Dangersense Potion
+                                || _isDangersenseActive // Dangersense Potion
                                     && Terraria.GameContent.Drawing.TileDrawing.IsTileDangerous(
                                         x,
                                         y,
                                         Main.LocalPlayer
                                     )
-                                )
-                                || (_isSpelunkerActive && Main.IsTileSpelunkable(x, y))
-                            ) // Spelunker Potion
+                                || _isSpelunkerActive && Main.IsTileSpelunkable(x, y) // Spelunker Potion
+                                || _isBiomeSightActive
+                                    && Main.IsTileBiomeSightable(x, y, ref dummyColor) // Biome Sight Potion
+                            )
                             {
                                 _hasLight[i++] = 2;
                                 continue;
@@ -1135,6 +1148,7 @@ internal sealed class SmoothLighting
 
         _isDangersenseActive = Main.LocalPlayer.dangerSense;
         _isSpelunkerActive = Main.LocalPlayer.findTreasure;
+        _isBiomeSightActive = Main.LocalPlayer.biomeSight;
 
         if (!_smoothLightingPositionValid || cameraMode)
         {
@@ -1182,12 +1196,6 @@ internal sealed class SmoothLighting
         if (offset < 0 || offset >= height)
         {
             return;
-        }
-
-        if (!background)
-        {
-            _isDangersenseActive = Main.LocalPlayer.dangerSense;
-            _isSpelunkerActive = Main.LocalPlayer.findTreasure;
         }
 
         if (LightingConfig.Instance.HiDefFeaturesEnabled())
@@ -1277,10 +1285,7 @@ internal sealed class SmoothLighting
                             var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (
-                                tile.IsWallFullbright
-                                || tile.LiquidType is LiquidID.Shimmer
-                            )
+                            if (tile.IsWallFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1352,14 +1357,12 @@ internal sealed class SmoothLighting
                                 brightness,
                                 out var lightColor
                             );
-
                             var tile = Main.tile[x, y];
 
+                            var biomeSightColor = new Color();
+
                             // Illuminant Paint and Shimmer
-                            if (
-                                tile.IsTileFullbright
-                                || tile.LiquidType is LiquidID.Shimmer
-                            )
+                            if (tile.IsTileFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1393,6 +1396,25 @@ internal sealed class SmoothLighting
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
+                            }
+                            // Biome Sight Potion
+                            else if (
+                                _isBiomeSightActive
+                                && Main.IsTileBiomeSightable(x, y, ref biomeSightColor)
+                            )
+                            {
+                                lightColor.X = Math.Max(
+                                    lightColor.X,
+                                    (1f / 255f) * biomeSightColor.R
+                                );
+                                lightColor.Y = Math.Max(
+                                    lightColor.Y,
+                                    (1f / 255f) * biomeSightColor.G
+                                );
+                                lightColor.Z = Math.Max(
+                                    lightColor.Z,
+                                    (1f / 255f) * biomeSightColor.B
+                                );
                             }
 
                             TileShine(ref lightColor, tile);
@@ -1482,10 +1504,7 @@ internal sealed class SmoothLighting
                             var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
-                            if (
-                                tile.IsWallFullbright
-                                || tile.LiquidType is LiquidID.Shimmer
-                            )
+                            if (tile.IsWallFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1551,14 +1570,12 @@ internal sealed class SmoothLighting
                                 brightness,
                                 out var lightColor
                             );
-
                             var tile = Main.tile[x, y];
 
+                            var biomeSightColor = new Color();
+
                             // Illuminant Paint and Shimmer
-                            if (
-                                tile.IsTileFullbright
-                                || tile.LiquidType is LiquidID.Shimmer
-                            )
+                            if (tile.IsTileFullbright || HasShimmer(tile))
                             {
                                 lightColor.X = Math.Max(lightColor.X, brightness);
                                 lightColor.Y = Math.Max(lightColor.Y, brightness);
@@ -1592,6 +1609,25 @@ internal sealed class SmoothLighting
                             {
                                 lightColor.X = Math.Max(lightColor.X, 200f / 255f);
                                 lightColor.Y = Math.Max(lightColor.Y, 170f / 255f);
+                            }
+                            // Biome Sight Potion
+                            else if (
+                                _isBiomeSightActive
+                                && Main.IsTileBiomeSightable(x, y, ref biomeSightColor)
+                            )
+                            {
+                                lightColor.X = Math.Max(
+                                    lightColor.X,
+                                    (1f / 255f) * biomeSightColor.R
+                                );
+                                lightColor.Y = Math.Max(
+                                    lightColor.Y,
+                                    (1f / 255f) * biomeSightColor.G
+                                );
+                                lightColor.Z = Math.Max(
+                                    lightColor.Z,
+                                    (1f / 255f) * biomeSightColor.B
+                                );
                             }
 
                             TileShine(ref lightColor, tile);
@@ -1880,8 +1916,8 @@ internal sealed class SmoothLighting
                         )
                     )
                     .Apply();
-                Main.graphics.GraphicsDevice.Textures[1] = _ditherNoise;
-                Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[4] = _ditherNoise;
+                Main.graphics.GraphicsDevice.SamplerStates[4] = SamplerState.PointWrap;
             }
         }
 
@@ -2000,8 +2036,8 @@ internal sealed class SmoothLighting
                     )
                 )
                 .SetParameter("HiDefNormalMapStrength", hiDefNormalMapStrength);
-            Main.graphics.GraphicsDevice.Textures[1] = worldTarget;
-            Main.graphics.GraphicsDevice.SamplerStates[1] = SamplerState.PointClamp;
+            Main.graphics.GraphicsDevice.Textures[4] = worldTarget;
+            Main.graphics.GraphicsDevice.SamplerStates[4] = SamplerState.PointClamp;
             if (doDitheringSecond)
             {
                 shader.SetParameter(
@@ -2011,8 +2047,8 @@ internal sealed class SmoothLighting
                         (float)target2.Height / _ditherNoise.Height
                     )
                 );
-                Main.graphics.GraphicsDevice.Textures[2] = _ditherNoise;
-                Main.graphics.GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
+                Main.graphics.GraphicsDevice.Textures[5] = _ditherNoise;
+                Main.graphics.GraphicsDevice.SamplerStates[5] = SamplerState.PointWrap;
             }
             if (doAmbientOcclusion)
             {
@@ -2023,8 +2059,8 @@ internal sealed class SmoothLighting
                         (float)target2.Height / ambientOcclusionTarget.Height
                     )
                 );
-                Main.graphics.GraphicsDevice.Textures[3] = ambientOcclusionTarget;
-                Main.graphics.GraphicsDevice.SamplerStates[3] = SamplerState.PointClamp;
+                Main.graphics.GraphicsDevice.Textures[6] = ambientOcclusionTarget;
+                Main.graphics.GraphicsDevice.SamplerStates[6] = SamplerState.PointClamp;
             }
             shader.Apply();
 

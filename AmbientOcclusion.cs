@@ -122,9 +122,11 @@ internal sealed class AmbientOcclusion
 
         Main.graphics.GraphicsDevice.SetRenderTarget(null);
 
-        return doDraw ? null
-            : useTarget2 ? _drawTarget1
-            : _drawTarget2;
+        return doDraw
+            ? null
+            : useTarget2
+                ? _drawTarget1
+                : _drawTarget2;
     }
 
     internal RenderTarget2D ApplyAmbientOcclusionCameraMode(
@@ -246,9 +248,11 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.End();
         }
 
-        return doDraw ? null
-            : useTarget2 ? _cameraModeTarget3
-            : _cameraModeTarget2;
+        return doDraw
+            ? null
+            : useTarget2
+                ? _cameraModeTarget3
+                : _cameraModeTarget2;
     }
 
     private void ApplyAmbientOcclusionInner(

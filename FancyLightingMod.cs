@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.GameContent.Drawing;
-using Terraria.Graphics;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Light;
 using Terraria.ID;
@@ -358,16 +357,6 @@ public sealed class FancyLightingMod : Mod
 
     private void AddHooks()
     {
-        Terraria.On_Lighting.GetSubLight += _GetSubLight;
-        Terraria.On_Lighting.GetCornerColors += _GetCornerColors;
-        Terraria.On_Lighting.GetColor9Slice_int_int_refVector3Array +=
-            _GetColor9Slice_int_int_refVector3Array;
-        Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array +=
-            _GetColor4Slice_int_int_refVector3Array;
-        Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray +=
-            _GetColor9Slice_int_int_refColorArray;
-        Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray +=
-            _GetColor4Slice_int_int_refColorArray;
         Terraria.GameContent.Drawing.On_TileDrawing.ShouldTileShine += _ShouldTileShine;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
         Terraria.On_Main.DrawSurfaceBG += _DrawSurfaceBG;
@@ -389,118 +378,6 @@ public sealed class FancyLightingMod : Mod
         Terraria.On_Main.DrawWalls += _DrawWalls;
         Terraria.On_Main.DrawTiles += _DrawTiles;
         Terraria.On_Main.DrawCapture += _DrawCapture;
-    }
-
-    private static Vector3 _GetSubLight(
-        Terraria.On_Lighting.orig_GetSubLight orig,
-        Vector2 position
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            return orig(position);
-        }
-
-        return Vector3.One;
-    }
-
-    private static void _GetCornerColors(
-        Terraria.On_Lighting.orig_GetCornerColors orig,
-        int centerX,
-        int centerY,
-        out VertexColors vertices,
-        float scale
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            orig(centerX, centerY, out vertices, scale);
-            return;
-        }
-
-        vertices = new(Color.White);
-    }
-
-    private static void _GetColor9Slice_int_int_refVector3Array(
-        Terraria.On_Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
-        int x,
-        int y,
-        ref Vector3[] slices
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (var i = 0; i < slices.Length; ++i)
-        {
-            ref var slice = ref slices[i];
-            slice.X = 1f;
-            slice.Y = 1f;
-            slice.Z = 1f;
-        }
-    }
-
-    private static void _GetColor4Slice_int_int_refVector3Array(
-        Terraria.On_Lighting.orig_GetColor4Slice_int_int_refVector3Array orig,
-        int x,
-        int y,
-        ref Vector3[] slices
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (var i = 0; i < slices.Length; ++i)
-        {
-            ref var slice = ref slices[i];
-            slice.X = 1f;
-            slice.Y = 1f;
-            slice.Z = 1f;
-        }
-    }
-
-    private static void _GetColor9Slice_int_int_refColorArray(
-        Terraria.On_Lighting.orig_GetColor9Slice_int_int_refColorArray orig,
-        int x,
-        int y,
-        ref Color[] slices
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (var i = 0; i < slices.Length; ++i)
-        {
-            slices[i].PackedValue = 0xFFFFFFFF; // White
-        }
-    }
-
-    private static void _GetColor4Slice_int_int_refColorArray(
-        Terraria.On_Lighting.orig_GetColor4Slice_int_int_refColorArray orig,
-        int x,
-        int y,
-        ref Color[] slices
-    )
-    {
-        if (!_overrideLightColor)
-        {
-            orig(x, y, ref slices);
-            return;
-        }
-
-        for (var i = 0; i < slices.Length; ++i)
-        {
-            slices[i].PackedValue = 0xFFFFFFFF; // White
-        }
     }
 
     private bool _ShouldTileShine(
@@ -910,7 +787,6 @@ public sealed class FancyLightingMod : Mod
         if (_inCameraMode)
         {
             _smoothLightingInstance.CalculateSmoothLighting(true, true);
-            OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingBack;
 
             Main.tileBatch.End();
             Main.spriteBatch.End();
@@ -920,6 +796,7 @@ public sealed class FancyLightingMod : Mod
             Main.graphics.GraphicsDevice.Clear(Color.Transparent);
             Main.tileBatch.Begin();
             Main.spriteBatch.Begin();
+            OverrideLightColor = _smoothLightingInstance.DrawSmoothLightingBack;
             try
             {
                 orig(self);

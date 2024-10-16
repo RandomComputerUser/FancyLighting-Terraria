@@ -18,6 +18,7 @@ public static class SkyColors
 
     private static bool _dayTimeTmp;
     private static bool _dontStarveWorldTmp;
+    private static bool _modifyNightColor = false;
 
     internal static void Initialize() =>
         Profiles = new()
@@ -48,10 +49,12 @@ public static class SkyColors
             return;
         }
 
+        _modifyNightColor = false;
         orig(info, out sunColor, out moonColor);
 
         _dayTimeTmp = Main.dayTime;
         _dontStarveWorldTmp = Main.dontStarveWorld;
+        _modifyNightColor = true;
         Main.dayTime = false;
         Main.dontStarveWorld = true;
         // info is a struct, so we don't have to reset this value
@@ -64,6 +67,7 @@ public static class SkyColors
         {
             Main.dayTime = _dayTimeTmp;
             Main.dontStarveWorld = _dontStarveWorldTmp;
+            _modifyNightColor = false;
         }
     }
 
@@ -74,7 +78,8 @@ public static class SkyColors
     )
     {
         if (
-            Profiles is null
+            !_modifyNightColor
+            || Profiles is null
             || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false)
         )
         {
