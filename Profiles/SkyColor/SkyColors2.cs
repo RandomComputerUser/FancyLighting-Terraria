@@ -12,9 +12,9 @@ public class SkyColors2 : ISimpleColorProfile
 
         _profile = new(InterpolationMode.Cubic);
 
-        double noonTime = 12.0;
-        double sunriseTime = noonTime - 7.0;
-        double sunsetTime = noonTime + 7.0;
+        var noonTime = 12.0;
+        var sunriseTime = noonTime - 7.0;
+        var sunsetTime = noonTime + 7.0;
 
         Vector3 midnightColor = new Vector3(8, 10, 15) / 255f;
         Vector3 twilightColor1 = new Vector3(10, 13, 18) / 255f;
@@ -41,7 +41,7 @@ public class SkyColors2 : ISimpleColorProfile
             (24.0, midnightColor),
         };
 
-        foreach ((double hour, Vector3 color) in colors)
+        foreach ((var hour, var color) in colors)
         {
             _profile.AddColor(hour, color);
         }

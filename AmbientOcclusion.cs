@@ -99,7 +99,7 @@ internal sealed class AmbientOcclusion
             _drawTarget1,
             _drawTarget2,
             doDraw,
-            out bool useTarget2
+            out var useTarget2
         );
 
         if (doDraw)
@@ -172,7 +172,7 @@ internal sealed class AmbientOcclusion
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
-        bool extraLayer =
+        var extraLayer =
             LightingConfig.Instance.DoNonSolidAmbientOcclusion
             || LightingConfig.Instance.DoTileEntityAmbientOcclusion;
 
@@ -212,7 +212,7 @@ internal sealed class AmbientOcclusion
             _cameraModeTarget3,
             _cameraModeTarget2,
             doDraw,
-            out bool useTarget2
+            out var useTarget2
         );
 
         if (doDraw)
@@ -272,8 +272,8 @@ internal sealed class AmbientOcclusion
             float blurMult = 0f
         )
         {
-            RenderTarget2D surfaceDestination = useTarget2 ? target2 : target1;
-            RenderTarget2D surfaceSource = useTarget2 ? target1 : target2;
+            var surfaceDestination = useTarget2 ? target2 : target1;
+            var surfaceSource = useTarget2 ? target1 : target2;
 
             Main.graphics.GraphicsDevice.SetRenderTarget(surfaceDestination);
 
@@ -303,8 +303,8 @@ internal sealed class AmbientOcclusion
             useTarget2 = !useTarget2;
         }
 
-        bool drawNonSolidTiles = LightingConfig.Instance.DoNonSolidAmbientOcclusion;
-        bool drawTileEntities = LightingConfig.Instance.DoTileEntityAmbientOcclusion;
+        var drawNonSolidTiles = LightingConfig.Instance.DoNonSolidAmbientOcclusion;
+        var drawTileEntities = LightingConfig.Instance.DoTileEntityAmbientOcclusion;
 
         if (!(drawNonSolidTiles || drawTileEntities))
         {
@@ -334,8 +334,8 @@ internal sealed class AmbientOcclusion
 
                 Main.graphics.GraphicsDevice.SetRenderTarget(_tileEntityTarget);
                 Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-                Vector2 currentZoom = Main.GameViewMatrix.Zoom;
-                Vector2 currentScreenPosition = Main.screenPosition;
+                var currentZoom = Main.GameViewMatrix.Zoom;
+                var currentScreenPosition = Main.screenPosition;
                 Main.GameViewMatrix.Zoom = Vector2.One;
                 Main.screenPosition -= new Vector2(Main.offScreenRange);
 
@@ -392,15 +392,15 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.End();
         }
 
-        float power = LightingConfig.Instance.AmbientOcclusionPower();
+        var power = LightingConfig.Instance.AmbientOcclusionPower();
         if (LightingConfig.Instance.DoGammaCorrection())
         {
             power *= 2.2f;
         }
-        float mult = LightingConfig.Instance.AmbientOcclusionMult();
+        var mult = LightingConfig.Instance.AmbientOcclusionMult();
 
-        int radius = LightingConfig.Instance.AmbientOcclusionRadius;
-        int firstShaderBlurStep = radius switch
+        var radius = LightingConfig.Instance.AmbientOcclusionRadius;
+        var firstShaderBlurStep = radius switch
         {
             1 => 1,
             2 => 2,

@@ -7,9 +7,8 @@ internal static class MainRenderTarget
 {
     public static RenderTarget2D Get()
     {
-        RenderTargetBinding[] renderTargets =
-            Main.graphics.GraphicsDevice.GetRenderTargets();
-        RenderTarget2D renderTarget =
+        var renderTargets = Main.graphics.GraphicsDevice.GetRenderTargets();
+        var renderTarget =
             renderTargets is null || renderTargets.Length < 1
                 ? null
                 : (RenderTarget2D)renderTargets[0].RenderTarget;

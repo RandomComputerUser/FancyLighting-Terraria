@@ -94,7 +94,7 @@ internal sealed class SmoothLighting
 
         _glowingTiles = new bool[ushort.MaxValue + 1];
         foreach (
-            ushort id in new ushort[]
+            var id in new ushort[]
             {
                 TileID.Crystals, // Crystal Shards and Gelatin Crystal
                 TileID.AshGrass,
@@ -347,7 +347,7 @@ internal sealed class SmoothLighting
 
     private static Color RainbowGlowColor()
     {
-        Color color = Main.DiscoColor;
+        var color = Main.DiscoColor;
         Vector3 vector = new(color.R / 255f, color.G / 255f, color.B / 255f);
         vector.X = MathF.Sqrt(vector.X);
         vector.Y = MathF.Sqrt(vector.Y);
@@ -399,8 +399,8 @@ internal sealed class SmoothLighting
         // Method from vanilla limits brightness to 1f,
         //   which we don't want
 
-        ushort type = tile.TileType;
-        short frameX = tile.TileFrameX;
+        var type = tile.TileType;
+        var frameX = tile.TileFrameX;
 
         if (!ShouldTileGlow(type, frameX))
         {
@@ -487,10 +487,10 @@ internal sealed class SmoothLighting
                 break;
         }
 
-        float shimmer = Main.shimmerAlpha;
+        var shimmer = Main.shimmerAlpha;
         if (shimmer > 0f)
         {
-            float tmp = 1f - shimmer;
+            var tmp = 1f - shimmer;
             color.X *= tmp + 1.2f * shimmer;
             color.Z *= tmp + 1.6f * shimmer;
         }
@@ -508,7 +508,7 @@ internal sealed class SmoothLighting
         _smoothLightingForeComplete = false;
         _smoothLightingBackComplete = false;
 
-        int length = width * height;
+        var length = width * height;
 
         ArrayUtil.MakeAtLeastSize(ref _lights, length);
         ArrayUtil.MakeAtLeastSize(ref _whiteLights, length);
@@ -524,10 +524,10 @@ internal sealed class SmoothLighting
             return;
         }
 
-        int caughtException = 0;
-        bool doGammaCorrection = LightingConfig.Instance.DoGammaCorrection();
-        bool blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
-        bool doToneMap = LightingConfig.Instance.UseLightMapToneMapping;
+        var caughtException = 0;
+        var doGammaCorrection = LightingConfig.Instance.DoGammaCorrection();
+        var blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
+        var doToneMap = LightingConfig.Instance.UseLightMapToneMapping;
 
         if (doGammaCorrection && !LightingConfig.Instance.FancyLightingEngineEnabled())
         {
@@ -540,8 +540,8 @@ internal sealed class SmoothLighting
                 },
                 (x) =>
                 {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
+                    var i = height * x;
+                    for (var y = 0; y < height; ++y)
                     {
                         try
                         {
@@ -576,31 +576,30 @@ internal sealed class SmoothLighting
                     },
                     (x) =>
                     {
-                        int i = height * x;
-                        for (int y = 1; y < height - 1; ++y)
+                        var i = height * x;
+                        for (var y = 1; y < height - 1; ++y)
                         {
                             ++i;
 
                             try
                             {
-                                LightMaskMode mask = lightMasks[i];
+                                var mask = lightMasks[i];
 
-                                float upperLeftMult =
+                                var upperLeftMult =
                                     lightMasks[i - height - 1] == mask ? 1f : 0f;
-                                float leftMult = lightMasks[i - height] == mask ? 2f : 0f;
-                                float lowerLeftMult =
+                                var leftMult = lightMasks[i - height] == mask ? 2f : 0f;
+                                var lowerLeftMult =
                                     lightMasks[i - height + 1] == mask ? 1f : 0f;
-                                float upperMult = lightMasks[i - 1] == mask ? 2f : 0f;
-                                float middleMult = mask is LightMaskMode.Solid ? 12f : 4f;
-                                float lowerMult = lightMasks[i + 1] == mask ? 2f : 0f;
-                                float upperRightMult =
+                                var upperMult = lightMasks[i - 1] == mask ? 2f : 0f;
+                                var middleMult = mask is LightMaskMode.Solid ? 12f : 4f;
+                                var lowerMult = lightMasks[i + 1] == mask ? 2f : 0f;
+                                var upperRightMult =
                                     lightMasks[i + height - 1] == mask ? 1f : 0f;
-                                float rightMult =
-                                    lightMasks[i + height] == mask ? 2f : 0f;
-                                float lowerRightMult =
+                                var rightMult = lightMasks[i + height] == mask ? 2f : 0f;
+                                var lowerRightMult =
                                     lightMasks[i + height + 1] == mask ? 1f : 0f;
 
-                                float mult =
+                                var mult =
                                     1f
                                     / (
                                         (upperLeftMult + leftMult + lowerLeftMult)
@@ -608,17 +607,17 @@ internal sealed class SmoothLighting
                                         + (upperRightMult + rightMult + lowerRightMult)
                                     );
 
-                                ref Vector3 light = ref _lights[i];
+                                ref var light = ref _lights[i];
 
-                                ref Vector3 upperLeft = ref colors[i - height - 1];
-                                ref Vector3 left = ref colors[i - height];
-                                ref Vector3 lowerLeft = ref colors[i - height + 1];
-                                ref Vector3 upper = ref colors[i - 1];
-                                ref Vector3 middle = ref colors[i];
-                                ref Vector3 lower = ref colors[i + 1];
-                                ref Vector3 upperRight = ref colors[i + height - 1];
-                                ref Vector3 right = ref colors[i + height];
-                                ref Vector3 lowerRight = ref colors[i + height + 1];
+                                ref var upperLeft = ref colors[i - height - 1];
+                                ref var left = ref colors[i - height];
+                                ref var lowerLeft = ref colors[i - height + 1];
+                                ref var upper = ref colors[i - 1];
+                                ref var middle = ref colors[i];
+                                ref var lower = ref colors[i + 1];
+                                ref var upperRight = ref colors[i + height - 1];
+                                ref var right = ref colors[i + height];
+                                ref var lowerRight = ref colors[i + height + 1];
 
                                 // Faster to do it separately for each component
                                 light.X =
@@ -698,24 +697,24 @@ internal sealed class SmoothLighting
                     },
                     (x) =>
                     {
-                        int i = height * x;
-                        for (int y = 1; y < height - 1; ++y)
+                        var i = height * x;
+                        for (var y = 1; y < height - 1; ++y)
                         {
                             ++i;
 
                             try
                             {
-                                ref Vector3 light = ref _lights[i];
+                                ref var light = ref _lights[i];
 
-                                ref Vector3 upperLeft = ref colors[i - height - 1];
-                                ref Vector3 left = ref colors[i - height];
-                                ref Vector3 lowerLeft = ref colors[i - height + 1];
-                                ref Vector3 upper = ref colors[i - 1];
-                                ref Vector3 middle = ref colors[i];
-                                ref Vector3 lower = ref colors[i + 1];
-                                ref Vector3 upperRight = ref colors[i + height - 1];
-                                ref Vector3 right = ref colors[i + height];
-                                ref Vector3 lowerRight = ref colors[i + height + 1];
+                                ref var upperLeft = ref colors[i - height - 1];
+                                ref var left = ref colors[i - height];
+                                ref var lowerLeft = ref colors[i - height + 1];
+                                ref var upper = ref colors[i - 1];
+                                ref var middle = ref colors[i];
+                                ref var lower = ref colors[i + 1];
+                                ref var upperRight = ref colors[i + height - 1];
+                                ref var right = ref colors[i + height];
+                                ref var lowerRight = ref colors[i + height + 1];
 
                                 // Faster to do it separately for each component
                                 light.X =
@@ -755,8 +754,8 @@ internal sealed class SmoothLighting
                 return;
             }
 
-            int offset = (width - 1) * height;
-            for (int i = 0; i < height; ++i)
+            var offset = (width - 1) * height;
+            for (var i = 0; i < height; ++i)
             {
                 try
                 {
@@ -770,9 +769,9 @@ internal sealed class SmoothLighting
                 }
             }
 
-            int end = (width - 1) * height;
+            var end = (width - 1) * height;
             offset = height - 1;
-            for (int i = height; i < end; i += height)
+            for (var i = height; i < end; i += height)
             {
                 try
                 {
@@ -789,7 +788,7 @@ internal sealed class SmoothLighting
 
         if (doToneMap)
         {
-            Vector3[] lights = blurLightMap ? _lights : colors;
+            var lights = blurLightMap ? _lights : colors;
 
             if (doGammaCorrection)
             {
@@ -802,8 +801,8 @@ internal sealed class SmoothLighting
                     },
                     (x) =>
                     {
-                        int i = height * x;
-                        for (int y = 0; y < height; ++y)
+                        var i = height * x;
+                        for (var y = 0; y < height; ++y)
                         {
                             try
                             {
@@ -829,12 +828,12 @@ internal sealed class SmoothLighting
                     },
                     (x) =>
                     {
-                        int i = height * x;
-                        for (int y = 0; y < height; ++y)
+                        var i = height * x;
+                        for (var y = 0; y < height; ++y)
                         {
                             try
                             {
-                                ref Vector3 lightColor = ref lights[i++];
+                                ref var lightColor = ref lights[i++];
 
                                 GammaConverter.SrgbToLinear(ref lightColor);
                                 ToneMapper.ToneMap(ref lightColor);
@@ -877,8 +876,8 @@ internal sealed class SmoothLighting
                 },
                 (x) =>
                 {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
+                    var i = height * x;
+                    for (var y = 0; y < height; ++y)
                     {
                         try
                         {
@@ -908,8 +907,8 @@ internal sealed class SmoothLighting
                 },
                 (x) =>
                 {
-                    int i = height * x;
-                    for (int y = 0; y < height; ++y)
+                    var i = height * x;
+                    for (var y = 0; y < height; ++y)
                     {
                         try
                         {
@@ -942,12 +941,11 @@ internal sealed class SmoothLighting
             }
         }
 
-        LightingEngine lightEngine = (LightingEngine)
-            _modInstance.field_activeEngine.GetValue(null);
-        Rectangle lightMapTileArea = (Rectangle)
+        var lightEngine = (LightingEngine)_modInstance.field_activeEngine.GetValue(null);
+        var lightMapTileArea = (Rectangle)
             _modInstance.field_workingProcessedArea.GetValue(lightEngine);
 
-        float low = 0.49f / 255f;
+        var low = 0.49f / 255f;
         if (doGammaCorrection)
         {
             GammaConverter.SrgbToLinear(ref low);
@@ -963,14 +961,14 @@ internal sealed class SmoothLighting
             },
             (x) =>
             {
-                bool isXInTilemap = x >= 0 && x < Main.tile.Width;
-                ushort tilemapHeight = Main.tile.Height;
+                var isXInTilemap = x >= 0 && x < Main.tile.Width;
+                var tilemapHeight = Main.tile.Height;
                 int i = height * (x - lightMapTileArea.X);
-                for (int y = lightMapTileArea.Y; y < ymax; ++y)
+                for (var y = lightMapTileArea.Y; y < ymax; ++y)
                 {
                     try
                     {
-                        ref Vector3 color = ref _lights[i];
+                        ref var color = ref _lights[i];
                         if (color.X > low || color.Y > low || color.Z > low)
                         {
                             _hasLight[i++] = 2;
@@ -979,7 +977,7 @@ internal sealed class SmoothLighting
 
                         if (isXInTilemap && y >= 0 && y < tilemapHeight)
                         {
-                            Tile tile = Main.tile[x, y];
+                            var tile = Main.tile[x, y];
 
                             if (
                                 tile.IsTileFullbright // Illuminant Paint
@@ -1032,12 +1030,12 @@ internal sealed class SmoothLighting
             },
             (x) =>
             {
-                int i = height * x;
-                for (int y = 1; y < height - 1; ++y)
+                var i = height * x;
+                for (var y = 1; y < height - 1; ++y)
                 {
                     try
                     {
-                        ref Vector3 whiteLight = ref _whiteLights[++i];
+                        ref var whiteLight = ref _whiteLights[++i];
 
                         if (
                             _hasLight[i] != 0
@@ -1090,10 +1088,10 @@ internal sealed class SmoothLighting
 
     private void GetColorsPosition(bool cameraMode)
     {
-        int xmin = _lightMapTileArea.X;
-        int ymin = _lightMapTileArea.Y;
-        int width = _lightMapTileArea.Width;
-        int height = _lightMapTileArea.Height;
+        var xmin = _lightMapTileArea.X;
+        var ymin = _lightMapTileArea.Y;
+        var width = _lightMapTileArea.Width;
+        var height = _lightMapTileArea.Height;
 
         if (width == 0 || height == 0)
         {
@@ -1153,34 +1151,34 @@ internal sealed class SmoothLighting
             return;
         }
 
-        int xmin = _lightMapTileArea.X;
-        int ymin = _lightMapTileArea.Y;
-        int width = _lightMapTileArea.Width;
-        int height = _lightMapTileArea.Height;
-        int ymax = ymin + height;
+        var xmin = _lightMapTileArea.X;
+        var ymin = _lightMapTileArea.Y;
+        var width = _lightMapTileArea.Width;
+        var height = _lightMapTileArea.Height;
+        var ymax = ymin + height;
 
-        int clampedXmin = Math.Clamp(xmin, 0, Main.tile.Width);
-        int clampedXmax = Math.Clamp(xmin + width, 0, Main.tile.Width);
+        var clampedXmin = Math.Clamp(xmin, 0, Main.tile.Width);
+        var clampedXmax = Math.Clamp(xmin + width, 0, Main.tile.Width);
         if (clampedXmax - clampedXmin < 1)
         {
             return;
         }
 
-        int clampedStart = Math.Clamp(clampedXmin - xmin, 0, width);
-        int clampedEnd = Math.Clamp(clampedXmax - clampedXmin, 0, width);
+        var clampedStart = Math.Clamp(clampedXmin - xmin, 0, width);
+        var clampedEnd = Math.Clamp(clampedXmax - clampedXmin, 0, width);
         if (clampedEnd - clampedStart < 1)
         {
             return;
         }
 
-        int clampedYmin = Math.Clamp(ymin, 0, Main.tile.Height);
-        int clampedYmax = Math.Clamp(ymax, 0, Main.tile.Height);
+        var clampedYmin = Math.Clamp(ymin, 0, Main.tile.Height);
+        var clampedYmax = Math.Clamp(ymax, 0, Main.tile.Height);
         if (clampedYmax - clampedYmin < 1)
         {
             return;
         }
 
-        int offset = clampedYmin - ymin;
+        var offset = clampedYmin - ymin;
         if (offset < 0 || offset >= height)
         {
             return;
@@ -1237,19 +1235,19 @@ internal sealed class SmoothLighting
         bool cameraMode
     )
     {
-        int length = width * height;
+        var length = width * height;
 
         ArrayUtil.MakeAtLeastSize(ref _finalLightsHiDef, length);
         _finalLights = null; // Save some memory
 
-        int caughtException = 0;
+        var caughtException = 0;
 
         const int OVERBRIGHT_WHITE = 16384;
         const float OVERBRIGHT_MULT = OVERBRIGHT_WHITE / 65535f;
 
-        float brightness = Lighting.GlobalBrightness;
-        float glowMult = brightness / 255f;
-        float multFromOverbright = LightingConfig.Instance.DrawOverbright()
+        var brightness = Lighting.GlobalBrightness;
+        var glowMult = brightness / 255f;
+        var multFromOverbright = LightingConfig.Instance.DrawOverbright()
             ? OVERBRIGHT_MULT
             : 1f;
 
@@ -1264,19 +1262,19 @@ internal sealed class SmoothLighting
                 },
                 (x1) =>
                 {
-                    int i = height * x1 + offset;
-                    int x = x1 + xmin;
-                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    var i = height * x1 + offset;
+                    var x = x1 + xmin;
+                    for (var y = clampedYmin; y < clampedYmax; ++y)
                     {
                         try
                         {
                             Vector3.Multiply(
                                 ref _lights[i],
                                 brightness,
-                                out Vector3 lightColor
+                                out var lightColor
                             );
 
-                            Tile tile = Main.tile[x, y];
+                            var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
                             if (
@@ -1343,19 +1341,19 @@ internal sealed class SmoothLighting
                 },
                 (x1) =>
                 {
-                    int i = height * x1 + offset;
-                    int x = x1 + xmin;
-                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    var i = height * x1 + offset;
+                    var x = x1 + xmin;
+                    for (var y = clampedYmin; y < clampedYmax; ++y)
                     {
                         try
                         {
                             Vector3.Multiply(
                                 ref _lights[i],
                                 brightness,
-                                out Vector3 lightColor
+                                out var lightColor
                             );
 
-                            Tile tile = Main.tile[x, y];
+                            var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
                             if (
@@ -1370,7 +1368,7 @@ internal sealed class SmoothLighting
                             // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
                             else if (_glowingTiles[tile.TileType])
                             {
-                                ref Color glow = ref _glowingTileColors[tile.TileType];
+                                ref var glow = ref _glowingTileColors[tile.TileType];
 
                                 lightColor.X = Math.Max(lightColor.X, glowMult * glow.R);
                                 lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
@@ -1442,19 +1440,19 @@ internal sealed class SmoothLighting
         bool cameraMode
     )
     {
-        int length = width * height;
+        var length = width * height;
 
         ArrayUtil.MakeAtLeastSize(ref _finalLights, length);
         _finalLightsHiDef = null; // Save some memory
 
-        int caughtException = 0;
+        var caughtException = 0;
 
         const int OVERBRIGHT_WHITE = 128;
         const float OVERBRIGHT_MULT = OVERBRIGHT_WHITE / 255f;
 
-        float brightness = Lighting.GlobalBrightness;
-        float glowMult = brightness / 255f;
-        float multFromOverbright = LightingConfig.Instance.DrawOverbright()
+        var brightness = Lighting.GlobalBrightness;
+        var glowMult = brightness / 255f;
+        var multFromOverbright = LightingConfig.Instance.DrawOverbright()
             ? OVERBRIGHT_MULT
             : 1f;
 
@@ -1469,19 +1467,19 @@ internal sealed class SmoothLighting
                 },
                 (x1) =>
                 {
-                    int i = height * x1 + offset;
-                    int x = x1 + xmin;
-                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    var i = height * x1 + offset;
+                    var x = x1 + xmin;
+                    for (var y = clampedYmin; y < clampedYmax; ++y)
                     {
                         try
                         {
                             Vector3.Multiply(
                                 ref _lights[i],
                                 brightness,
-                                out Vector3 lightColor
+                                out var lightColor
                             );
 
-                            Tile tile = Main.tile[x, y];
+                            var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
                             if (
@@ -1542,19 +1540,19 @@ internal sealed class SmoothLighting
                 },
                 (x1) =>
                 {
-                    int i = height * x1 + offset;
-                    int x = x1 + xmin;
-                    for (int y = clampedYmin; y < clampedYmax; ++y)
+                    var i = height * x1 + offset;
+                    var x = x1 + xmin;
+                    for (var y = clampedYmin; y < clampedYmax; ++y)
                     {
                         try
                         {
                             Vector3.Multiply(
                                 ref _lights[i],
                                 brightness,
-                                out Vector3 lightColor
+                                out var lightColor
                             );
 
-                            Tile tile = Main.tile[x, y];
+                            var tile = Main.tile[x, y];
 
                             // Illuminant Paint and Shimmer
                             if (
@@ -1569,7 +1567,7 @@ internal sealed class SmoothLighting
                             // Crystal Shards, Gelatin Crystal, Glowing Moss, Meteorite Brick, and Martian Conduit Plating
                             else if (_glowingTiles[tile.TileType])
                             {
-                                ref Color glow = ref _glowingTileColors[tile.TileType];
+                                ref var glow = ref _glowingTileColors[tile.TileType];
 
                                 lightColor.X = Math.Max(lightColor.X, glowMult * glow.R);
                                 lightColor.Y = Math.Max(lightColor.Y, glowMult * glow.G);
@@ -1651,7 +1649,7 @@ internal sealed class SmoothLighting
             return;
         }
 
-        bool doScaling = tempTarget is not null;
+        var doScaling = tempTarget is not null;
         Vector2 offset;
         if (tempTarget is null)
         {
@@ -1666,7 +1664,7 @@ internal sealed class SmoothLighting
                 / 2f;
         }
 
-        Texture2D lightMapTexture = background ? _colorsBackground : _colors;
+        var lightMapTexture = background ? _colorsBackground : _colors;
 
         if (
             LightingConfig.Instance.UseNormalMaps() && !disableNormalMaps
@@ -1729,7 +1727,7 @@ internal sealed class SmoothLighting
         RenderTarget2D ambientOcclusionTarget = null
     )
     {
-        Texture2D lightMapTexture = background ? _colorsBackground : _colors;
+        var lightMapTexture = background ? _colorsBackground : _colors;
 
         TextureUtil.MakeAtLeastSize(
             ref _cameraModeTarget2,
@@ -1823,17 +1821,17 @@ internal sealed class SmoothLighting
         RenderTarget2D ambientOcclusionTarget
     )
     {
-        bool fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
-        bool doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
-        bool simulateNormalMaps =
+        var fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
+        var doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
+        var simulateNormalMaps =
             !disableNormalMaps && LightingConfig.Instance.UseNormalMaps();
-        bool hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
-        bool lightOnly = LightingConfig.Instance.RenderOnlyLight;
-        bool doOverbright = LightingConfig.Instance.DrawOverbright();
-        bool doDitheringSecond = (simulateNormalMaps || doOverbright) && hiDef;
-        bool doGamma = LightingConfig.Instance.DoGammaCorrection();
-        bool doAmbientOcclusion = background && ambientOcclusionTarget is not null;
-        bool doOneStepOnly = !(simulateNormalMaps || doOverbright);
+        var hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
+        var lightOnly = LightingConfig.Instance.RenderOnlyLight;
+        var doOverbright = LightingConfig.Instance.DrawOverbright();
+        var doDitheringSecond = (simulateNormalMaps || doOverbright) && hiDef;
+        var doGamma = LightingConfig.Instance.DoGammaCorrection();
+        var doAmbientOcclusion = background && ambientOcclusionTarget is not null;
+        var doOneStepOnly = !(simulateNormalMaps || doOverbright);
 
         Main.graphics.GraphicsDevice.SetRenderTarget(doOneStepOnly ? target1 : target2);
         if (doOneStepOnly)
@@ -1887,13 +1885,13 @@ internal sealed class SmoothLighting
             }
         }
 
-        bool flippedGravity =
+        var flippedGravity =
             doScaling
             && Main.LocalPlayer.gravDir == -1
             && !FancyLightingMod._inCameraMode;
 
         lightMapPosition -= positionOffset;
-        float angle = (float)(Math.PI / 2.0);
+        var angle = (float)(Math.PI / 2.0);
         if (flippedGravity)
         {
             angle *= -1f;
@@ -1933,7 +1931,7 @@ internal sealed class SmoothLighting
                 RasterizerState.CullNone
             );
 
-            Shader shader = simulateNormalMaps
+            var shader = simulateNormalMaps
                 ? doOverbright
                     ? lightOnly
                         ? background
@@ -1957,7 +1955,7 @@ internal sealed class SmoothLighting
                             ? _overbrightAmbientOcclusionShader
                             : _overbrightShader;
 
-            float normalMapRadius = hiDef ? 32f : 24f;
+            var normalMapRadius = hiDef ? 32f : 24f;
             if (!hiDef)
             {
                 normalMapRadius *= 0.6f * LightingConfig.Instance.NormalMapsMultiplier();
@@ -1967,8 +1965,8 @@ internal sealed class SmoothLighting
                 }
             }
 
-            float normalMapResolution = fineNormalMaps ? 1f : 2f;
-            float hiDefNormalMapStrength = background ? 26f : 34f;
+            var normalMapResolution = fineNormalMaps ? 1f : 2f;
+            var hiDefNormalMapStrength = background ? 26f : 34f;
             hiDefNormalMapStrength *= LightingConfig.Instance.NormalMapsMultiplier();
             if (doGamma)
             {

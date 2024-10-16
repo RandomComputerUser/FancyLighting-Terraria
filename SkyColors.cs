@@ -101,9 +101,9 @@ public static class SkyColors
 
     public static Vector3 CalculateSkyColor(double hour)
     {
-        bool foundProfile = Profiles.TryGetValue(
+        var foundProfile = Profiles.TryGetValue(
             LightingConfig.Instance.CustomSkyPreset,
-            out ISimpleColorProfile profile
+            out var profile
         );
 
         if (!foundProfile)

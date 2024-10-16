@@ -21,9 +21,9 @@ public static class VectorToColor
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Assign(ref Rgba64 color, float brightness, Vector3 rgb)
     {
-        ulong R = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.X, 0f, 1f) + 0.5f);
-        ulong G = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Y, 0f, 1f) + 0.5f);
-        ulong B = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Z, 0f, 1f) + 0.5f);
+        var R = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.X, 0f, 1f) + 0.5f);
+        var G = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Y, 0f, 1f) + 0.5f);
+        var B = (ulong)(65535f * MathHelper.Clamp(brightness * rgb.Z, 0f, 1f) + 0.5f);
 
         color.PackedValue = R | G << 16 | B << 32 | (ulong)ushort.MaxValue << 48;
     }

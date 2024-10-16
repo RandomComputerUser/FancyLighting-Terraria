@@ -40,12 +40,12 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     private void ComputeLightSpread(out LightSpread[] values)
     {
         values = new LightSpread[(MAX_LIGHT_RANGE + 1) * (MAX_LIGHT_RANGE + 1)];
-        DistanceCache[] distances = new DistanceCache[MAX_LIGHT_RANGE + 1];
+        var distances = new DistanceCache[MAX_LIGHT_RANGE + 1];
 
-        for (int row = 0; row <= MAX_LIGHT_RANGE; ++row)
+        for (var row = 0; row <= MAX_LIGHT_RANGE; ++row)
         {
-            int index = row;
-            ref LightSpread value = ref values[index];
+            var index = row;
+            ref var value = ref values[index];
             value = CalculateTileLightSpread(row, 0, 0.0, 0.0);
             distances[row] = new(
                 row + 1.0,
@@ -53,20 +53,20 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             );
         }
 
-        for (int col = 1; col <= MAX_LIGHT_RANGE; ++col)
+        for (var col = 1; col <= MAX_LIGHT_RANGE; ++col)
         {
-            int index = (MAX_LIGHT_RANGE + 1) * col;
-            ref LightSpread value = ref values[index];
+            var index = (MAX_LIGHT_RANGE + 1) * col;
+            ref var value = ref values[index];
             value = CalculateTileLightSpread(0, col, 0.0, 0.0);
             distances[0] = new(
                 col + value.DistanceToTop / (double)DISTANCE_TICKS,
                 col + 1.0
             );
 
-            for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
+            for (var row = 1; row <= MAX_LIGHT_RANGE; ++row)
             {
                 ++index;
-                double distance = MathUtil.Hypot(col, row);
+                var distance = MathUtil.Hypot(col, row);
                 value = ref values[index];
                 value = CalculateTileLightSpread(
                     row,
@@ -117,9 +117,9 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         static int DoubleToIndex(double x) =>
             Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
 
-        double distance = MathUtil.Hypot(col, row);
-        double distanceToTop = MathUtil.Hypot(col, row + 1) - distance;
-        double distanceToRight = MathUtil.Hypot(col + 1, row) - distance;
+        var distance = MathUtil.Hypot(col, row);
+        var distanceToTop = MathUtil.Hypot(col, row + 1) - distance;
+        var distanceToRight = MathUtil.Hypot(col + 1, row) - distance;
 
         if (row == 0 && col == 0)
         {
@@ -166,8 +166,8 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         Span<double> lightFrom = stackalloc double[4 * 4];
         Span<double> area = stackalloc double[4];
 
-        Span<double> x = stackalloc[] { 0.0, 0.0, 0.5, 1.0 };
-        Span<double> y = stackalloc[] { 0.5, 0.0, 0.0, 0.0 };
+        var x = stackalloc[] { 0.0, 0.0, 0.5, 1.0 };
+        var y = stackalloc[] { 0.5, 0.0, 0.0, 0.0 };
         CalculateSubTileLightSpread(in x, in y, ref lightFrom, ref area, row, col);
 
         distanceToTop -=
@@ -237,7 +237,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             ConvertLightColorsToLinear(colors, width, height);
         }
 
-        int length = width * height;
+        var length = width * height;
 
         ArrayUtil.MakeAtLeastSize(ref _tmp, length);
         ArrayUtil.MakeAtLeastSize(ref _lightMask, length);
@@ -246,7 +246,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         UpdateLightMasks(lightMasks, width, height);
         InitializeTaskVariables(length);
 
-        bool doGI = LightingConfig.Instance.SimulateGlobalIllumination;
+        var doGI = LightingConfig.Instance.SimulateGlobalIllumination;
 
         _countTemporal = LightingConfig.Instance.FancyLightingEngineUseTemporal;
         RunLightingPass(
@@ -256,7 +256,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             _countTemporal,
             (Vec3[] lightMap, ref int temporalData, int begin, int end) =>
             {
-                for (int i = begin; i < end; ++i)
+                for (var i = begin; i < end; ++i)
                 {
                     ProcessLight(lightMap, colors, ref temporalData, i, width, height);
                 }
@@ -285,7 +285,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 false,
                 (Vec3[] lightMap, ref int temporalData, int begin, int end) =>
                 {
-                    for (int i = begin; i < end; ++i)
+                    for (var i = begin; i < end; ++i)
                     {
                         if (_skipGI[i])
                         {
@@ -315,7 +315,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         int height
     )
     {
-        ref Vector3 colorRef = ref colors[index];
+        ref var colorRef = ref colors[index];
         Vec3 color = new(colorRef.X, colorRef.Y, colorRef.Z);
         if (
             color.X <= _initialBrightnessCutoff
@@ -334,14 +334,14 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             index,
             width,
             height,
-            out int upDistance,
-            out int downDistance,
-            out int leftDistance,
-            out int rightDistance,
-            out bool doUp,
-            out bool doDown,
-            out bool doLeft,
-            out bool doRight
+            out var upDistance,
+            out var downDistance,
+            out var leftDistance,
+            out var rightDistance,
+            out var doUp,
+            out var doDown,
+            out var doLeft,
+            out var doRight
         );
 
         // We blend by taking the max of each component, so this is a valid check to skip
@@ -350,7 +350,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             return;
         }
 
-        int lightRange = CalculateLightRange(color);
+        var lightRange = CalculateLightRange(color);
 
         upDistance = Math.Min(upDistance, lightRange);
         downDistance = Math.Min(downDistance, lightRange);
@@ -375,14 +375,14 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         }
 
         // Using && instead of || for culling is sometimes inaccurate, but much faster
-        bool doUpperLeft = doUp && doLeft;
-        bool doUpperRight = doUp && doRight;
-        bool doLowerLeft = doDown && doLeft;
-        bool doLowerRight = doDown && doRight;
+        var doUpperLeft = doUp && doLeft;
+        var doUpperRight = doUp && doRight;
+        var doLowerLeft = doDown && doLeft;
+        var doLowerRight = doDown && doRight;
 
         if (doUpperRight || doUpperLeft || doLowerRight || doLowerLeft)
         {
-            int[] circle = _circles[lightRange];
+            var circle = _circles[lightRange];
             Span<Vec2> workingLights = stackalloc Vec2[lightRange + 1];
 
             if (doUpperLeft)
@@ -472,22 +472,22 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     )
     {
         // Performance optimization
-        float[][] lightMask = _lightMask;
-        float[] solidDecay = _lightSolidDecay;
-        float lightLoss = _lightLossExitingSolid;
-        LightSpread[] lightSpread = _lightSpread;
+        var lightMask = _lightMask;
+        var solidDecay = _lightSolidDecay;
+        var lightLoss = _lightLossExitingSolid;
+        var lightSpread = _lightSpread;
 
         {
             workingLights[0] = new(1f);
-            int i = index + verticalChange;
-            float value = 1f;
-            float[] prevMask = lightMask[i];
+            var i = index + verticalChange;
+            var value = 1f;
+            var prevMask = lightMask[i];
             workingLights[1] = new(prevMask[lightSpread[1].DistanceToRight]);
-            for (int y = 2; y <= verticalDistance; ++y)
+            for (var y = 2; y <= verticalDistance; ++y)
             {
                 i += verticalChange;
 
-                float[] mask = lightMask[i];
+                var mask = lightMask[i];
                 if (prevMask == solidDecay && mask != solidDecay)
                 {
                     value *= lightLoss * prevMask[DISTANCE_TICKS];
@@ -502,16 +502,16 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             }
         }
 
-        for (int x = 1; x <= horizontalDistance; ++x)
+        for (var x = 1; x <= horizontalDistance; ++x)
         {
-            int i = index + horizontalChange * x;
-            int j = (MAX_LIGHT_RANGE + 1) * x;
+            var i = index + horizontalChange * x;
+            var j = (MAX_LIGHT_RANGE + 1) * x;
 
-            float[] mask = lightMask[i];
+            var mask = lightMask[i];
 
             Vec2 verticalLight;
             {
-                ref Vec2 horizontalLight = ref workingLights[0];
+                ref var horizontalLight = ref workingLights[0];
 
                 if (
                     x > 1
@@ -526,11 +526,11 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 horizontalLight *= mask[DISTANCE_TICKS];
             }
 
-            int edge = Math.Min(verticalDistance, circle[x]);
-            float[] prevMask = mask;
-            for (int y = 1; y <= edge; ++y)
+            var edge = Math.Min(verticalDistance, circle[x]);
+            var prevMask = mask;
+            for (var y = 1; y <= edge; ++y)
             {
-                ref Vec2 horizontalLight = ref workingLights[y];
+                ref var horizontalLight = ref workingLights[y];
 
                 mask = lightMask[i += verticalChange];
                 if (mask != solidDecay)
@@ -546,7 +546,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 }
                 prevMask = mask;
 
-                ref LightSpread spread = ref lightSpread[++j];
+                ref var spread = ref lightSpread[++j];
 
                 SetLight(
                     ref lightMap[i],
@@ -556,9 +556,9 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                     ) * color
                 );
 
-                float topDecay = mask[spread.DistanceToTop];
-                float rightDecay = mask[spread.DistanceToRight];
-                Vec4 outgoingLight =
+                var topDecay = mask[spread.DistanceToTop];
+                var rightDecay = mask[spread.DistanceToRight];
+                var outgoingLight =
                     (
                         (
                             horizontalLight.X * spread.FromLeftX

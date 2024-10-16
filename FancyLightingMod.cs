@@ -70,7 +70,7 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            object activeEngine = field_activeEngine.GetValue(null);
+            var activeEngine = field_activeEngine.GetValue(null);
             if (activeEngine is not LightingEngine lightingEngine)
             {
                 return;
@@ -81,7 +81,7 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            LightMap lightMapInstance = (LightMap)
+            var lightMapInstance = (LightMap)
                 field_activeLightMap.GetValue(lightingEngine);
 
             if (value)
@@ -126,13 +126,13 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            object activeEngine = field_activeEngine.GetValue(null);
+            var activeEngine = field_activeEngine.GetValue(null);
             if (activeEngine is not LightingEngine lightingEngine)
             {
                 return;
             }
 
-            LightMap lightMapInstance = (LightMap)
+            var lightMapInstance = (LightMap)
                 field_activeLightMap.GetValue(lightingEngine);
 
             if (value)
@@ -314,7 +314,7 @@ public sealed class FancyLightingMod : Mod
 
     private void SetFancyLightingEngineInstance()
     {
-        LightingEngineMode mode =
+        var mode =
             LightingConfig.Instance?.FancyLightingEngineMode ?? LightingEngineMode.One;
         switch (mode)
         {
@@ -434,9 +434,9 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        for (int i = 0; i < slices.Length; ++i)
+        for (var i = 0; i < slices.Length; ++i)
         {
-            ref Vector3 slice = ref slices[i];
+            ref var slice = ref slices[i];
             slice.X = 1f;
             slice.Y = 1f;
             slice.Z = 1f;
@@ -456,9 +456,9 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        for (int i = 0; i < slices.Length; ++i)
+        for (var i = 0; i < slices.Length; ++i)
         {
-            ref Vector3 slice = ref slices[i];
+            ref var slice = ref slices[i];
             slice.X = 1f;
             slice.Y = 1f;
             slice.Z = 1f;
@@ -478,7 +478,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        for (int i = 0; i < slices.Length; ++i)
+        for (var i = 0; i < slices.Length; ++i)
         {
             slices[i].PackedValue = 0xFFFFFFFF; // White
         }
@@ -497,7 +497,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        for (int i = 0; i < slices.Length; ++i)
+        for (var i = 0; i < slices.Length; ++i)
         {
             slices[i].PackedValue = 0xFFFFFFFF; // White
         }
@@ -566,7 +566,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        RenderTarget2D target = LightingConfig.Instance.RenderOnlyLight
+        var target = LightingConfig.Instance.RenderOnlyLight
             ? null
             : MainRenderTarget.Get();
         if (target is null)
@@ -969,7 +969,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        bool initialLightingOverride = OverrideLightColor;
+        var initialLightingOverride = OverrideLightColor;
         OverrideLightColor = false;
         try
         {
@@ -1077,8 +1077,8 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        bool doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
-        bool doOverbright = LightingConfig.Instance.DrawOverbright();
+        var doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
+        var doOverbright = LightingConfig.Instance.DrawOverbright();
 
         RenderTarget2D ambientOcclusionTarget = null;
         if (doAmbientOcclusion && doOverbright)
@@ -1131,8 +1131,8 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        Vector3[] colors = (Vector3[])field_colors.GetValue(self);
-        LightMaskMode[] lightMasks = (LightMaskMode[])field_mask.GetValue(self);
+        var colors = (Vector3[])field_colors.GetValue(self);
+        var lightMasks = (LightMaskMode[])field_mask.GetValue(self);
         if (colors is null || lightMasks is null)
         {
             orig(self);
@@ -1240,7 +1240,7 @@ public sealed class FancyLightingMod : Mod
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
         OverrideLightColor = LightingConfig.Instance.SmoothLightingEnabled();
 
-        RenderTarget2D wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(
+        var wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(
             _cameraModeTarget
         );
 
@@ -1261,8 +1261,8 @@ public sealed class FancyLightingMod : Mod
         Main.tileBatch.End();
         Main.spriteBatch.End();
 
-        bool doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
-        bool doOverbright =
+        var doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
+        var doOverbright =
             LightingConfig.Instance.DrawOverbright()
             && LightingConfig.Instance.SmoothLightingEnabled();
 

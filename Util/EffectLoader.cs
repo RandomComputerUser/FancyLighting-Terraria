@@ -8,7 +8,7 @@ internal static class EffectLoader
 {
     public static Shader LoadEffect(string filePath, string passName, bool hiDef = false)
     {
-        Effect effect = ModContent
+        var effect = ModContent
             .Request<Effect>(filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad)
             .Value;
 
