@@ -3,5 +3,5 @@
 public enum InterpolationMode
 {
     Linear,
-    Cubic
+    Cubic,
 }

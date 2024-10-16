@@ -1,7 +1,7 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.ComponentModel;
+using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
@@ -15,26 +15,47 @@ public sealed class LightingConfig : ModConfig
     // Handled automatically by tModLoader
     public static LightingConfig Instance;
 
-    internal bool ModifyCameraModeRendering() => SmoothLightingEnabled() || AmbientOcclusionEnabled();
-    internal bool SmoothLightingEnabled() => UseSmoothLighting && Lighting.UsingNewLighting;
-    internal bool UseBicubicScaling() => LightMapRenderMode is not RenderMode.Bilinear;
-    internal bool DrawOverbright() => LightMapRenderMode is RenderMode.BicubicOverbright;
-    internal bool UseNormalMaps() => NormalMapsStrength != 0;
-    internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
-    internal bool AmbientOcclusionEnabled() => UseAmbientOcclusion && Lighting.UsingNewLighting;
-    internal float AmbientOcclusionPower() => AmbientOcclusionIntensity / 50f;
-    internal float AmbientOcclusionMult() => AmbientLightProportion / 100f;
-    internal bool FancyLightingEngineEnabled() => UseFancyLightingEngine && Lighting.UsingNewLighting;
-    internal float FancyLightingEngineExitMultiplier() => 1f - FancyLightingEngineLightLoss / 100f;
-    internal float FancyLightingEngineAbsorptionExponent() => FancyLightingEngineLightAbsorption / 100f;
-    internal bool CustomSkyColorsEnabled() => UseCustomSkyColors && Lighting.UsingNewLighting;
-    internal bool HiDefFeaturesEnabled()
-        => UseHiDefFeatures && Main.graphics.GraphicsProfile is GraphicsProfile.HiDef;
-    internal bool DoGammaCorrection()
-        => HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
+    internal bool ModifyCameraModeRendering() =>
+        SmoothLightingEnabled() || AmbientOcclusionEnabled();
 
-    public override void OnChanged()
-        => ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
+    internal bool SmoothLightingEnabled() =>
+        UseSmoothLighting && Lighting.UsingNewLighting;
+
+    internal bool UseBicubicScaling() => LightMapRenderMode is not RenderMode.Bilinear;
+
+    internal bool DrawOverbright() => LightMapRenderMode is RenderMode.BicubicOverbright;
+
+    internal bool UseNormalMaps() => NormalMapsStrength != 0;
+
+    internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
+
+    internal bool AmbientOcclusionEnabled() =>
+        UseAmbientOcclusion && Lighting.UsingNewLighting;
+
+    internal float AmbientOcclusionPower() => AmbientOcclusionIntensity / 50f;
+
+    internal float AmbientOcclusionMult() => AmbientLightProportion / 100f;
+
+    internal bool FancyLightingEngineEnabled() =>
+        UseFancyLightingEngine && Lighting.UsingNewLighting;
+
+    internal float FancyLightingEngineExitMultiplier() =>
+        1f - FancyLightingEngineLightLoss / 100f;
+
+    internal float FancyLightingEngineAbsorptionExponent() =>
+        FancyLightingEngineLightAbsorption / 100f;
+
+    internal bool CustomSkyColorsEnabled() =>
+        UseCustomSkyColors && Lighting.UsingNewLighting;
+
+    internal bool HiDefFeaturesEnabled() =>
+        UseHiDefFeatures && Main.graphics.GraphicsProfile is GraphicsProfile.HiDef;
+
+    internal bool DoGammaCorrection() =>
+        HiDefFeaturesEnabled() && SmoothLightingEnabled() && DrawOverbright();
+
+    public override void OnChanged() =>
+        ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
 
     private void CopyFrom(PresetOptions options)
     {
@@ -71,7 +92,6 @@ public sealed class LightingConfig : ModConfig
 
     // Presets
     [Header("Presets")]
-
     // Serialize this last
     [JsonProperty(Order = 1000)]
     [DefaultValue(DefaultOptions.ConfigPreset)]
@@ -84,8 +104,10 @@ public sealed class LightingConfig : ModConfig
             if (value == Preset.CustomPreset)
             {
                 PresetOptions currentOptions = new(this);
-                bool isPreset
-                    = PresetOptions.PresetLookup.TryGetValue(currentOptions, out Preset preset);
+                bool isPreset = PresetOptions.PresetLookup.TryGetValue(
+                    currentOptions,
+                    out Preset preset
+                );
                 if (isPreset)
                 {
                     _preset = preset;
@@ -97,8 +119,10 @@ public sealed class LightingConfig : ModConfig
             }
             else
             {
-                bool isPresetOptions
-                    = PresetOptions.PresetOptionsLookup.TryGetValue(value, out PresetOptions presetOptions);
+                bool isPresetOptions = PresetOptions.PresetOptionsLookup.TryGetValue(
+                    value,
+                    out PresetOptions presetOptions
+                );
                 if (isPresetOptions)
                 {
                     CopyFrom(presetOptions);
@@ -115,7 +139,6 @@ public sealed class LightingConfig : ModConfig
 
     // Smooth Lighting, Normal Maps, Overbright
     [Header("SmoothLighting")]
-
     [DefaultValue(DefaultOptions.UseSmoothLighting)]
     public bool UseSmoothLighting
     {
@@ -219,7 +242,6 @@ public sealed class LightingConfig : ModConfig
 
     // Ambient Occlusion
     [Header("AmbientOcclusion")]
-
     [DefaultValue(DefaultOptions.UseAmbientOcclusion)]
     public bool UseAmbientOcclusion
     {
@@ -306,7 +328,6 @@ public sealed class LightingConfig : ModConfig
 
     // Fancy Lighting Engine
     [Header("LightingEngine")]
-
     [DefaultValue(DefaultOptions.UseFancyLightingEngine)]
     public bool UseFancyLightingEngine
     {
@@ -402,7 +423,6 @@ public sealed class LightingConfig : ModConfig
 
     // Sky Color
     [Header("SkyColor")]
-
     [DefaultValue(DefaultOptions.UseCustomSkyColors)]
     public bool UseCustomSkyColors
     {
@@ -430,7 +450,6 @@ public sealed class LightingConfig : ModConfig
 
     // Other Settings
     [Header("General")]
-
     [Range(DefaultOptions.MinThreadCount, DefaultOptions.MaxThreadCount)]
     [Increment(1)]
     [DefaultValue(DefaultOptions.ThreadCount)]

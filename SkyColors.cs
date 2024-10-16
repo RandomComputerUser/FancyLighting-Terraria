@@ -1,26 +1,31 @@
-﻿using FancyLighting.Config;
+﻿using System.Collections.Generic;
+using FancyLighting.Config;
 using FancyLighting.Profiles;
 using FancyLighting.Profiles.SkyColor;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
-using System.Collections.Generic;
 using Terraria;
 
 namespace FancyLighting;
 
 public static class SkyColors
 {
-    public static Dictionary<SkyColorPreset, ISimpleColorProfile> Profiles { get; private set; }
+    public static Dictionary<SkyColorPreset, ISimpleColorProfile> Profiles
+    {
+        get;
+        private set;
+    }
 
     private static bool _dayTimeTmp;
     private static bool _dontStarveWorldTmp;
 
-    internal static void Initialize() => Profiles = new()
-    {
-        [SkyColorPreset.Profile1] = new SkyColors1(),
-        [SkyColorPreset.Profile2] = new SkyColors2(),
-        [SkyColorPreset.Profile3] = new SkyColors3()
-    };
+    internal static void Initialize() =>
+        Profiles = new()
+        {
+            [SkyColorPreset.Profile1] = new SkyColors1(),
+            [SkyColorPreset.Profile2] = new SkyColors2(),
+            [SkyColorPreset.Profile3] = new SkyColors3(),
+        };
 
     internal static void AddSkyColorsHooks()
     {
@@ -68,7 +73,10 @@ public static class SkyColors
         ref Color moonColor
     )
     {
-        if (Profiles is null || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false))
+        if (
+            Profiles is null
+            || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false)
+        )
         {
             orig(ref backColor, ref moonColor);
             return;
@@ -85,7 +93,9 @@ public static class SkyColors
 
     public static void SetBaseSkyColor(ref Color bgColor)
     {
-        double hour = Main.dayTime ? 4.5 + (Main.time / 3600.0) : 12.0 + 7.5 + (Main.time / 3600.0);
+        double hour = Main.dayTime
+            ? 4.5 + (Main.time / 3600.0)
+            : 12.0 + 7.5 + (Main.time / 3600.0);
         VectorToColor.Assign(ref bgColor, 1f, CalculateSkyColor(hour));
     }
 

@@ -4,5 +4,5 @@ public enum SkyColorPreset : int
 {
     Profile1 = 0,
     Profile2 = 1,
-    Profile3 = 2
+    Profile3 = 2,
 }

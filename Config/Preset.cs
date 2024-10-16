@@ -8,5 +8,5 @@ public enum Preset : int
     MediumPreset = 40,
     HighPreset = 50,
     VeryHighPreset = 55,
-    UltraPreset = 60
+    UltraPreset = 60,
 }

@@ -1,7 +1,7 @@
-﻿using FancyLighting.Config;
+﻿using System;
+using FancyLighting.Config;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
-using System;
 using Terraria.Graphics.Light;
 using Vec2 = System.Numerics.Vector2;
 using Vec3 = System.Numerics.Vector3;
@@ -47,7 +47,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             int index = row;
             ref LightSpread value = ref values[index];
             value = CalculateTileLightSpread(row, 0, 0.0, 0.0);
-            distances[row] = new(row + 1.0, row + value.DistanceToRight / (double)DISTANCE_TICKS);
+            distances[row] = new(
+                row + 1.0,
+                row + value.DistanceToRight / (double)DISTANCE_TICKS
+            );
         }
 
         for (int col = 1; col <= MAX_LIGHT_RANGE; ++col)
@@ -55,7 +58,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             int index = (MAX_LIGHT_RANGE + 1) * col;
             ref LightSpread value = ref values[index];
             value = CalculateTileLightSpread(0, col, 0.0, 0.0);
-            distances[0] = new(col + value.DistanceToTop / (double)DISTANCE_TICKS, col + 1.0);
+            distances[0] = new(
+                col + value.DistanceToTop / (double)DISTANCE_TICKS,
+                col + 1.0
+            );
 
             for (int row = 1; row <= MAX_LIGHT_RANGE; ++row)
             {
@@ -63,31 +69,53 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 double distance = MathUtil.Hypot(col, row);
                 value = ref values[index];
                 value = CalculateTileLightSpread(
-                    row, col, distances[row].Right - distance, distances[row - 1].Top - distance
+                    row,
+                    col,
+                    distances[row].Right - distance,
+                    distances[row - 1].Top - distance
                 );
 
                 distances[row] = new(
                     value.DistanceToTop / (double)DISTANCE_TICKS
-                        + ((value.FromLeftX.X + value.FromLeftX.Y) + (value.FromLeftY.X + value.FromLeftY.Y))
-                            / 2.0 * distances[row].Right
-                        + ((value.FromBottomX.X + value.FromBottomX.Y) + (value.FromBottomY.X + value.FromBottomY.Y))
-                            / 2.0 * distances[row - 1].Top,
+                        + (
+                            (value.FromLeftX.X + value.FromLeftX.Y)
+                            + (value.FromLeftY.X + value.FromLeftY.Y)
+                        )
+                            / 2.0
+                            * distances[row].Right
+                        + (
+                            (value.FromBottomX.X + value.FromBottomX.Y)
+                            + (value.FromBottomY.X + value.FromBottomY.Y)
+                        )
+                            / 2.0
+                            * distances[row - 1].Top,
                     value.DistanceToRight / (double)DISTANCE_TICKS
-                        + ((value.FromLeftX.Z + value.FromLeftX.W) + (value.FromLeftY.Z + value.FromLeftY.W))
-                            / 2.0 * distances[row].Right
-                        + ((value.FromBottomX.Z + value.FromBottomX.W) + (value.FromBottomY.Z + value.FromBottomY.W))
-                            / 2.0 * distances[row - 1].Top
+                        + (
+                            (value.FromLeftX.Z + value.FromLeftX.W)
+                            + (value.FromLeftY.Z + value.FromLeftY.W)
+                        )
+                            / 2.0
+                            * distances[row].Right
+                        + (
+                            (value.FromBottomX.Z + value.FromBottomX.W)
+                            + (value.FromBottomY.Z + value.FromBottomY.W)
+                        )
+                            / 2.0
+                            * distances[row - 1].Top
                 );
             }
         }
     }
 
     private static LightSpread CalculateTileLightSpread(
-        int row, int col, double leftDistanceError, double bottomDistanceError
+        int row,
+        int col,
+        double leftDistanceError,
+        double bottomDistanceError
     )
     {
-        static int DoubleToIndex(double x)
-            => Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
+        static int DoubleToIndex(double x) =>
+            Math.Clamp((int)Math.Round(DISTANCE_TICKS * x), 0, DISTANCE_TICKS);
 
         double distance = MathUtil.Hypot(col, row);
         double distanceToTop = MathUtil.Hypot(col, row + 1) - distance;
@@ -100,8 +128,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec4.Zero,
-                Vec4.Zero, Vec4.Zero,
-                Vec4.Zero, Vec4.Zero
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero
             );
         }
 
@@ -112,8 +142,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec4.Zero,
-                Vec4.Zero, Vec4.Zero,
-                Vec4.Zero, Vec4.Zero
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero
             );
         }
 
@@ -124,8 +156,10 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 DoubleToIndex(distanceToRight),
                 // The values below are unused and should never be used
                 Vec4.Zero,
-                Vec4.Zero, Vec4.Zero,
-                Vec4.Zero, Vec4.Zero
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero,
+                Vec4.Zero
             );
         }
 
@@ -136,21 +170,54 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         Span<double> y = stackalloc[] { 0.5, 0.0, 0.0, 0.0 };
         CalculateSubTileLightSpread(in x, in y, ref lightFrom, ref area, row, col);
 
-        distanceToTop
-            -= (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5]) / 2.0 * leftDistanceError
-            + (lightFrom[8] + lightFrom[9] + lightFrom[12] + lightFrom[13]) / 2.0 * bottomDistanceError;
-        distanceToRight
-            -= (lightFrom[2] + lightFrom[3] + lightFrom[6] + lightFrom[7]) / 2.0 * leftDistanceError
-            + (lightFrom[10] + lightFrom[11] + lightFrom[14] + lightFrom[15]) / 2.0 * bottomDistanceError;
+        distanceToTop -=
+            (lightFrom[0] + lightFrom[1] + lightFrom[4] + lightFrom[5])
+                / 2.0
+                * leftDistanceError
+            + (lightFrom[8] + lightFrom[9] + lightFrom[12] + lightFrom[13])
+                / 2.0
+                * bottomDistanceError;
+        distanceToRight -=
+            (lightFrom[2] + lightFrom[3] + lightFrom[6] + lightFrom[7])
+                / 2.0
+                * leftDistanceError
+            + (lightFrom[10] + lightFrom[11] + lightFrom[14] + lightFrom[15])
+                / 2.0
+                * bottomDistanceError;
 
         return new(
             DoubleToIndex(distanceToTop),
             DoubleToIndex(distanceToRight),
-            new((float)(area[1] - area[0]), (float)area[0], (float)(area[2] - area[1]), (float)(area[3] - area[2])),
-            new((float)lightFrom[4], (float)lightFrom[5], (float)lightFrom[7], (float)lightFrom[6]),
-            new((float)lightFrom[0], (float)lightFrom[1], (float)lightFrom[3], (float)lightFrom[2]),
-            new((float)lightFrom[8], (float)lightFrom[9], (float)lightFrom[11], (float)lightFrom[10]),
-            new((float)lightFrom[12], (float)lightFrom[13], (float)lightFrom[15], (float)lightFrom[14])
+            new(
+                (float)(area[1] - area[0]),
+                (float)area[0],
+                (float)(area[2] - area[1]),
+                (float)(area[3] - area[2])
+            ),
+            new(
+                (float)lightFrom[4],
+                (float)lightFrom[5],
+                (float)lightFrom[7],
+                (float)lightFrom[6]
+            ),
+            new(
+                (float)lightFrom[0],
+                (float)lightFrom[1],
+                (float)lightFrom[3],
+                (float)lightFrom[2]
+            ),
+            new(
+                (float)lightFrom[8],
+                (float)lightFrom[9],
+                (float)lightFrom[11],
+                (float)lightFrom[10]
+            ),
+            new(
+                (float)lightFrom[12],
+                (float)lightFrom[13],
+                (float)lightFrom[15],
+                (float)lightFrom[14]
+            )
         );
     }
 
@@ -201,7 +268,13 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             ArrayUtil.MakeAtLeastSize(ref _skipGI, length);
 
             GetLightsForGlobalIllumination(
-                _tmp, colors, colors, _skipGI, lightMasks, width, height
+                _tmp,
+                colors,
+                colors,
+                _skipGI,
+                lightMasks,
+                width,
+                height
             );
 
             _countTemporal = false;
@@ -219,7 +292,14 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                             continue;
                         }
 
-                        ProcessLight(lightMap, colors, ref temporalData, i, width, height);
+                        ProcessLight(
+                            lightMap,
+                            colors,
+                            ref temporalData,
+                            i,
+                            width,
+                            height
+                        );
                     }
                 }
             );
@@ -227,7 +307,12 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     }
 
     private void ProcessLight(
-        Vec3[] lightMap, Vector3[] colors, ref int temporalData, int index, int width, int height
+        Vec3[] lightMap,
+        Vector3[] colors,
+        ref int temporalData,
+        int index,
+        int width,
+        int height
     )
     {
         ref Vector3 colorRef = ref colors[index];
@@ -303,25 +388,57 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             if (doUpperLeft)
             {
                 ProcessQuadrant(
-                    lightMap, ref workingLights, circle, color, index, upDistance, leftDistance, -1, -height
+                    lightMap,
+                    ref workingLights,
+                    circle,
+                    color,
+                    index,
+                    upDistance,
+                    leftDistance,
+                    -1,
+                    -height
                 );
             }
             if (doUpperRight)
             {
                 ProcessQuadrant(
-                    lightMap, ref workingLights, circle, color, index, upDistance, rightDistance, -1, height
+                    lightMap,
+                    ref workingLights,
+                    circle,
+                    color,
+                    index,
+                    upDistance,
+                    rightDistance,
+                    -1,
+                    height
                 );
             }
             if (doLowerLeft)
             {
                 ProcessQuadrant(
-                    lightMap, ref workingLights, circle, color, index, downDistance, leftDistance, 1, -height
+                    lightMap,
+                    ref workingLights,
+                    circle,
+                    color,
+                    index,
+                    downDistance,
+                    leftDistance,
+                    1,
+                    -height
                 );
             }
             if (doLowerRight)
             {
                 ProcessQuadrant(
-                    lightMap, ref workingLights, circle, color, index, downDistance, rightDistance, 1, height
+                    lightMap,
+                    ref workingLights,
+                    circle,
+                    color,
+                    index,
+                    downDistance,
+                    rightDistance,
+                    1,
+                    height
                 );
             }
         }
@@ -329,7 +446,15 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
         if (_countTemporal)
         {
             temporalData += CalculateTemporalData(
-                color, doUp, doDown, doLeft, doRight, doUpperLeft, doUpperRight, doLowerLeft, doLowerRight
+                color,
+                doUp,
+                doDown,
+                doLeft,
+                doRight,
+                doUpperLeft,
+                doUpperRight,
+                doLowerLeft,
+                doLowerRight
             );
         }
     }
@@ -388,7 +513,11 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
             {
                 ref Vec2 horizontalLight = ref workingLights[0];
 
-                if (x > 1 && mask != solidDecay && lightMask[i - horizontalChange] == solidDecay)
+                if (
+                    x > 1
+                    && mask != solidDecay
+                    && lightMask[i - horizontalChange] == solidDecay
+                )
                 {
                     horizontalLight *= lightLoss;
                 }
@@ -422,14 +551,15 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
                 SetLight(
                     ref lightMap[i],
                     Vec4.Dot(
-                            new Vec4(horizontalLight, verticalLight.X, verticalLight.Y),
-                            spread.LightFrom
-                        ) * color
+                        new Vec4(horizontalLight, verticalLight.X, verticalLight.Y),
+                        spread.LightFrom
+                    ) * color
                 );
 
                 float topDecay = mask[spread.DistanceToTop];
                 float rightDecay = mask[spread.DistanceToRight];
-                Vec4 outgoingLight = (
+                Vec4 outgoingLight =
+                    (
                         (
                             horizontalLight.X * spread.FromLeftX
                             + horizontalLight.Y * spread.FromLeftY

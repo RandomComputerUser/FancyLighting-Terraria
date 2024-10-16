@@ -37,7 +37,7 @@ public static class DefaultOptions
     public const int MinThreadCount = 1;
     public const int MaxThreadCount = 32;
     public const int MaxDefaultThreadCount = 16;
-    public static int RuntimeDefaultThreadCount
-        => Math.Clamp(Environment.ProcessorCount, MinThreadCount, MaxDefaultThreadCount);
+    public static int RuntimeDefaultThreadCount =>
+        Math.Clamp(Environment.ProcessorCount, MinThreadCount, MaxDefaultThreadCount);
     public const bool UseHiDefFeatures = false;
 }

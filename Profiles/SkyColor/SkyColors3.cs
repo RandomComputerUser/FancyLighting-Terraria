@@ -43,7 +43,7 @@ public class SkyColors3 : ISimpleColorProfile
             (preSunsetTimeLate, dayTransitionColor),
             (sunsetTime, dayNightTransitionColor),
             (postSunsetTime, nightTransitionColor),
-            (dayEndTime, midnightColor)
+            (dayEndTime, midnightColor),
         };
 
         foreach ((double hour, Vector3 color) in colors)

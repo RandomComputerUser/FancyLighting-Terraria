@@ -1,20 +1,16 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using System;
+﻿using System;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria.ModLoader;
 
 namespace FancyLighting.Util;
 
 internal static class EffectLoader
 {
-    public static Shader LoadEffect(
-        string filePath,
-        string passName,
-        bool hiDef = false
-    )
+    public static Shader LoadEffect(string filePath, string passName, bool hiDef = false)
     {
-        Effect effect = ModContent.Request<Effect>(
-            filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad
-        ).Value;
+        Effect effect = ModContent
+            .Request<Effect>(filePath, ReLogic.Content.AssetRequestMode.ImmediateLoad)
+            .Value;
 
         string hiDefPassName;
         if (hiDef)
@@ -36,9 +32,7 @@ internal static class EffectLoader
             shader.Unload();
         }
         catch (Exception) // Shouldn't normally happen
-        {
-
-        }
+        { }
         finally
         {
             shader = null;

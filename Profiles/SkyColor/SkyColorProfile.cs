@@ -1,5 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace FancyLighting.Profiles.SkyColor;
 
@@ -14,7 +14,8 @@ public class SkyColorProfile : ISimpleColorProfile
         _interpolationMode = interpolationMode;
     }
 
-    public virtual void AddColor(double hour, Vector3 color) => _colors.Add((hour, color));
+    public virtual void AddColor(double hour, Vector3 color) =>
+        _colors.Add((hour, color));
 
     protected (double hour, Vector3 color) HourColorAtIndex(int index)
     {
@@ -31,7 +32,14 @@ public class SkyColorProfile : ISimpleColorProfile
         return _colors[index];
     }
 
-    private static Vector3 ChooseDerivative(double x1, double x2, double x3, Vector3 y1, Vector3 y2, Vector3 y3)
+    private static Vector3 ChooseDerivative(
+        double x1,
+        double x2,
+        double x3,
+        Vector3 y1,
+        Vector3 y2,
+        Vector3 y3
+    )
     {
         Vector3 baseSlope = (y3 - y1) / (float)(x3 - x1);
         Vector3 slope1 = 2 * (y2 - y1) / (float)(x2 - x1);
@@ -95,36 +103,50 @@ public class SkyColorProfile : ISimpleColorProfile
 
             switch (_interpolationMode)
             {
-            case InterpolationMode.Linear:
-                // Linear interpolation
+                case InterpolationMode.Linear:
+                    // Linear interpolation
 
-                float t = (float)((hour - hour2) / (hour3 - hour2));
-                return (1 - t) * color2 + t * color3;
-            case InterpolationMode.Cubic:
-            default:
-                // Cubic Hermite spline interpolation
+                    float t = (float)((hour - hour2) / (hour3 - hour2));
+                    return (1 - t) * color2 + t * color3;
+                case InterpolationMode.Cubic:
+                default:
+                    // Cubic Hermite spline interpolation
 
-                Vector3 y1 = color2;
-                Vector3 m1 = ChooseDerivative(hour1, hour2, hour3, color1, color2, color3);
+                    Vector3 y1 = color2;
+                    Vector3 m1 = ChooseDerivative(
+                        hour1,
+                        hour2,
+                        hour3,
+                        color1,
+                        color2,
+                        color3
+                    );
 
-                float x2 = (float)(hour3 - hour2);
-                float x2_2 = x2 * x2;
-                Vector3 y2 = color3;
-                Vector3 m2 = ChooseDerivative(hour2, hour3, hour4, color2, color3, color4);
+                    float x2 = (float)(hour3 - hour2);
+                    float x2_2 = x2 * x2;
+                    Vector3 y2 = color3;
+                    Vector3 m2 = ChooseDerivative(
+                        hour2,
+                        hour3,
+                        hour4,
+                        color2,
+                        color3,
+                        color4
+                    );
 
-                Vector3 y_diff = y2 - y1;
+                    Vector3 y_diff = y2 - y1;
 
-                Vector3 a = 2 * y_diff - x2 * (m1 + m2);
-                Vector3 b = x2_2 * m2 + 2 * x2_2 * m1 - 3 * x2 * y_diff;
-                Vector3 c = m1;
-                Vector3 d = y1;
+                    Vector3 a = 2 * y_diff - x2 * (m1 + m2);
+                    Vector3 b = x2_2 * m2 + 2 * x2_2 * m1 - 3 * x2 * y_diff;
+                    Vector3 c = m1;
+                    Vector3 d = y1;
 
-                float den = -x2_2 * x2;
-                a /= den;
-                b /= den;
+                    float den = -x2_2 * x2;
+                    a /= den;
+                    b /= den;
 
-                float x = (float)(hour - hour2);
-                return Vector3.Min(d + x * (c + x * (b + x * a)), Vector3.One);
+                    float x = (float)(hour - hour2);
+                    return Vector3.Min(d + x * (c + x * (b + x * a)), Vector3.One);
             }
         }
 

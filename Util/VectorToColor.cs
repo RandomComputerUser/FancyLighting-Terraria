@@ -1,6 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
-using System.Runtime.CompilerServices;
 
 namespace FancyLighting.Util;
 

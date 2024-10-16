@@ -1,10 +1,10 @@
+using System;
+using System.Reflection;
 using FancyLighting.Config;
 using FancyLighting.LightingEngines;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Reflection;
 using Terraria;
 using Terraria.GameContent.Drawing;
 using Terraria.Graphics;
@@ -33,7 +33,9 @@ public sealed class FancyLightingMod : Mod
     internal FieldInfo field_colors;
     internal FieldInfo field_mask;
 
-    private delegate void TileDrawingMethod(Terraria.GameContent.Drawing.TileDrawing self);
+    private delegate void TileDrawingMethod(
+        Terraria.GameContent.Drawing.TileDrawing self
+    );
 
     private TileDrawingMethod method_DrawMultiTileVines;
     private TileDrawingMethod method_DrawMultiTileGrass;
@@ -79,16 +81,20 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue(lightingEngine);
+            LightMap lightMapInstance = (LightMap)
+                field_activeLightMap.GetValue(lightingEngine);
 
             if (value)
             {
-                _smoothLightingInstance._tmpLights = (Vector3[])field_colors.GetValue(lightMapInstance);
+                _smoothLightingInstance._tmpLights = (Vector3[])
+                    field_colors.GetValue(lightMapInstance);
             }
 
             field_colors.SetValue(
                 lightMapInstance,
-                value ? _smoothLightingInstance._whiteLights : _smoothLightingInstance._tmpLights
+                value
+                    ? _smoothLightingInstance._whiteLights
+                    : _smoothLightingInstance._tmpLights
             );
 
             if (!value)
@@ -126,16 +132,20 @@ public sealed class FancyLightingMod : Mod
                 return;
             }
 
-            LightMap lightMapInstance = (LightMap)field_activeLightMap.GetValue(lightingEngine);
+            LightMap lightMapInstance = (LightMap)
+                field_activeLightMap.GetValue(lightingEngine);
 
             if (value)
             {
-                _smoothLightingInstance._tmpLights = (Vector3[])field_colors.GetValue(lightMapInstance);
+                _smoothLightingInstance._tmpLights = (Vector3[])
+                    field_colors.GetValue(lightMapInstance);
             }
 
             field_colors.SetValue(
                 lightMapInstance,
-                value ? _smoothLightingInstance._lights : _smoothLightingInstance._tmpLights
+                value
+                    ? _smoothLightingInstance._lights
+                    : _smoothLightingInstance._tmpLights
             );
 
             if (!value)
@@ -162,92 +172,122 @@ public sealed class FancyLightingMod : Mod
         {
             ColorBlendFunction = BlendFunction.Add,
             ColorSourceBlend = Blend.Zero,
-            ColorDestinationBlend = Blend.SourceColor
+            ColorDestinationBlend = Blend.SourceColor,
         };
 
         _smoothLightingInstance = new SmoothLighting(this);
         _ambientOcclusionInstance = new AmbientOcclusion();
         SetFancyLightingEngineInstance();
 
-        field_activeEngine
-            = typeof(Lighting).GetField("_activeEngine", BindingFlags.NonPublic | BindingFlags.Static);
-        field_activeLightMap
-            = typeof(LightingEngine).GetField("_activeLightMap", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_workingProcessedArea
-            = typeof(LightingEngine).GetField("_workingProcessedArea", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_colors
-            = typeof(LightMap).GetField("_colors", BindingFlags.NonPublic | BindingFlags.Instance);
-        field_mask
-            = typeof(LightMap).GetField("_mask", BindingFlags.NonPublic | BindingFlags.Instance);
+        field_activeEngine = typeof(Lighting).GetField(
+            "_activeEngine",
+            BindingFlags.NonPublic | BindingFlags.Static
+        );
+        field_activeLightMap = typeof(LightingEngine).GetField(
+            "_activeLightMap",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
+        field_workingProcessedArea = typeof(LightingEngine).GetField(
+            "_workingProcessedArea",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
+        field_colors = typeof(LightMap).GetField(
+            "_colors",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
+        field_mask = typeof(LightMap).GetField(
+            "_mask",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
 
-        method_DrawMultiTileVines
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawMultiTileVines = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawMultiTileVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawMultiTileVines",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawMultiTileGrass
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawMultiTileGrass = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawMultiTileGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawMultiTileGrass",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawVoidLenses
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawVoidLenses = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawVoidLenses", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawVoidLenses",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawTeleportationPylons
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawTeleportationPylons = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawTeleportationPylons", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawTeleportationPylons",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawMasterTrophies
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawMasterTrophies = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawMasterTrophies", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawMasterTrophies",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawGrass
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawGrass = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawGrass",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawAnyDirectionalGrass
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawAnyDirectionalGrass = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawAnyDirectionalGrass", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawAnyDirectionalGrass",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawTrees
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawTrees = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawTrees", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawTrees",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawVines
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawVines = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawVines",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
-        method_DrawReverseVines
-            = (TileDrawingMethod)Delegate.CreateDelegate(
+        method_DrawReverseVines = (TileDrawingMethod)
+            Delegate.CreateDelegate(
                 typeof(TileDrawingMethod),
                 typeof(TileDrawing).GetMethod(
-                    "DrawReverseVines", BindingFlags.NonPublic | BindingFlags.Instance, new Type[] { }
+                    "DrawReverseVines",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    new Type[] { }
                 )
             );
 
@@ -257,52 +297,51 @@ public sealed class FancyLightingMod : Mod
 
     public override void Unload()
     {
-        Main.QueueMainThreadAction(
-            () =>
-            {
-                // Do not dispose _cameraModeTarget
-                // _cameraModeTarget comes from the Main class, so we don't own it
-                _screenTarget1?.Dispose();
-                _screenTarget2?.Dispose();
-                _cameraModeTarget = null;
-                _smoothLightingInstance?.Unload();
-                _ambientOcclusionInstance?.Unload();
-                _fancyLightingEngineInstance?.Unload();
-            }
-        );
+        Main.QueueMainThreadAction(() =>
+        {
+            // Do not dispose _cameraModeTarget
+            // _cameraModeTarget comes from the Main class, so we don't own it
+            _screenTarget1?.Dispose();
+            _screenTarget2?.Dispose();
+            _cameraModeTarget = null;
+            _smoothLightingInstance?.Unload();
+            _ambientOcclusionInstance?.Unload();
+            _fancyLightingEngineInstance?.Unload();
+        });
 
         base.Unload();
     }
 
     private void SetFancyLightingEngineInstance()
     {
-        LightingEngineMode mode = LightingConfig.Instance?.FancyLightingEngineMode ?? LightingEngineMode.One;
+        LightingEngineMode mode =
+            LightingConfig.Instance?.FancyLightingEngineMode ?? LightingEngineMode.One;
         switch (mode)
         {
-        default:
-        case LightingEngineMode.One:
-            if (_fancyLightingEngineInstance is not FancyLightingEngine)
-            {
-                _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new FancyLightingEngine();
-            }
-            break;
+            default:
+            case LightingEngineMode.One:
+                if (_fancyLightingEngineInstance is not FancyLightingEngine)
+                {
+                    _fancyLightingEngineInstance?.Unload();
+                    _fancyLightingEngineInstance = new FancyLightingEngine();
+                }
+                break;
 
-        case LightingEngineMode.Two:
-            if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
-            {
-                _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
-            }
-            break;
+            case LightingEngineMode.Two:
+                if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
+                {
+                    _fancyLightingEngineInstance?.Unload();
+                    _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
+                }
+                break;
 
-        case LightingEngineMode.Four:
-            if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
-            {
-                _fancyLightingEngineInstance?.Unload();
-                _fancyLightingEngineInstance = new UltraFancyLightingEngine();
-            }
-            break;
+            case LightingEngineMode.Four:
+                if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
+                {
+                    _fancyLightingEngineInstance?.Unload();
+                    _fancyLightingEngineInstance = new UltraFancyLightingEngine();
+                }
+                break;
         }
     }
 
@@ -321,10 +360,14 @@ public sealed class FancyLightingMod : Mod
     {
         Terraria.On_Lighting.GetSubLight += _GetSubLight;
         Terraria.On_Lighting.GetCornerColors += _GetCornerColors;
-        Terraria.On_Lighting.GetColor9Slice_int_int_refVector3Array += _GetColor9Slice_int_int_refVector3Array;
-        Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array += _GetColor4Slice_int_int_refVector3Array;
-        Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray += _GetColor9Slice_int_int_refColorArray;
-        Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray += _GetColor4Slice_int_int_refColorArray;
+        Terraria.On_Lighting.GetColor9Slice_int_int_refVector3Array +=
+            _GetColor9Slice_int_int_refVector3Array;
+        Terraria.On_Lighting.GetColor4Slice_int_int_refVector3Array +=
+            _GetColor4Slice_int_int_refVector3Array;
+        Terraria.On_Lighting.GetColor9Slice_int_int_refColorArray +=
+            _GetColor9Slice_int_int_refColorArray;
+        Terraria.On_Lighting.GetColor4Slice_int_int_refColorArray +=
+            _GetColor4Slice_int_int_refColorArray;
         Terraria.GameContent.Drawing.On_TileDrawing.ShouldTileShine += _ShouldTileShine;
         Terraria.GameContent.Drawing.On_TileDrawing.PostDrawTiles += _PostDrawTiles;
         Terraria.On_Main.DrawSurfaceBG += _DrawSurfaceBG;
@@ -379,10 +422,10 @@ public sealed class FancyLightingMod : Mod
     }
 
     private static void _GetColor9Slice_int_int_refVector3Array(
-       Terraria.On_Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
-       int x,
-       int y,
-       ref Vector3[] slices
+        Terraria.On_Lighting.orig_GetColor9Slice_int_int_refVector3Array orig,
+        int x,
+        int y,
+        ref Vector3[] slices
     )
     {
         if (!_overrideLightColor)
@@ -423,10 +466,10 @@ public sealed class FancyLightingMod : Mod
     }
 
     private static void _GetColor9Slice_int_int_refColorArray(
-       Terraria.On_Lighting.orig_GetColor9Slice_int_int_refColorArray orig,
-       int x,
-       int y,
-       ref Color[] slices
+        Terraria.On_Lighting.orig_GetColor9Slice_int_int_refColorArray orig,
+        int x,
+        int y,
+        ref Color[] slices
     )
     {
         if (!_overrideLightColor)
@@ -464,8 +507,7 @@ public sealed class FancyLightingMod : Mod
         Terraria.GameContent.Drawing.On_TileDrawing.orig_ShouldTileShine orig,
         ushort type,
         short frameX
-    )
-        => !_overrideLightColor && orig(type, frameX);
+    ) => !_overrideLightColor && orig(type, frameX);
 
     // Tile entities
     private void _PostDrawTiles(
@@ -503,21 +545,39 @@ public sealed class FancyLightingMod : Mod
                 _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
             );
             Main.graphics.GraphicsDevice.Clear(Color.Transparent);
-            _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
+            _PostDrawTiles_inner(
+                orig,
+                self,
+                solidLayer,
+                forRenderTargets,
+                intoRenderTargets
+            );
 
             _smoothLightingInstance.CalculateSmoothLighting(false, true);
             _smoothLightingInstance.DrawSmoothLightingCameraMode(
-                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, false, false, true, true
+                _cameraModeTarget,
+                _smoothLightingInstance._cameraModeTarget1,
+                false,
+                false,
+                true,
+                true
             );
 
             return;
         }
 
-        RenderTarget2D target
-            = LightingConfig.Instance.RenderOnlyLight ? null : MainRenderTarget.Get();
+        RenderTarget2D target = LightingConfig.Instance.RenderOnlyLight
+            ? null
+            : MainRenderTarget.Get();
         if (target is null)
         {
-            _PostDrawTiles_inner(orig, self, solidLayer, forRenderTargets, intoRenderTargets);
+            _PostDrawTiles_inner(
+                orig,
+                self,
+                solidLayer,
+                forRenderTargets,
+                intoRenderTargets
+            );
             return;
         }
 
@@ -631,11 +691,13 @@ public sealed class FancyLightingMod : Mod
         else
         {
             transform = Main.BackgroundViewMatrix.TransformationMatrix;
-            transform.Translation
-                -= Main.BackgroundViewMatrix.ZoomMatrix.Translation
+            transform.Translation -=
+                Main.BackgroundViewMatrix.ZoomMatrix.Translation
                 * new Vector3(
                     1f,
-                    Main.BackgroundViewMatrix.Effects.HasFlag(SpriteEffects.FlipVertically)
+                    Main.BackgroundViewMatrix.Effects.HasFlag(
+                        SpriteEffects.FlipVertically
+                    )
                         ? -1f
                         : 1f,
                     1f
@@ -718,10 +780,7 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
-    private void _RenderWater(
-        Terraria.On_Main.orig_RenderWater orig,
-        Terraria.Main self
-    )
+    private void _RenderWater(Terraria.On_Main.orig_RenderWater orig, Terraria.Main self)
     {
         if (
             LightingConfig.Instance.SmoothLightingEnabled()
@@ -816,8 +875,16 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        _smoothLightingInstance.DrawSmoothLighting(Main.instance.backgroundTarget, true, true);
-        _smoothLightingInstance.DrawSmoothLighting(Main.instance.backWaterTarget, true, true);
+        _smoothLightingInstance.DrawSmoothLighting(
+            Main.instance.backgroundTarget,
+            true,
+            true
+        );
+        _smoothLightingInstance.DrawSmoothLighting(
+            Main.instance.backWaterTarget,
+            true,
+            true
+        );
     }
 
     private void _DrawBackground(
@@ -865,7 +932,11 @@ public sealed class FancyLightingMod : Mod
             Main.spriteBatch.End();
 
             _smoothLightingInstance.DrawSmoothLightingCameraMode(
-                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, true, false, true
+                _cameraModeTarget,
+                _smoothLightingInstance._cameraModeTarget1,
+                true,
+                false,
+                true
             );
 
             Main.tileBatch.Begin();
@@ -885,10 +956,7 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
-    private void _RenderBlack(
-        Terraria.On_Main.orig_RenderBlack orig,
-        Terraria.Main self
-    )
+    private void _RenderBlack(Terraria.On_Main.orig_RenderBlack orig, Terraria.Main self)
     {
         if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
@@ -913,10 +981,7 @@ public sealed class FancyLightingMod : Mod
         }
     }
 
-    private void _RenderTiles(
-        Terraria.On_Main.orig_RenderTiles orig,
-        Terraria.Main self
-    )
+    private void _RenderTiles(Terraria.On_Main.orig_RenderTiles orig, Terraria.Main self)
     {
         if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
@@ -973,10 +1038,7 @@ public sealed class FancyLightingMod : Mod
         _smoothLightingInstance.DrawSmoothLighting(Main.instance.tile2Target, false);
     }
 
-    private void _RenderWalls(
-        Terraria.On_Main.orig_RenderWalls orig,
-        Terraria.Main self
-    )
+    private void _RenderWalls(Terraria.On_Main.orig_RenderWalls orig, Terraria.Main self)
     {
         if (!LightingConfig.Instance.SmoothLightingEnabled())
         {
@@ -1021,11 +1083,15 @@ public sealed class FancyLightingMod : Mod
         RenderTarget2D ambientOcclusionTarget = null;
         if (doAmbientOcclusion && doOverbright)
         {
-            ambientOcclusionTarget = _ambientOcclusionInstance.ApplyAmbientOcclusion(false);
+            ambientOcclusionTarget = _ambientOcclusionInstance.ApplyAmbientOcclusion(
+                false
+            );
         }
 
         _smoothLightingInstance.DrawSmoothLighting(
-            Main.instance.wallTarget, true, ambientOcclusionTarget: ambientOcclusionTarget
+            Main.instance.wallTarget,
+            true,
+            ambientOcclusionTarget: ambientOcclusionTarget
         );
 
         if (doAmbientOcclusion && !doOverbright)
@@ -1045,7 +1111,9 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        _fancyLightingEngineInstance.SetLightMapArea((Rectangle)field_workingProcessedArea.GetValue(self));
+        _fancyLightingEngineInstance.SetLightMapArea(
+            (Rectangle)field_workingProcessedArea.GetValue(self)
+        );
         orig(self);
     }
 
@@ -1074,7 +1142,11 @@ public sealed class FancyLightingMod : Mod
         if (LightingConfig.Instance.FancyLightingEngineEnabled())
         {
             _fancyLightingEngineInstance.SpreadLight(
-                self, colors, lightMasks, self.Width, self.Height
+                self,
+                colors,
+                lightMasks,
+                self.Width,
+                self.Height
             );
         }
         else
@@ -1084,7 +1156,12 @@ public sealed class FancyLightingMod : Mod
 
         if (LightingConfig.Instance.SmoothLightingEnabled())
         {
-            _smoothLightingInstance.GetAndBlurLightMap(colors, lightMasks, self.Width, self.Height);
+            _smoothLightingInstance.GetAndBlurLightMap(
+                colors,
+                lightMasks,
+                self.Width,
+                self.Height
+            );
         }
     }
 
@@ -1133,16 +1210,17 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.End();
 
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
-            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, bg, false, true
+            _cameraModeTarget,
+            _smoothLightingInstance._cameraModeTarget1,
+            bg,
+            false,
+            true
         );
 
         Main.spriteBatch.Begin();
     }
 
-    private void _DrawWalls(
-        Terraria.On_Main.orig_DrawWalls orig,
-        Terraria.Main self
-    )
+    private void _DrawWalls(Terraria.On_Main.orig_DrawWalls orig, Terraria.Main self)
     {
         if (!_inCameraMode)
         {
@@ -1162,7 +1240,9 @@ public sealed class FancyLightingMod : Mod
         _smoothLightingInstance.CalculateSmoothLighting(true, true);
         OverrideLightColor = LightingConfig.Instance.SmoothLightingEnabled();
 
-        RenderTarget2D wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget);
+        RenderTarget2D wallTarget = _smoothLightingInstance.GetCameraModeRenderTarget(
+            _cameraModeTarget
+        );
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
@@ -1182,15 +1262,20 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.End();
 
         bool doAmbientOcclusion = LightingConfig.Instance.AmbientOcclusionEnabled();
-        bool doOverbright = LightingConfig.Instance.DrawOverbright()
+        bool doOverbright =
+            LightingConfig.Instance.DrawOverbright()
             && LightingConfig.Instance.SmoothLightingEnabled();
 
         RenderTarget2D ambientOcclusionTarget = null;
         if (doAmbientOcclusion && doOverbright)
         {
-            ambientOcclusionTarget = _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
-                _cameraModeTarget, wallTarget, _cameraModeBiome, false
-            );
+            ambientOcclusionTarget =
+                _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
+                    _cameraModeTarget,
+                    wallTarget,
+                    _cameraModeBiome,
+                    false
+                );
         }
 
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
@@ -1204,7 +1289,9 @@ public sealed class FancyLightingMod : Mod
         if (doAmbientOcclusion && !doOverbright)
         {
             _ambientOcclusionInstance.ApplyAmbientOcclusionCameraMode(
-                _cameraModeTarget, _smoothLightingInstance._cameraModeTarget2, _cameraModeBiome
+                _cameraModeTarget,
+                _smoothLightingInstance._cameraModeTarget2,
+                _cameraModeBiome
             );
         }
 
@@ -1223,7 +1310,13 @@ public sealed class FancyLightingMod : Mod
     {
         if (!_inCameraMode)
         {
-            orig(self, solidLayer, forRenderTargets, intoRenderTargets, waterStyleOverride);
+            orig(
+                self,
+                solidLayer,
+                forRenderTargets,
+                intoRenderTargets,
+                waterStyleOverride
+            );
             return;
         }
 
@@ -1232,13 +1325,21 @@ public sealed class FancyLightingMod : Mod
 
         Main.tileBatch.End();
         Main.spriteBatch.End();
-        Main.graphics.GraphicsDevice.SetRenderTarget(_smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget));
+        Main.graphics.GraphicsDevice.SetRenderTarget(
+            _smoothLightingInstance.GetCameraModeRenderTarget(_cameraModeTarget)
+        );
         Main.graphics.GraphicsDevice.Clear(Color.Transparent);
         Main.tileBatch.Begin();
         Main.spriteBatch.Begin();
         try
         {
-            orig(self, solidLayer, forRenderTargets, intoRenderTargets, waterStyleOverride);
+            orig(
+                self,
+                solidLayer,
+                forRenderTargets,
+                intoRenderTargets,
+                waterStyleOverride
+            );
         }
         finally
         {
@@ -1248,7 +1349,10 @@ public sealed class FancyLightingMod : Mod
         Main.spriteBatch.End();
 
         _smoothLightingInstance.DrawSmoothLightingCameraMode(
-            _cameraModeTarget, _smoothLightingInstance._cameraModeTarget1, false, false
+            _cameraModeTarget,
+            _smoothLightingInstance._cameraModeTarget1,
+            false,
+            false
         );
 
         Main.tileBatch.Begin();

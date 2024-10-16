@@ -1,6 +1,6 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
+using Microsoft.Xna.Framework;
 
 namespace FancyLighting.Util;
 
@@ -29,10 +29,11 @@ internal static class GammaConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SrgbToLinear(ref float x)
-        => x = x <= 0.04045f
-            ? (1f / 12.92f) * x
-            : MathF.Pow((1f / 1.055f) * (x + 0.055f), 2.4f);
+    public static void SrgbToLinear(ref float x) =>
+        x =
+            x <= 0.04045f
+                ? (1f / 12.92f) * x
+                : MathF.Pow((1f / 1.055f) * (x + 0.055f), 2.4f);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SrgbToLinear(ref Vector3 color)
@@ -43,10 +44,8 @@ internal static class GammaConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void LinearToSrgb(ref float x)
-        => x = x <= 0.0031308f
-            ? 12.92f * x
-            : 1.055f * MathF.Pow(x, 1f / 2.4f) - 0.055f;
+    public static void LinearToSrgb(ref float x) =>
+        x = x <= 0.0031308f ? 12.92f * x : 1.055f * MathF.Pow(x, 1f / 2.4f) - 0.055f;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void LinearToSrgb(ref Vector3 color)

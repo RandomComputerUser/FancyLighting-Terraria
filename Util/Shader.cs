@@ -11,8 +11,8 @@ internal class Shader
     private EffectPass _shader;
     private EffectPass _hiDefShader;
 
-    protected EffectPass EffectPass
-        => _hiDefShader is not null && LightingConfig.Instance.HiDefFeaturesEnabled()
+    protected EffectPass EffectPass =>
+        _hiDefShader is not null && LightingConfig.Instance.HiDefFeaturesEnabled()
             ? _hiDefShader
             : _shader;
 
