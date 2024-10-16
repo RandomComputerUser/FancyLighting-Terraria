@@ -16,24 +16,24 @@ public class SkyColors1 : ISimpleColorProfile
         var sunriseTime = noonTime - (7 + 1.0 / 3.0);
         var sunsetTime = noonTime + (7 + 1.0 / 3.0);
 
-        Vector3 midnightColor = new(0.018f, 0.027f, 0.054f);
-        Vector3 nightColor = new(0.020f, 0.030f, 0.060f);
-        Vector3 twilightColor1 = new(0.030f, 0.035f, 0.070f);
-        Vector3 twilightColor2 = new(0.045f, 0.045f, 0.095f);
-        Vector3 twilightColor3 = new(0.070f, 0.055f, 0.120f);
-        Vector3 twilightColor4 = new(0.110f, 0.075f, 0.145f);
-        Vector3 twilightColor5 = new(0.160f, 0.100f, 0.170f);
-        Vector3 sunrisesetColor = new(0.220f, 0.125f, 0.195f);
-        Vector3 goldenHourColor1 = new(0.320f, 0.160f, 0.220f);
-        Vector3 goldenHourColor2 = new(0.440f, 0.220f, 0.250f);
-        Vector3 goldenHourColor3 = new(0.580f, 0.320f, 0.280f);
-        Vector3 goldenHourColor4 = new(0.700f, 0.440f, 0.320f);
-        Vector3 goldenHourColor5 = new(0.780f, 0.580f, 0.380f);
-        Vector3 dayColor1 = new(0.840f, 0.700f, 0.600f);
-        Vector3 dayColor2 = new(0.890f, 0.820f, 0.760f);
-        Vector3 dayColor3 = new(0.940f, 0.920f, 0.900f);
-        Vector3 dayColor4 = new(0.980f, 0.990f, 1.000f);
-        Vector3 noonColor = new(1.250f, 1.250f, 1.250f);
+        var midnightColor = new Vector3(0.018f, 0.027f, 0.054f);
+        var nightColor = new Vector3(0.020f, 0.030f, 0.060f);
+        var twilightColor1 = new Vector3(0.030f, 0.035f, 0.070f);
+        var twilightColor2 = new Vector3(0.045f, 0.045f, 0.095f);
+        var twilightColor3 = new Vector3(0.070f, 0.055f, 0.120f);
+        var twilightColor4 = new Vector3(0.110f, 0.075f, 0.145f);
+        var twilightColor5 = new Vector3(0.160f, 0.100f, 0.170f);
+        var sunrisesetColor = new Vector3(0.220f, 0.125f, 0.195f);
+        var goldenHourColor1 = new Vector3(0.320f, 0.160f, 0.220f);
+        var goldenHourColor2 = new Vector3(0.440f, 0.220f, 0.250f);
+        var goldenHourColor3 = new Vector3(0.580f, 0.320f, 0.280f);
+        var goldenHourColor4 = new Vector3(0.700f, 0.440f, 0.320f);
+        var goldenHourColor5 = new Vector3(0.780f, 0.580f, 0.380f);
+        var dayColor1 = new Vector3(0.840f, 0.700f, 0.600f);
+        var dayColor2 = new Vector3(0.890f, 0.820f, 0.760f);
+        var dayColor3 = new Vector3(0.940f, 0.920f, 0.900f);
+        var dayColor4 = new Vector3(0.980f, 0.990f, 1.000f);
+        var noonColor = new Vector3(1.250f, 1.250f, 1.250f);
 
         (double hour, Vector3 color)[] colors =
         [

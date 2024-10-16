@@ -316,7 +316,7 @@ internal sealed class EnhancedFancyLightingEngine : FancyLightingEngineBase
     )
     {
         ref var colorRef = ref colors[index];
-        Vec3 color = new(colorRef.X, colorRef.Y, colorRef.Z);
+        var color = new Vec3(colorRef.X, colorRef.Y, colorRef.Z);
         if (
             color.X <= _initialBrightnessCutoff
             && color.Y <= _initialBrightnessCutoff

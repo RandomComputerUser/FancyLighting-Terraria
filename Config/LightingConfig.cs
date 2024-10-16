@@ -103,7 +103,7 @@ public sealed class LightingConfig : ModConfig
         {
             if (value == Preset.CustomPreset)
             {
-                PresetOptions currentOptions = new(this);
+                var currentOptions = new PresetOptions(this);
                 var isPreset = PresetOptions.PresetLookup.TryGetValue(
                     currentOptions,
                     out var preset

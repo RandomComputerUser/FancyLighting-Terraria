@@ -348,7 +348,7 @@ internal sealed class SmoothLighting
     private static Color RainbowGlowColor()
     {
         var color = Main.DiscoColor;
-        Vector3 vector = new(color.R / 255f, color.G / 255f, color.B / 255f);
+        var vector = new Vector3(color.R / 255f, color.G / 255f, color.B / 255f);
         vector.X = MathF.Sqrt(vector.X);
         vector.Y = MathF.Sqrt(vector.Y);
         vector.Z = MathF.Sqrt(vector.Z);

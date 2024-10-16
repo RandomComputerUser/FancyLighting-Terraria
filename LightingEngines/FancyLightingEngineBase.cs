@@ -169,8 +169,8 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     {
         _initialBrightnessCutoff = LOW_LIGHT_LEVEL;
 
-        var cutoff =
-            FancyLightingMod._inCameraMode ? cameraModeCutoff
+        var cutoff = FancyLightingMod._inCameraMode
+            ? cameraModeCutoff
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
                 ? (float)
                     Math.Clamp(
@@ -178,7 +178,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                         temporalMin,
                         temporalMax
                     )
-            : baseCutoff;
+                : baseCutoff;
 
         var basicWorkCutoff = baseCutoff;
 
@@ -616,7 +616,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         bool LessThanThreshold(int otherIndex)
         {
             ref var otherColorRef = ref colors[otherIndex];
-            Vec3 otherColor = new(otherColorRef.X, otherColorRef.Y, otherColorRef.Z);
+            var otherColor = new Vec3(otherColorRef.X, otherColorRef.Y, otherColorRef.Z);
             otherColor *= _lightMask[otherIndex][DISTANCE_TICKS];
             return otherColor.X < threshold.X
                 || otherColor.Y < threshold.Y
