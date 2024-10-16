@@ -8,3 +8,4 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 ### Latest Version
 
 **v0.8.0 (2024-??-??)**
+- Upgraded to .NET 8
