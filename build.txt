@@ -3,7 +3,7 @@ author = RandomComputerUser
 version = 0.8.0
 side = Client
 homepage = https://github.com/RandomComputerUser/FancyLighting-Terraria
-buildIgnore = Effects/*.config, Effects/*.dll, Effects/*.exe, Effects/*.pdb, Effects/BlurKernelGenerator/*, Effects/DitherNoiseGenerator/*, icon_workshop.png, obj/*, packages/*, Properties/*, README.md
+buildIgnore = Effects/*.config, Effects/BlurKernelGenerator/*, Effects/DitherNoiseGenerator/*, icon_workshop.png, obj/*, packages/*, Properties/*, README.md
 
 hideCode = false
 hideResources = false

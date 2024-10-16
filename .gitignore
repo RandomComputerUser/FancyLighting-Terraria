@@ -3,10 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-Effects/*.dll
-Effects/*.exe
-Effects/*.pdb
-
 # User-specific files
 *.rsuser
 *.suo
