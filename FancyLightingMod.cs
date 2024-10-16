@@ -319,26 +319,26 @@ public sealed class FancyLightingMod : Mod
         {
             default:
             case LightingEngineMode.One:
-                if (_fancyLightingEngineInstance is not FancyLightingEngine)
+                if (_fancyLightingEngineInstance is not FancyLightingEngine1X)
                 {
                     _fancyLightingEngineInstance?.Unload();
-                    _fancyLightingEngineInstance = new FancyLightingEngine();
+                    _fancyLightingEngineInstance = new FancyLightingEngine1X();
                 }
                 break;
 
             case LightingEngineMode.Two:
-                if (_fancyLightingEngineInstance is not EnhancedFancyLightingEngine)
+                if (_fancyLightingEngineInstance is not FancyLightingEngine2X)
                 {
                     _fancyLightingEngineInstance?.Unload();
-                    _fancyLightingEngineInstance = new EnhancedFancyLightingEngine();
+                    _fancyLightingEngineInstance = new FancyLightingEngine2X();
                 }
                 break;
 
             case LightingEngineMode.Four:
-                if (_fancyLightingEngineInstance is not UltraFancyLightingEngine)
+                if (_fancyLightingEngineInstance is not FancyLightingEngine4X)
                 {
                     _fancyLightingEngineInstance?.Unload();
-                    _fancyLightingEngineInstance = new UltraFancyLightingEngine();
+                    _fancyLightingEngineInstance = new FancyLightingEngine4X();
                 }
                 break;
         }

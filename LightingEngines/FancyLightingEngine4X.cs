@@ -8,7 +8,7 @@ using Vec4 = System.Numerics.Vector4;
 
 namespace FancyLighting.LightingEngines;
 
-internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
+internal sealed class FancyLightingEngine4X : FancyLightingEngineBase
 {
     private readonly record struct LightSpread(
         int DistanceToTop,
@@ -42,7 +42,7 @@ internal sealed class UltraFancyLightingEngine : FancyLightingEngineBase
 
     private bool _countTemporal;
 
-    public UltraFancyLightingEngine()
+    public FancyLightingEngine4X()
     {
         ComputeLightSpread(out _lightSpread);
         InitializeDecayArrays();
