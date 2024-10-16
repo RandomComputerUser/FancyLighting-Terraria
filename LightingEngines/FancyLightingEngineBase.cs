@@ -169,8 +169,8 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     {
         _initialBrightnessCutoff = LOW_LIGHT_LEVEL;
 
-        var cutoff = FancyLightingMod._inCameraMode
-            ? cameraModeCutoff
+        var cutoff =
+            FancyLightingMod._inCameraMode ? cameraModeCutoff
             : LightingConfig.Instance.FancyLightingEngineUseTemporal
                 ? (float)
                     Math.Clamp(
@@ -178,7 +178,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                         temporalMin,
                         temporalMax
                     )
-                : baseCutoff;
+            : baseCutoff;
 
         var basicWorkCutoff = baseCutoff;
 
