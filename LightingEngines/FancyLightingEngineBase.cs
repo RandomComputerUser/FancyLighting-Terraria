@@ -142,7 +142,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
     protected void ComputeCircles()
     {
         _circles = new int[MAX_LIGHT_RANGE + 1][];
-        _circles[0] = new int[] { 0 };
+        _circles[0] = [0];
         for (var radius = 1; radius <= MAX_LIGHT_RANGE; ++radius)
         {
             _circles[radius] = new int[radius + 1];

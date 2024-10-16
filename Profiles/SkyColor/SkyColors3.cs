@@ -31,8 +31,8 @@ public class SkyColors3 : ISimpleColorProfile
         Vector3 dayTransitionColor2 = new Vector3(230, 180, 140) / 255f;
         Vector3 noonColor = new Vector3(360, 360, 360) / 255f;
 
-        (double hour, Vector3 color)[] colors = new[]
-        {
+        (double hour, Vector3 color)[] colors =
+        [
             (midnightTime, midnightColor),
             (preSunriseTime, nightTransitionColor),
             (sunriseTime, dayNightTransitionColor),
@@ -44,7 +44,7 @@ public class SkyColors3 : ISimpleColorProfile
             (sunsetTime, dayNightTransitionColor),
             (postSunsetTime, nightTransitionColor),
             (dayEndTime, midnightColor),
-        };
+        ];
 
         foreach ((var hour, var color) in colors)
         {

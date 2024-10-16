@@ -35,8 +35,8 @@ public class SkyColors1 : ISimpleColorProfile
         Vector3 dayColor4 = new(0.980f, 0.990f, 1.000f);
         Vector3 noonColor = new(1.250f, 1.250f, 1.250f);
 
-        (double hour, Vector3 color)[] colors = new[]
-        {
+        (double hour, Vector3 color)[] colors =
+        [
             (0.00, midnightColor),
             (sunriseTime - 6 / 3.0, nightColor),
             (sunriseTime - 5 / 3.0, twilightColor1),
@@ -72,7 +72,7 @@ public class SkyColors1 : ISimpleColorProfile
             (sunsetTime + 5 / 3.0, twilightColor1),
             (sunsetTime + 6 / 3.0, nightColor),
             (24.00, midnightColor),
-        };
+        ];
 
         foreach ((var hour, var color) in colors)
         {

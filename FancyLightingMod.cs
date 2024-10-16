@@ -206,7 +206,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawMultiTileVines",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawMultiTileGrass = (TileDrawingMethod)
@@ -215,7 +215,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawMultiTileGrass",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawVoidLenses = (TileDrawingMethod)
@@ -224,7 +224,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawVoidLenses",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawTeleportationPylons = (TileDrawingMethod)
@@ -233,7 +233,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawTeleportationPylons",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawMasterTrophies = (TileDrawingMethod)
@@ -242,7 +242,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawMasterTrophies",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawGrass = (TileDrawingMethod)
@@ -251,7 +251,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawGrass",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawAnyDirectionalGrass = (TileDrawingMethod)
@@ -260,7 +260,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawAnyDirectionalGrass",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawTrees = (TileDrawingMethod)
@@ -269,7 +269,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawTrees",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawVines = (TileDrawingMethod)
@@ -278,7 +278,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawVines",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
         method_DrawReverseVines = (TileDrawingMethod)
@@ -287,7 +287,7 @@ public sealed class FancyLightingMod : Mod
                 typeof(TileDrawing).GetMethod(
                     "DrawReverseVines",
                     BindingFlags.NonPublic | BindingFlags.Instance,
-                    new Type[] { }
+                    []
                 )
             );
 
