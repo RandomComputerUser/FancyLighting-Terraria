@@ -305,7 +305,7 @@ internal sealed class SmoothLighting
 
     internal void ApplyGammaCorrectionShader() =>
         (
-            LightingConfig.Instance.RenderOnlyLight
+            PreferencesConfig.Instance.RenderOnlyLight
                 ? _gammaCorrectionLightOnlyShader
                 : _gammaCorrectionShader
         ).Apply();
@@ -314,7 +314,7 @@ internal sealed class SmoothLighting
         _gammaCorrectionBGShader
             .SetParameter(
                 "BackgroundBrightnessMult",
-                LightingConfig.Instance.UseLightMapToneMapping ? 1.05f : 1.1f
+                PreferencesConfig.Instance.UseLightMapToneMapping ? 1.05f : 1.1f
             )
             .Apply();
 
@@ -538,7 +538,7 @@ internal sealed class SmoothLighting
         var caughtException = 0;
         var doGammaCorrection = LightingConfig.Instance.DoGammaCorrection();
         var blurLightMap = LightingConfig.Instance.UseLightMapBlurring;
-        var doToneMap = LightingConfig.Instance.UseLightMapToneMapping;
+        var doToneMap = PreferencesConfig.Instance.UseLightMapToneMapping;
 
         if (doGammaCorrection && !LightingConfig.Instance.FancyLightingEngineEnabled())
         {
@@ -547,7 +547,7 @@ internal sealed class SmoothLighting
                 width,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x) =>
                 {
@@ -583,7 +583,7 @@ internal sealed class SmoothLighting
                     width - 1,
                     new ParallelOptions
                     {
-                        MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                        MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                     },
                     (x) =>
                     {
@@ -704,7 +704,7 @@ internal sealed class SmoothLighting
                     width - 1,
                     new ParallelOptions
                     {
-                        MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                        MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                     },
                     (x) =>
                     {
@@ -808,7 +808,7 @@ internal sealed class SmoothLighting
                     width,
                     new ParallelOptions
                     {
-                        MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                        MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                     },
                     (x) =>
                     {
@@ -835,7 +835,7 @@ internal sealed class SmoothLighting
                     width,
                     new ParallelOptions
                     {
-                        MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                        MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                     },
                     (x) =>
                     {
@@ -883,7 +883,7 @@ internal sealed class SmoothLighting
                 width,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x) =>
                 {
@@ -914,7 +914,7 @@ internal sealed class SmoothLighting
                 width,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x) =>
                 {
@@ -968,7 +968,7 @@ internal sealed class SmoothLighting
             lightMapTileArea.X + lightMapTileArea.Width,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
             },
             (x) =>
             {
@@ -1039,7 +1039,7 @@ internal sealed class SmoothLighting
             width - 1,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
             },
             (x) =>
             {
@@ -1266,7 +1266,7 @@ internal sealed class SmoothLighting
                 clampedEnd,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x1) =>
                 {
@@ -1342,7 +1342,7 @@ internal sealed class SmoothLighting
                 clampedEnd,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x1) =>
                 {
@@ -1485,7 +1485,7 @@ internal sealed class SmoothLighting
                 clampedEnd,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x1) =>
                 {
@@ -1555,7 +1555,7 @@ internal sealed class SmoothLighting
                 clampedEnd,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                    MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
                 },
                 (x1) =>
                 {
@@ -1703,7 +1703,7 @@ internal sealed class SmoothLighting
         var lightMapTexture = background ? _colorsBackground : _colors;
 
         if (
-            LightingConfig.Instance.UseNormalMaps() && !disableNormalMaps
+            LightingConfig.Instance.SimulateNormalMaps && !disableNormalMaps
             || LightingConfig.Instance.DrawOverbright()
         )
         {
@@ -1857,12 +1857,12 @@ internal sealed class SmoothLighting
         RenderTarget2D ambientOcclusionTarget
     )
     {
-        var fineNormalMaps = LightingConfig.Instance.FineNormalMaps;
+        var fineNormalMaps = PreferencesConfig.Instance.FineNormalMaps;
         var doBicubicUpscaling = LightingConfig.Instance.UseBicubicScaling();
         var simulateNormalMaps =
-            !disableNormalMaps && LightingConfig.Instance.UseNormalMaps();
+            !disableNormalMaps && LightingConfig.Instance.SimulateNormalMaps;
         var hiDef = LightingConfig.Instance.HiDefFeaturesEnabled();
-        var lightOnly = LightingConfig.Instance.RenderOnlyLight;
+        var lightOnly = PreferencesConfig.Instance.RenderOnlyLight;
         var doOverbright = LightingConfig.Instance.DrawOverbright();
         var doDitheringSecond = (simulateNormalMaps || doOverbright) && hiDef;
         var doGamma = LightingConfig.Instance.DoGammaCorrection();
@@ -1994,7 +1994,8 @@ internal sealed class SmoothLighting
             var normalMapRadius = hiDef ? 32f : 24f;
             if (!hiDef)
             {
-                normalMapRadius *= 0.6f * LightingConfig.Instance.NormalMapsMultiplier();
+                normalMapRadius *=
+                    0.6f * PreferencesConfig.Instance.NormalMapsMultiplier();
                 if (fineNormalMaps)
                 {
                     normalMapRadius *= 1.4f;
@@ -2003,7 +2004,7 @@ internal sealed class SmoothLighting
 
             var normalMapResolution = fineNormalMaps ? 1f : 2f;
             var hiDefNormalMapStrength = background ? 26f : 34f;
-            hiDefNormalMapStrength *= LightingConfig.Instance.NormalMapsMultiplier();
+            hiDefNormalMapStrength *= PreferencesConfig.Instance.NormalMapsMultiplier();
             if (doGamma)
             {
                 hiDefNormalMapStrength *= 2f;

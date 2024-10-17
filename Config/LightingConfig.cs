@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using Terraria;
@@ -25,28 +24,11 @@ public sealed class LightingConfig : ModConfig
 
     internal bool DrawOverbright() => LightMapRenderMode is RenderMode.BicubicOverbright;
 
-    internal bool UseNormalMaps() => NormalMapsStrength != 0;
-
-    internal float NormalMapsMultiplier() => NormalMapsStrength / 100f;
-
     internal bool AmbientOcclusionEnabled() =>
         UseAmbientOcclusion && Lighting.UsingNewLighting;
 
-    internal float AmbientOcclusionPower() => AmbientOcclusionIntensity / 50f;
-
-    internal float AmbientOcclusionMult() => AmbientLightProportion / 100f;
-
     internal bool FancyLightingEngineEnabled() =>
         UseFancyLightingEngine && Lighting.UsingNewLighting;
-
-    internal float FancyLightingEngineExitMultiplier() =>
-        1f - FancyLightingEngineLightLoss / 100f;
-
-    internal float FancyLightingEngineAbsorptionExponent() =>
-        FancyLightingEngineLightAbsorption / 100f;
-
-    internal bool CustomSkyColorsEnabled() =>
-        UseCustomSkyColors && Lighting.UsingNewLighting;
 
     internal bool HiDefFeaturesEnabled() =>
         UseHiDefFeatures && Main.graphics.GraphicsProfile is GraphicsProfile.HiDef;
@@ -57,65 +39,49 @@ public sealed class LightingConfig : ModConfig
     public override void OnChanged() =>
         ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
 
-    private void CopyFrom(PresetOptions options)
+    internal void CopyFrom(PresetOptions options)
     {
+        _useHiDefFeatures = options.UseHiDefFeatures;
+
         _useSmoothLighting = options.UseSmoothLighting;
         _useLightMapBlurring = options.UseLightMapBlurring;
-        _useLightMapToneMapping = options.UseLightMapToneMapping;
         _useEnhancedBlurring = options.UseEnhancedBlurring;
         _lightMapRenderMode = options.LightMapRenderMode;
-        _normalMapsStrength = options.NormalMapsStrength;
-        _useFineNormalMaps = options.FineNormalMaps;
-        _renderOnlyLight = options.RenderOnlyLight;
+        _simulateNormalMaps = options.SimulateNormalMaps;
 
         _useAmbientOcclusion = options.UseAmbientOcclusion;
         _doNonSolidAmbientOcclusion = options.DoNonSolidAmbientOcclusion;
         _doTileEntityAmbientOcclusion = options.DoTileEntityAmbientOcclusion;
-        _ambientOcclusionRadius = options.AmbientOcclusionRadius;
-        _ambientOcclusionIntensity = options.AmbientOcclusionIntensity;
-        _ambientLightProportion = options.AmbientLightProportion;
 
         _useFancyLightingEngine = options.UseFancyLightingEngine;
         _fancyLightingEngineUseTemporal = options.FancyLightingEngineUseTemporal;
         _fancyLightingEngineMakeBrighter = options.FancyLightingEngineMakeBrighter;
-        _fancyLightingEngineLightLoss = options.FancyLightingEngineLightLoss;
-        _fancyLightingEngineLightAbsorption = options.FancyLightingEngineLightAbsorption;
         _fancyLightingEngineMode = options.FancyLightingEngineMode;
         _simulateGlobalIllumination = options.SimulateGlobalIllumination;
-
-        _useCustomSkyColors = options.UseCustomSkyColors;
-        _customSkyPreset = options.CustomSkyPreset;
-
-        _threadCount = options.ThreadCount;
-        _useHiDefFeatures = options.UseHiDefFeatures;
     }
 
-    // Presets
-    [Header("Presets")]
+    public void UpdatePreset()
+    {
+        var currentOptions = new PresetOptions(this);
+        var isPreset = PresetOptions.PresetLookup.TryGetValue(
+            currentOptions,
+            out var preset
+        );
+        _preset = isPreset ? preset : Preset.CustomPreset;
+    }
+
     // Serialize this last
     [JsonProperty(Order = 1000)]
-    [DefaultValue(DefaultOptions.ConfigPreset)]
+    [DefaultValue(DefaultOptions.QualityPreset)]
     [DrawTicks]
-    public Preset ConfigPreset
+    public Preset QualityPreset
     {
         get => _preset;
         set
         {
-            if (value == Preset.CustomPreset)
+            if (value is Preset.CustomPreset)
             {
-                var currentOptions = new PresetOptions(this);
-                var isPreset = PresetOptions.PresetLookup.TryGetValue(
-                    currentOptions,
-                    out var preset
-                );
-                if (isPreset)
-                {
-                    _preset = preset;
-                }
-                else
-                {
-                    _preset = Preset.CustomPreset;
-                }
+                UpdatePreset();
             }
             else
             {
@@ -137,6 +103,18 @@ public sealed class LightingConfig : ModConfig
     }
     private Preset _preset;
 
+    [DefaultValue(DefaultOptions.UseHiDefFeatures)]
+    public bool UseHiDefFeatures
+    {
+        get => _useHiDefFeatures;
+        set
+        {
+            _useHiDefFeatures = value;
+            UpdatePreset();
+        }
+    }
+    private bool _useHiDefFeatures;
+
     // Smooth Lighting, Normal Maps, Overbright
     [Header("SmoothLighting")]
     [DefaultValue(DefaultOptions.UseSmoothLighting)]
@@ -146,7 +124,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _useSmoothLighting = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _useSmoothLighting;
@@ -158,7 +136,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _useLightMapBlurring = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _useLightMapBlurring;
@@ -170,22 +148,10 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _useEnhancedBlurring = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _useEnhancedBlurring;
-
-    [DefaultValue(DefaultOptions.UseLightMapToneMapping)]
-    public bool UseLightMapToneMapping
-    {
-        get => _useLightMapToneMapping;
-        set
-        {
-            _useLightMapToneMapping = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useLightMapToneMapping;
 
     [DefaultValue(DefaultOptions.LightMapRenderMode)]
     [DrawTicks]
@@ -195,50 +161,22 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _lightMapRenderMode = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private RenderMode _lightMapRenderMode;
 
-    [Range(0, 200)]
-    [Increment(25)]
-    [DefaultValue(DefaultOptions.NormalMapsStrength)]
-    [Slider]
-    [DrawTicks]
-    public int NormalMapsStrength
+    [DefaultValue(DefaultOptions.SimulateNormalMaps)]
+    public bool SimulateNormalMaps
     {
-        get => _normalMapsStrength;
+        get => _simulateNormalMaps;
         set
         {
-            _normalMapsStrength = value;
-            ConfigPreset = Preset.CustomPreset;
+            _simulateNormalMaps = value;
+            UpdatePreset();
         }
     }
-    private int _normalMapsStrength;
-
-    [DefaultValue(DefaultOptions.FineNormalMaps)]
-    public bool FineNormalMaps
-    {
-        get => _useFineNormalMaps;
-        set
-        {
-            _useFineNormalMaps = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useFineNormalMaps;
-
-    [DefaultValue(DefaultOptions.RenderOnlyLight)]
-    public bool RenderOnlyLight
-    {
-        get => _renderOnlyLight;
-        set
-        {
-            _renderOnlyLight = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _renderOnlyLight;
+    private bool _simulateNormalMaps;
 
     // Ambient Occlusion
     [Header("AmbientOcclusion")]
@@ -249,7 +187,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _useAmbientOcclusion = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _useAmbientOcclusion;
@@ -261,7 +199,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _doNonSolidAmbientOcclusion = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _doNonSolidAmbientOcclusion;
@@ -273,58 +211,10 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _doTileEntityAmbientOcclusion = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _doTileEntityAmbientOcclusion;
-
-    [Range(1, 4)]
-    [Increment(1)]
-    [DefaultValue(DefaultOptions.AmbientOcclusionRadius)]
-    [Slider]
-    [DrawTicks]
-    public int AmbientOcclusionRadius
-    {
-        get => _ambientOcclusionRadius;
-        set
-        {
-            _ambientOcclusionRadius = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _ambientOcclusionRadius;
-
-    [Range(5, 100)]
-    [Increment(5)]
-    [DefaultValue(DefaultOptions.AmbientOcclusionIntensity)]
-    [Slider]
-    [DrawTicks]
-    public int AmbientOcclusionIntensity
-    {
-        get => _ambientOcclusionIntensity;
-        set
-        {
-            _ambientOcclusionIntensity = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _ambientOcclusionIntensity;
-
-    [Range(5, 100)]
-    [Increment(5)]
-    [DefaultValue(DefaultOptions.AmbientLightProportion)]
-    [Slider]
-    [DrawTicks]
-    public int AmbientLightProportion
-    {
-        get => _ambientLightProportion;
-        set
-        {
-            _ambientLightProportion = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _ambientLightProportion;
 
     // Fancy Lighting Engine
     [Header("LightingEngine")]
@@ -335,7 +225,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _useFancyLightingEngine = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _useFancyLightingEngine;
@@ -347,7 +237,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _fancyLightingEngineUseTemporal = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _fancyLightingEngineUseTemporal;
@@ -359,42 +249,10 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _fancyLightingEngineMakeBrighter = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _fancyLightingEngineMakeBrighter;
-
-    [Range(0, 100)]
-    [Increment(5)]
-    [DefaultValue(DefaultOptions.FancyLightingEngineLightLoss)]
-    [Slider]
-    [DrawTicks]
-    public int FancyLightingEngineLightLoss
-    {
-        get => _fancyLightingEngineLightLoss;
-        set
-        {
-            _fancyLightingEngineLightLoss = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _fancyLightingEngineLightLoss;
-
-    [Range(70, 200)]
-    [Increment(10)]
-    [DefaultValue(DefaultOptions.FancyLightingEngineLightAbsorption)]
-    [Slider]
-    [DrawTicks]
-    public int FancyLightingEngineLightAbsorption
-    {
-        get => _fancyLightingEngineLightAbsorption;
-        set
-        {
-            _fancyLightingEngineLightAbsorption = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _fancyLightingEngineLightAbsorption;
 
     [DefaultValue(DefaultOptions.FancyLightingEngineMode)]
     [DrawTicks]
@@ -404,7 +262,7 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _fancyLightingEngineMode = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private LightingEngineMode _fancyLightingEngineMode;
@@ -416,63 +274,8 @@ public sealed class LightingConfig : ModConfig
         set
         {
             _simulateGlobalIllumination = value;
-            ConfigPreset = Preset.CustomPreset;
+            UpdatePreset();
         }
     }
     private bool _simulateGlobalIllumination;
-
-    // Sky Color
-    [Header("SkyColor")]
-    [DefaultValue(DefaultOptions.UseCustomSkyColors)]
-    public bool UseCustomSkyColors
-    {
-        get => _useCustomSkyColors;
-        set
-        {
-            _useCustomSkyColors = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useCustomSkyColors;
-
-    [DefaultValue(DefaultOptions.CustomSkyPreset)]
-    [DrawTicks]
-    public SkyColorPreset CustomSkyPreset
-    {
-        get => _customSkyPreset;
-        set
-        {
-            _customSkyPreset = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private SkyColorPreset _customSkyPreset;
-
-    // Other Settings
-    [Header("General")]
-    [Range(DefaultOptions.MinThreadCount, DefaultOptions.MaxThreadCount)]
-    [Increment(1)]
-    [DefaultValue(DefaultOptions.ThreadCount)]
-    public int ThreadCount
-    {
-        get => _threadCount;
-        set
-        {
-            _threadCount = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private int _threadCount;
-
-    [DefaultValue(DefaultOptions.UseHiDefFeatures)]
-    public bool UseHiDefFeatures
-    {
-        get => _useHiDefFeatures;
-        set
-        {
-            _useHiDefFeatures = value;
-            ConfigPreset = Preset.CustomPreset;
-        }
-    }
-    private bool _useHiDefFeatures;
 }

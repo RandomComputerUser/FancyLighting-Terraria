@@ -43,7 +43,7 @@ public static class SkyColors
         out Color moonColor
     )
     {
-        if (!(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false))
+        if (!(PreferencesConfig.Instance?.CustomSkyColorsEnabled() ?? false))
         {
             orig(info, out sunColor, out moonColor);
             return;
@@ -80,7 +80,7 @@ public static class SkyColors
         if (
             !_modifyNightColor
             || Profiles is null
-            || !(LightingConfig.Instance?.CustomSkyColorsEnabled() ?? false)
+            || !(PreferencesConfig.Instance?.CustomSkyColorsEnabled() ?? false)
         )
         {
             orig(ref backColor, ref moonColor);
@@ -107,7 +107,7 @@ public static class SkyColors
     public static Vector3 CalculateSkyColor(double hour)
     {
         var foundProfile = Profiles.TryGetValue(
-            LightingConfig.Instance.CustomSkyPreset,
+            PreferencesConfig.Instance.CustomSkyPreset,
             out var profile
         );
 

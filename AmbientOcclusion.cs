@@ -392,14 +392,14 @@ internal sealed class AmbientOcclusion
             Main.spriteBatch.End();
         }
 
-        var power = LightingConfig.Instance.AmbientOcclusionPower();
+        var power = PreferencesConfig.Instance.AmbientOcclusionPower();
         if (LightingConfig.Instance.DoGammaCorrection())
         {
             power *= 2.2f;
         }
-        var mult = LightingConfig.Instance.AmbientOcclusionMult();
+        var mult = PreferencesConfig.Instance.AmbientOcclusionMult();
 
-        var radius = LightingConfig.Instance.AmbientOcclusionRadius;
+        var radius = PreferencesConfig.Instance.AmbientOcclusionRadius;
         var firstShaderBlurStep = radius switch
         {
             1 => 1,

@@ -5,28 +5,20 @@ namespace FancyLighting.Config;
 
 internal record PresetOptions
 {
+    public bool UseHiDefFeatures { get; init; } = DefaultOptions.UseHiDefFeatures;
+
     public bool UseSmoothLighting { get; init; } = DefaultOptions.UseSmoothLighting;
     public bool UseLightMapBlurring { get; init; } = DefaultOptions.UseLightMapBlurring;
     public bool UseEnhancedBlurring { get; init; } = DefaultOptions.UseEnhancedBlurring;
-    public bool UseLightMapToneMapping { get; init; } =
-        DefaultOptions.UseLightMapToneMapping;
     public RenderMode LightMapRenderMode { get; init; } =
         DefaultOptions.LightMapRenderMode;
-    public int NormalMapsStrength { get; init; } = DefaultOptions.NormalMapsStrength;
-    public bool FineNormalMaps { get; init; } = DefaultOptions.FineNormalMaps;
-    public bool RenderOnlyLight { get; init; } = DefaultOptions.RenderOnlyLight;
+    public bool SimulateNormalMaps { get; init; } = DefaultOptions.SimulateNormalMaps;
 
     public bool UseAmbientOcclusion { get; init; } = DefaultOptions.UseAmbientOcclusion;
     public bool DoNonSolidAmbientOcclusion { get; init; } =
         DefaultOptions.DoNonSolidAmbientOcclusion;
     public bool DoTileEntityAmbientOcclusion { get; init; } =
         DefaultOptions.DoTileEntityAmbientOcclusion;
-    public int AmbientOcclusionRadius { get; init; } =
-        DefaultOptions.AmbientOcclusionRadius;
-    public int AmbientOcclusionIntensity { get; init; } =
-        DefaultOptions.AmbientOcclusionIntensity;
-    public int AmbientLightProportion { get; init; } =
-        DefaultOptions.AmbientLightProportion;
 
     public bool UseFancyLightingEngine { get; init; } =
         DefaultOptions.UseFancyLightingEngine;
@@ -34,92 +26,72 @@ internal record PresetOptions
         DefaultOptions.FancyLightingEngineUseTemporal;
     public bool FancyLightingEngineMakeBrighter { get; init; } =
         DefaultOptions.FancyLightingEngineMakeBrighter;
-    public int FancyLightingEngineLightLoss { get; init; } =
-        DefaultOptions.FancyLightingEngineLightLoss;
-    public int FancyLightingEngineLightAbsorption { get; init; } =
-        DefaultOptions.FancyLightingEngineLightAbsorption;
     public LightingEngineMode FancyLightingEngineMode { get; init; } =
         DefaultOptions.FancyLightingEngineMode;
     public bool SimulateGlobalIllumination { get; init; } =
         DefaultOptions.SimulateGlobalIllumination;
 
-    public bool UseCustomSkyColors { get; init; } = DefaultOptions.UseCustomSkyColors;
-    public SkyColorPreset CustomSkyPreset { get; init; } = DefaultOptions.CustomSkyPreset;
-
-    public int ThreadCount { get; init; } = DefaultOptions.RuntimeDefaultThreadCount;
-    public bool UseHiDefFeatures { get; init; } = DefaultOptions.UseHiDefFeatures;
-
     public PresetOptions() { }
 
     public PresetOptions(LightingConfig config)
     {
+        UseHiDefFeatures = config.UseHiDefFeatures;
+
         UseSmoothLighting = config.UseSmoothLighting;
         UseLightMapBlurring = config.UseLightMapBlurring;
         UseEnhancedBlurring = config.UseEnhancedBlurring;
-        UseLightMapToneMapping = config.UseLightMapToneMapping;
         LightMapRenderMode = config.LightMapRenderMode;
-        NormalMapsStrength = config.NormalMapsStrength;
-        FineNormalMaps = config.FineNormalMaps;
-        RenderOnlyLight = config.RenderOnlyLight;
+        SimulateNormalMaps = config.SimulateNormalMaps;
 
         UseAmbientOcclusion = config.UseAmbientOcclusion;
         DoNonSolidAmbientOcclusion = config.DoNonSolidAmbientOcclusion;
         DoTileEntityAmbientOcclusion = config.DoTileEntityAmbientOcclusion;
-        AmbientOcclusionRadius = config.AmbientOcclusionRadius;
-        AmbientOcclusionIntensity = config.AmbientOcclusionIntensity;
-        AmbientLightProportion = config.AmbientLightProportion;
 
         UseFancyLightingEngine = config.UseFancyLightingEngine;
         FancyLightingEngineUseTemporal = config.FancyLightingEngineUseTemporal;
         FancyLightingEngineMakeBrighter = config.FancyLightingEngineMakeBrighter;
-        FancyLightingEngineLightLoss = config.FancyLightingEngineLightLoss;
-        FancyLightingEngineLightAbsorption = config.FancyLightingEngineLightAbsorption;
         FancyLightingEngineMode = config.FancyLightingEngineMode;
         SimulateGlobalIllumination = config.SimulateGlobalIllumination;
-
-        UseCustomSkyColors = config.UseCustomSkyColors;
-        CustomSkyPreset = config.CustomSkyPreset;
-
-        ThreadCount = config.ThreadCount;
-        UseHiDefFeatures = config.UseHiDefFeatures;
     }
 
     public static PresetOptions VanillaPresetOptions =
         new()
         {
+            UseHiDefFeatures = false,
+
             UseSmoothLighting = false,
             UseEnhancedBlurring = false,
-            UseLightMapToneMapping = false,
             LightMapRenderMode = RenderMode.Bilinear,
-            NormalMapsStrength = 0,
+            SimulateNormalMaps = false,
+
             UseAmbientOcclusion = false,
             DoNonSolidAmbientOcclusion = false,
             DoTileEntityAmbientOcclusion = false,
+
             UseFancyLightingEngine = false,
             FancyLightingEngineMakeBrighter = false,
-            FancyLightingEngineLightLoss = 50,
             FancyLightingEngineMode = LightingEngineMode.One,
-            UseCustomSkyColors = false,
-            UseHiDefFeatures = false,
+            SimulateGlobalIllumination = false,
         };
 
     public static PresetOptions LowPresetOptions =
         new()
         {
+            UseHiDefFeatures = false,
+
             UseSmoothLighting = true,
             UseEnhancedBlurring = false,
-            UseLightMapToneMapping = false,
             LightMapRenderMode = RenderMode.Bilinear,
-            NormalMapsStrength = 0,
+            SimulateNormalMaps = false,
+
             UseAmbientOcclusion = false,
             DoNonSolidAmbientOcclusion = false,
             DoTileEntityAmbientOcclusion = false,
+
             UseFancyLightingEngine = false,
             FancyLightingEngineMakeBrighter = false,
-            FancyLightingEngineLightLoss = 50,
             FancyLightingEngineMode = LightingEngineMode.One,
-            UseCustomSkyColors = true,
-            UseHiDefFeatures = false,
+            SimulateGlobalIllumination = false,
         };
 
     public static PresetOptions MediumPresetOptions = new();
@@ -127,58 +99,61 @@ internal record PresetOptions
     public static PresetOptions HighPresetOptions =
         new()
         {
+            UseHiDefFeatures = false,
+
             UseSmoothLighting = true,
             UseEnhancedBlurring = true,
-            UseLightMapToneMapping = true,
             LightMapRenderMode = RenderMode.Bicubic,
-            NormalMapsStrength = 0,
+            SimulateNormalMaps = false,
+
             UseAmbientOcclusion = true,
             DoNonSolidAmbientOcclusion = true,
             DoTileEntityAmbientOcclusion = true,
+
             UseFancyLightingEngine = true,
             FancyLightingEngineMakeBrighter = true,
-            FancyLightingEngineLightLoss = 50,
             FancyLightingEngineMode = LightingEngineMode.One,
-            UseCustomSkyColors = true,
-            UseHiDefFeatures = false,
+            SimulateGlobalIllumination = false,
         };
 
     public static PresetOptions VeryHighPresetOptions =
         new()
         {
+            UseHiDefFeatures = false,
+
             UseSmoothLighting = true,
             UseEnhancedBlurring = true,
-            UseLightMapToneMapping = true,
             LightMapRenderMode = RenderMode.BicubicOverbright,
-            NormalMapsStrength = 100,
+            SimulateNormalMaps = true,
+
             UseAmbientOcclusion = true,
             DoNonSolidAmbientOcclusion = true,
             DoTileEntityAmbientOcclusion = true,
+
             UseFancyLightingEngine = true,
             FancyLightingEngineMakeBrighter = true,
-            FancyLightingEngineLightLoss = 50,
             FancyLightingEngineMode = LightingEngineMode.Two,
-            UseCustomSkyColors = true,
-            UseHiDefFeatures = false,
+            SimulateGlobalIllumination = false,
         };
 
     public static PresetOptions UltraPresetOptions =
         new()
         {
+            UseHiDefFeatures = true,
+
             UseSmoothLighting = true,
             UseEnhancedBlurring = true,
-            UseLightMapToneMapping = true,
             LightMapRenderMode = RenderMode.BicubicOverbright,
-            NormalMapsStrength = 100,
+            SimulateNormalMaps = true,
+
             UseAmbientOcclusion = true,
             DoNonSolidAmbientOcclusion = true,
             DoTileEntityAmbientOcclusion = true,
+
             UseFancyLightingEngine = true,
             FancyLightingEngineMakeBrighter = true,
-            FancyLightingEngineLightLoss = 40,
             FancyLightingEngineMode = LightingEngineMode.Four,
-            UseCustomSkyColors = true,
-            UseHiDefFeatures = true,
+            SimulateGlobalIllumination = false,
         };
 
     public static Dictionary<PresetOptions, Preset> PresetLookup =

@@ -208,7 +208,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             * Math.Min(
                 MathF.Pow(
                     lightMap.LightDecayThroughSolid,
-                    LightingConfig.Instance.FancyLightingEngineAbsorptionExponent()
+                    PreferencesConfig.Instance.FancyLightingEngineAbsorptionExponent()
                 ),
                 MAX_DECAY_MULT
             );
@@ -242,7 +242,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             );
 
         _lightLossExitingSolid =
-            LightingConfig.Instance.FancyLightingEngineExitMultiplier();
+            PreferencesConfig.Instance.FancyLightingEngineExitMultiplier();
 
         if (LightingConfig.Instance.DoGammaCorrection())
         {
@@ -292,7 +292,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             width,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
             },
             (i) =>
             {
@@ -320,7 +320,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             width,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
             },
             (x) =>
             {
@@ -334,7 +334,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
     protected void InitializeTaskVariables(int lightMapSize)
     {
-        var taskCount = LightingConfig.Instance.ThreadCount;
+        var taskCount = PreferencesConfig.Instance.ThreadCount;
 
         if (_tasks is null)
         {
@@ -391,7 +391,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         LightingAction lightingAction
     )
     {
-        var taskCount = LightingConfig.Instance.ThreadCount;
+        var taskCount = PreferencesConfig.Instance.ThreadCount;
 
         if (countTemporalData)
         {
@@ -553,7 +553,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
             width,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = LightingConfig.Instance.ThreadCount,
+                MaxDegreeOfParallelism = PreferencesConfig.Instance.ThreadCount,
             },
             (i) =>
             {

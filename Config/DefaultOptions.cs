@@ -4,14 +4,23 @@ namespace FancyLighting.Config;
 
 public static class DefaultOptions
 {
-    public const Preset ConfigPreset = Preset.MediumPreset;
+    public const Preset QualityPreset = Preset.MediumPreset;
+
+    public const int ThreadCount = -1; // Used for the DefaultValue attribute in PreferencesConfig
+    public const int MinThreadCount = 1;
+    public const int MaxThreadCount = 32;
+    public const int MaxDefaultThreadCount = 16;
+    public static int RuntimeDefaultThreadCount =>
+        Math.Clamp(Environment.ProcessorCount, MinThreadCount, MaxDefaultThreadCount);
+    public const bool UseHiDefFeatures = false;
 
     public const bool UseSmoothLighting = true;
     public const bool UseLightMapBlurring = true;
     public const bool UseEnhancedBlurring = false;
-    public const bool UseLightMapToneMapping = false;
+    public const bool UseLightMapToneMapping = true;
     public const RenderMode LightMapRenderMode = RenderMode.Bilinear;
-    public const int NormalMapsStrength = 0;
+    public const bool SimulateNormalMaps = false;
+    public const int NormalMapsStrength = 100;
     public const bool FineNormalMaps = false;
     public const bool RenderOnlyLight = false;
 
@@ -32,12 +41,4 @@ public static class DefaultOptions
 
     public const bool UseCustomSkyColors = true;
     public const SkyColorPreset CustomSkyPreset = SkyColorPreset.Profile1;
-
-    public const int ThreadCount = 8; // Used for the DefaultValue attribute in LightingConfig
-    public const int MinThreadCount = 1;
-    public const int MaxThreadCount = 32;
-    public const int MaxDefaultThreadCount = 16;
-    public static int RuntimeDefaultThreadCount =>
-        Math.Clamp(Environment.ProcessorCount, MinThreadCount, MaxDefaultThreadCount);
-    public const bool UseHiDefFeatures = false;
 }

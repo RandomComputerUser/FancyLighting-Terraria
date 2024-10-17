@@ -2,33 +2,45 @@ Mods: {
 	FancyLighting: {
 		Configs: {
 			LightingConfig: {
-				DisplayName: Fancy Lighting Settings
+				DisplayName: Quality Settings
 
 				Headers: {
-					Presets: Presets
 					SmoothLighting: Smooth Lighting
 					AmbientOcclusion: Ambient Occlusion
-					LightingEngine: Lighting Engine
+					LightingEngine: Fancy Lighting Engine
 					SkyColor: Sky Color
-					General: General
 				}
 
-				# Presets
+				# General
 				
-				ConfigPreset: {
-					Label: Settings Preset
+				QualityPreset: {
+					Label: Quality Preset
 					Tooltip:
 						'''
-						A preset for the settings below may be chosen
-						With very high or ultra, do not set waves quality to off except in camera mode
-						Lower presets have better performance but lower quality
+						A preset for the quality settings may be chosen
+						With high or ultra, do not set waves quality to off except in camera mode
+						[c/FFFF00:Large Performance Impact]
+						'''
+				}
+
+				UseHiDefFeatures: {
+					Label: Enhanced Shaders and Colors
+					Tooltip:
+						'''
+						Toggles whether to use enhanced shaders and colors allowed by the FNA HiDef profile
+						When enabled, some visual effects are improved:
+						- Increases the precision of colors used in lighting
+						- Increases the maximum overbright light brightness
+						- Improves simulated normal maps
+						- Performs gamma correction when paired with overbright rendering
+						[c/FFFF00:Large Performance Impact]
 						'''
 				}
 
 				# Smooth Lighting
 				
 				UseSmoothLighting: {
-					Label: Enable Smooth Lighting
+					Label: Smooth Lighting
 					Tooltip:
 						'''
 						Toggles whether to use smooth lighting
@@ -39,34 +51,23 @@ Mods: {
 				}
 
 				UseLightMapBlurring: {
-					Label: Blur Light Map
+					Label: Light Map Blurring
 					Tooltip:
 						'''
 						Toggles whether to blur the light map
 						Applies a per-tile blur to the light map before rendering
 						Smooths sharp light transitions
-						May slightly reduce performance when enabled
+						[c/FFFF00:Slight Performance Impact]
 						'''
 				}
 
 				UseEnhancedBlurring: {
-					Label: Use Enhanced Light Map Blurring
+					Label: Enhanced Light Map Blurring
 					Tooltip:
 						'''
 						Controls the blurring function used to blur the light map
 						When enabled, uses improved blurring affected by light absorption
-						May slightly reduce performance when enabled
-						'''
-				}
-
-				UseLightMapToneMapping: {
-					Label: Use Light Map Tone Mapping
-					Tooltip:
-						'''
-						Toggles whether to use a tone mapper on the light map
-						Reduces the brightness of brightly lit tiles
-						The tone mapping curve is applied to the light color, not the final tile color
-						May slightly reduce performance when enabled
+						[c/FFFF00:Slight Performance Impact]
 						'''
 				}
 
@@ -79,23 +80,157 @@ Mods: {
 						Bicubic upscaling is smoother than bilinear upscaling
 						Overbright rendering increases the maximum brightness of light
 						With overbright rendering, do not set waves quality to off except in camera mode
-						Settings farther to the right may reduce performance
+						[c/FFFF00:Medium Performance Impact]
+						'''
+				}
+
+				SimulateNormalMaps: {
+					Label: Simulated Normal Maps
+					Tooltip:
+						'''
+						Toggles whether to simulate normal maps
+						[c/FFFF00:Medium Performance Impact]
+						'''
+				}
+
+				# Ambient Occlusion
+				
+				UseAmbientOcclusion: {
+					Label: Ambient Occlusion
+					Tooltip:
+						'''
+						Toggles whether to use ambient occlusion
+						If enabled, tiles produce shadows in front of walls
+						Rendering performance is affected primarily by the GPU
+						Requires lighting to be set to color
+						'''
+				}
+
+				DoNonSolidAmbientOcclusion: {
+					Label: Ambient Occlusion from Non-Solid Tiles
+					Tooltip:
+						'''
+						Toggles whether non-solid blocks generate ambient occlusion
+						Non-solid tiles generate weaker ambient occlusion
+						Primarily affects furniture and torches
+						Not all non-solid tiles are affected
+						[c/FFFF00:Slight Performance Impact]
+						'''
+				}
+
+				DoTileEntityAmbientOcclusion: {
+					Label: Ambient Occlusion from Tile Entities
+					Tooltip:
+						'''
+						Toggles whether tile entities generate ambient occlusion
+						Tile entities generate weaker ambient occlusion
+						Primarily affects moving, non-solid tiles (e.g., tiles affected by wind)
+						[c/FFFF00:Medium Performance Impact]
+						'''
+				}
+
+				# Fancy Lighting Engine
+				
+				UseFancyLightingEngine: {
+					Label: Fancy Lighting Engine
+					Tooltip:
+						'''
+						Toggles whether to use a modified lighting engine
+						When enabled, light is spread more accurately with noticeable shadows
+						Performance is affected by the number of light sources in the scene
+						Lighting performance is affected primarily by the CPU; the GPU is not used
+						Requires lighting to be set to color
+						'''
+				}
+
+				FancyLightingEngineUseTemporal: {
+					Label: Temporal Optimization
+					Tooltip:
+						'''
+						Toggles whether to use temporal optimization with the fancy lighting engine
+						When enabled, optimizes lighting using data from the previous lighting update
+						Makes lighting quicker in more intensly lit areas
+						May sometimes cause lighting quality to be slightly reduced
+						[c/FFFF00:Improves Performance]
+						'''
+				}
+
+				FancyLightingEngineMakeBrighter: {
+					Label: Brighter Lighting
+					Tooltip:
+						'''
+						Toggles whether to make lighting slightly brighter
+						When disabled, lighting along the axes is slightly darker than with vanilla lighting
+						[c/FFFF00:Slight Performance Impact]
+						'''
+				}
+
+				FancyLightingEngineMode: {
+					Label: Lighting Engine Resolution
+					Tooltip:
+						'''
+						Controls the internal resolution of the fancy lighting engine
+						Does not affect the final resolution of the light map
+						Higher values increase the accuracy of shadows
+						[c/FFFF00:Medium Performance Impact]
+						'''
+				}
+
+				SimulateGlobalIllumination: {
+					Label: (Experimental) Approximated Global Illumination
+					Tooltip:
+						'''
+						Toggles whether to simulate a basic form of global illumination
+						When enabled, indirect lighting makes shadows brighter
+						[c/FFFF00:Large Performance Impact]
+						'''
+				}
+			}
+
+			PreferencesConfig: {
+				DisplayName: Preferences
+
+				Headers: {
+					SmoothLighting: Smooth Lighting
+					AmbientOcclusion: Ambient Occlusion
+					LightingEngine: Fancy Lighting Engine
+					SkyColor: Fancy Sky Colors
+				}
+
+				# General
+				
+				ThreadCount: {
+					Label: Thread Count
+					Tooltip:
+						'''
+						Controls how many threads smooth lighting and the fancy lighting engine use
+						Higher values typically improve performance with diminishing returns
+						Values greater than the number of CPU hardware threads may reduce performance
+						The default value should be close to optimal
+						[c/FFFF00:Large Performance Impact]
+						'''
+				}
+
+				# Smooth Lighting
+				
+				UseLightMapToneMapping: {
+					Label: Light Map Tone Mapping
+					Tooltip:
+						'''
+						Toggles whether to use a tone mapper on the light map
+						Reduces the brightness of brightly lit tiles
+						The tone mapping curve is applied to the light color, not the final tile color
+						[c/FFFF00:Slight Performance Impact]
 						'''
 				}
 
 				NormalMapsStrength: {
-					Label: Simulated Normal Maps Strength
-					Tooltip:
-						'''
-						Controls the strength of simulated normal maps
-						When not 0, tiles have simulated normal maps and appear bumpy
-						Set to 0 to disable
-						May reduce performance when enabled
-						'''
+					Label: Normal Maps Strength
+					Tooltip: Controls the strength of simulated normal maps
 				}
 
 				FineNormalMaps: {
-					Label: Simulate Fine Normal Maps
+					Label: Fine Normal Maps
 					Tooltip:
 						'''
 						Toggles between coarse and fine simulated normal maps
@@ -111,40 +246,6 @@ Mods: {
 
 				# Ambient Occlusion
 				
-				UseAmbientOcclusion: {
-					Label: Enable Ambient Occlusion
-					Tooltip:
-						'''
-						Toggles whether to use ambient occlusion
-						If enabled, tiles produce shadows in front of walls
-						Rendering performance is affected primarily by the GPU
-						Requires lighting to be set to color
-						'''
-				}
-
-				DoNonSolidAmbientOcclusion: {
-					Label: Enable Ambient Occlusion from Non-Solid Tiles
-					Tooltip:
-						'''
-						Toggles whether non-solid blocks generate ambient occlusion
-						Non-solid tiles generate weaker ambient occlusion
-						Primarily affects furniture and torches
-						Not all non-solid tiles are affected
-						May reduce performance when enabled
-						'''
-				}
-
-				DoTileEntityAmbientOcclusion: {
-					Label: Enable Ambient Occlusion from Tile Entities
-					Tooltip:
-						'''
-						Toggles whether tile entities generate ambient occlusion
-						Tile entities generate weaker ambient occlusion
-						Primarily affects moving, non-solid tiles (e.g., tiles affected by wind)
-						Reduces performance more than the setting directly above
-						'''
-				}
-
 				AmbientOcclusionRadius: {
 					Label: Ambient Occlusion Radius
 					Tooltip:
@@ -173,43 +274,10 @@ Mods: {
 						'''
 				}
 
-				# Lighting Engine
+				# Fancy Lighting Engine
 				
-				UseFancyLightingEngine: {
-					Label: Enable Fancy Lighting Engine
-					Tooltip:
-						'''
-						Toggles whether to use a modified lighting engine
-						When enabled, light is spread more accurately with noticeable shadows
-						Performance is affected by the number of light sources in the scene
-						Lighting performance is affected primarily by the CPU; the GPU is not used
-						Requires lighting to be set to color
-						'''
-				}
-
-				FancyLightingEngineUseTemporal: {
-					Label: Use Temporal Optimization
-					Tooltip:
-						'''
-						Toggles whether to use temporal optimization with the fancy lighting engine
-						When enabled, optimizes lighting using data from the previous lighting update
-						Makes lighting quicker in more intensly lit areas
-						May sometimes cause lighting quality to be slightly reduced
-						'''
-				}
-
-				FancyLightingEngineMakeBrighter: {
-					Label: Brighten Lighting
-					Tooltip:
-						'''
-						Toggles whether to make lighting slightly brighter
-						When disabled, lighting along the axes is slightly darker than with vanilla lighting
-						May reduce performance when enabled
-						'''
-				}
-
 				FancyLightingEngineLightLoss: {
-					Label: Light Loss (%) Exiting Solid Blocks
+					Label: Light Loss Exiting Solid Blocks (%)
 					Tooltip:
 						'''
 						Controls how much light is lost exiting a solid block into the air
@@ -218,7 +286,7 @@ Mods: {
 				}
 
 				FancyLightingEngineLightAbsorption: {
-					Label: Light Absorption (% of vanilla) of Solid Blocks
+					Label: Light Absorption of Solid Blocks (% of vanilla)
 					Tooltip:
 						'''
 						Controls how much light is absorbed inside solid blocks
@@ -227,30 +295,10 @@ Mods: {
 						'''
 				}
 
-				FancyLightingEngineMode: {
-					Label: Fancy Lighting Engine Resolution
-					Tooltip:
-						'''
-						Controls the internal resolution of the fancy lighting engine
-						Does not affect the final resolution of the light map
-						Higher values increase the accuracy of shadows but reduce performance
-						'''
-				}
-
-				SimulateGlobalIllumination: {
-					Label: (Experimental) Approximate Global Illumination
-					Tooltip:
-						'''
-						Toggles whether to simulate a basic form of global illumination
-						When enabled, indirect lighting makes shadows brighter
-						May cause a large reduction in performance when enabled
-						'''
-				}
-
-				# Sky Color
+				# Fancy Sky Colors
 				
 				UseCustomSkyColors: {
-					Label: Enable Fancy Sky Colors
+					Label: Fancy Sky Colors
 					Tooltip:
 						'''
 						Toggles whether to use modified sky colors
@@ -261,33 +309,6 @@ Mods: {
 				CustomSkyPreset: {
 					Label: Sky Color Profile
 					Tooltip: Selects which set of sky colors is used
-				}
-
-				# General
-				
-				ThreadCount: {
-					Label: Thread Count
-					Tooltip:
-						'''
-						Controls how many threads smooth lighting and the fancy lighting engine use
-						Higher values typically improve performance with diminishing returns
-						Values greater than the number of CPU hardware threads may reduce performance
-						The default value should be close to optimal
-						'''
-				}
-
-				UseHiDefFeatures: {
-					Label: Use Enhanced Shaders and Colors
-					Tooltip:
-						'''
-						Toggles whether to use enhanced shaders and colors allowed by the FNA HiDef profile
-						When enabled, some visual effects are improved:
-						- Increases the precision of colors used in lighting
-						- Increases the maximum overbright light brightness
-						- Improves simulated normal maps
-						- Performs gamma correction when paired with overbright rendering
-						May significantly reduce rendering performance when enabled
-						'''
 				}
 			}
 
@@ -301,10 +322,10 @@ Mods: {
 			Preset: {
 				CustomPreset.Label: Custom
 				VanillaPreset.Label: Vanilla
-				LowPreset.Label: Low
-				MediumPreset.Label: Medium
-				HighPreset.Label: High
-				VeryHighPreset.Label: Very High
+				LowPreset.Label: Minimal
+				MediumPreset.Label: Low
+				HighPreset.Label: Medium
+				VeryHighPreset.Label: High
 				UltraPreset.Label: Ultra
 				Tooltip: ""
 			}

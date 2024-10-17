@@ -398,7 +398,7 @@ public sealed class FancyLightingMod : Mod
         if (
             !_ambientOcclusionInstance._drawingTileEntities
             && LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DoGammaCorrection()
         )
         {
@@ -443,7 +443,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        var target = LightingConfig.Instance.RenderOnlyLight
+        var target = PreferencesConfig.Instance.RenderOnlyLight
             ? null
             : MainRenderTarget.Get();
         if (target is null)
@@ -553,7 +553,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (
             !LightingConfig.Instance.DoGammaCorrection()
-            || LightingConfig.Instance.RenderOnlyLight
+            || PreferencesConfig.Instance.RenderOnlyLight
         )
         {
             orig(self);
@@ -605,7 +605,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (
             LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DoGammaCorrection()
         )
         {
@@ -661,7 +661,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (
             LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
@@ -696,7 +696,7 @@ public sealed class FancyLightingMod : Mod
     {
         if (
             LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
@@ -734,7 +734,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (LightingConfig.Instance.RenderOnlyLight)
+        if (PreferencesConfig.Instance.RenderOnlyLight)
         {
             Main.graphics.GraphicsDevice.SetRenderTarget(Main.instance.backgroundTarget);
             Main.graphics.GraphicsDevice.Clear(Color.Transparent);
@@ -778,7 +778,7 @@ public sealed class FancyLightingMod : Mod
         if (
             _inCameraMode
             && LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
         )
         {
             return;
@@ -841,7 +841,7 @@ public sealed class FancyLightingMod : Mod
             return;
         }
 
-        if (LightingConfig.Instance.RenderOnlyLight)
+        if (PreferencesConfig.Instance.RenderOnlyLight)
         {
             return;
         }
@@ -928,7 +928,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         if (
-            LightingConfig.Instance.RenderOnlyLight
+            PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
@@ -1060,7 +1060,7 @@ public sealed class FancyLightingMod : Mod
         }
 
         if (
-            LightingConfig.Instance.RenderOnlyLight
+            PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
@@ -1107,7 +1107,7 @@ public sealed class FancyLightingMod : Mod
 
         if (
             LightingConfig.Instance.SmoothLightingEnabled()
-            && LightingConfig.Instance.RenderOnlyLight
+            && PreferencesConfig.Instance.RenderOnlyLight
             && !LightingConfig.Instance.DrawOverbright()
         )
         {
