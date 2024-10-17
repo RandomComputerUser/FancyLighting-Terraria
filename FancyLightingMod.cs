@@ -306,6 +306,19 @@ public sealed class FancyLightingMod : Mod
             _smoothLightingInstance?.Unload();
             _ambientOcclusionInstance?.Unload();
             _fancyLightingEngineInstance?.Unload();
+
+            if (PreferencesConfig.Instance is not null)
+            {
+                foreach (var tileId in PreferencesConfig.Instance._vinesBlockingLight)
+                {
+                    if (tileId > Main.tileBlockLight.Length)
+                    {
+                        continue;
+                    }
+
+                    Main.tileBlockLight[tileId] = true;
+                }
+            }
         });
 
         base.Unload();

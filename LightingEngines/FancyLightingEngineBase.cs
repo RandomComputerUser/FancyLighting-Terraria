@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FancyLighting.Config;
 using FancyLighting.Util;
 using Microsoft.Xna.Framework;
+using Terraria;
 using Terraria.Graphics.Light;
 using Vec3 = System.Numerics.Vector3;
 
@@ -198,6 +199,13 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
 
     protected void UpdateDecays(LightMap lightMap)
     {
+        foreach (var tileId in PreferencesConfig.Instance._vinesBlockingLight)
+        {
+            Main.tileBlockLight[tileId] = PreferencesConfig
+                .Instance
+                .FancyLightingEngineVinesOpaque;
+        }
+
         var decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter
             ? 1f
             : 0.975f;

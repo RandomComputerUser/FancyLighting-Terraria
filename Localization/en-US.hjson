@@ -276,6 +276,11 @@ Mods: {
 
 				# Fancy Lighting Engine
 				
+				FancyLightingEngineVinesOpaque: {
+					Label: Vines Block Light
+					Tooltip: Toggles whether vines block light
+				}
+
 				FancyLightingEngineLightLoss: {
 					Label: Light Loss Exiting Solid Blocks (%)
 					Tooltip:

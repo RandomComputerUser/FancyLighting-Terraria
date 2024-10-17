@@ -10,4 +10,5 @@ This mod is not endorsed by the creators of either Terraria or tModLoader.
 **v0.8.0 (2024-??-??)**
 - Split settings into two pages
 - Made the settings preset change only settings that are considered to affect quality
+- Added an option to toggle whether vines block light
 - Upgraded to .NET 8

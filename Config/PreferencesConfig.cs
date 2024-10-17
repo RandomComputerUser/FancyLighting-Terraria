@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 
@@ -32,6 +34,12 @@ public sealed class PreferencesConfig : ModConfig
 
     public override void OnChanged() =>
         ModContent.GetInstance<FancyLightingMod>()?.OnConfigChange();
+
+    internal int[] _vinesBlockingLight = TileID
+        .Sets.IsVine.Select((value, index) => (tileId: index, isVine: value))
+        .Where(entry => entry.isVine && Main.tileBlockLight[entry.tileId])
+        .Select(entry => entry.tileId)
+        .ToArray();
 
     [Range(DefaultOptions.MinThreadCount, DefaultOptions.MaxThreadCount)]
     [Increment(1)]
@@ -127,6 +135,14 @@ public sealed class PreferencesConfig : ModConfig
 
     // Fancy Lighting Engine
     [Header("LightingEngine")]
+    [DefaultValue(DefaultOptions.FancyLightingEngineVinesOpaque)]
+    public bool FancyLightingEngineVinesOpaque
+    {
+        get => _fancyLightingEngineVinesOpaque;
+        set { _fancyLightingEngineVinesOpaque = value; }
+    }
+    private bool _fancyLightingEngineVinesOpaque;
+
     [Range(0, 100)]
     [Increment(5)]
     [DefaultValue(DefaultOptions.FancyLightingEngineLightLoss)]
