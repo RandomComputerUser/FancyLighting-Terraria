@@ -962,7 +962,7 @@ internal sealed class SmoothLighting
             GammaConverter.SrgbToLinear(ref low);
         }
 
-        int ymax = lightMapTileArea.Y + lightMapTileArea.Height;
+        var ymax = lightMapTileArea.Y + lightMapTileArea.Height;
         Parallel.For(
             lightMapTileArea.X,
             lightMapTileArea.X + lightMapTileArea.Width,
@@ -976,7 +976,7 @@ internal sealed class SmoothLighting
 
                 var isXInTilemap = x >= 0 && x < Main.tile.Width;
                 var tilemapHeight = Main.tile.Height;
-                int i = height * (x - lightMapTileArea.X);
+                var i = height * (x - lightMapTileArea.X);
                 for (var y = lightMapTileArea.Y; y < ymax; ++y)
                 {
                     try
@@ -1931,9 +1931,9 @@ internal sealed class SmoothLighting
         if (flippedGravity)
         {
             angle *= -1f;
-            float top = 16f * _lightMapTileArea.Y - positionOffset.Y;
-            float bottom = top + 16f * _lightMapTileArea.Height;
-            float targetMiddle = worldTarget.Height / 2f;
+            var top = 16f * _lightMapTileArea.Y - positionOffset.Y;
+            var bottom = top + 16f * _lightMapTileArea.Height;
+            var targetMiddle = worldTarget.Height / 2f;
             lightMapPosition.Y -= bottom - targetMiddle - (targetMiddle - top);
             lightMapPosition += _lightMapPositionFlipped - _lightMapPosition;
         }

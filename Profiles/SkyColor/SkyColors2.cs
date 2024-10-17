@@ -16,13 +16,13 @@ public class SkyColors2 : ISimpleColorProfile
         var sunriseTime = noonTime - 7.0;
         var sunsetTime = noonTime + 7.0;
 
-        Vector3 midnightColor = new Vector3(8, 10, 15) / 255f;
-        Vector3 twilightColor1 = new Vector3(10, 13, 18) / 255f;
-        Vector3 twilightColor2 = new Vector3(60, 35, 23) / 255f;
-        Vector3 sunrisesetColor = new Vector3(150, 70, 32) / 255f;
-        Vector3 goldenHourColor1 = new Vector3(250, 130, 55) / 255f;
-        Vector3 goldenHourColor2 = new Vector3(300, 230, 170) / 255f;
-        Vector3 noonColor = new Vector3(360, 460, 560) / 255f;
+        var midnightColor = new Vector3(8, 10, 15) / 255f;
+        var twilightColor1 = new Vector3(10, 13, 18) / 255f;
+        var twilightColor2 = new Vector3(60, 35, 23) / 255f;
+        var sunrisesetColor = new Vector3(150, 70, 32) / 255f;
+        var goldenHourColor1 = new Vector3(250, 130, 55) / 255f;
+        var goldenHourColor2 = new Vector3(300, 230, 170) / 255f;
+        var noonColor = new Vector3(360, 460, 560) / 255f;
 
         (double hour, Vector3 color)[] colors =
         [

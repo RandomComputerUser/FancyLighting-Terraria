@@ -24,12 +24,12 @@ public class SkyColors3 : ISimpleColorProfile
         var preSunsetTimeLate = sunsetTime - 0.5;
         var postSunsetTime = sunsetTime + 0.5;
 
-        Vector3 midnightColor = new Vector3(10, 10, 20) / 255f;
-        Vector3 nightTransitionColor = new Vector3(45, 30, 40) / 255f;
-        Vector3 dayNightTransitionColor = new Vector3(150, 60, 70) / 255f;
-        Vector3 dayTransitionColor = new Vector3(200, 120, 90) / 255f;
-        Vector3 dayTransitionColor2 = new Vector3(230, 180, 140) / 255f;
-        Vector3 noonColor = new Vector3(360, 360, 360) / 255f;
+        var midnightColor = new Vector3(10, 10, 20) / 255f;
+        var nightTransitionColor = new Vector3(45, 30, 40) / 255f;
+        var dayNightTransitionColor = new Vector3(150, 60, 70) / 255f;
+        var dayTransitionColor = new Vector3(200, 120, 90) / 255f;
+        var dayTransitionColor2 = new Vector3(230, 180, 140) / 255f;
+        var noonColor = new Vector3(360, 360, 360) / 255f;
 
         (double hour, Vector3 color)[] colors =
         [

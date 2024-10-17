@@ -201,9 +201,9 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
         var decayMult = LightingConfig.Instance.FancyLightingEngineMakeBrighter
             ? 1f
             : 0.975f;
-        float lightAirDecayBaseline =
+        var lightAirDecayBaseline =
             decayMult * Math.Min(lightMap.LightDecayThroughAir, MAX_DECAY_MULT);
-        float lightSolidDecayBaseline =
+        var lightSolidDecayBaseline =
             decayMult
             * Math.Min(
                 MathF.Pow(
@@ -212,7 +212,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                 ),
                 MAX_DECAY_MULT
             );
-        float lightWaterDecayBaseline =
+        var lightWaterDecayBaseline =
             decayMult
             * Math.Min(
                 0.625f * lightMap.LightDecayThroughWater.Length() / Vector3.One.Length()
@@ -226,7 +226,7 @@ internal abstract class FancyLightingEngineBase : ICustomLightingEngine
                         ),
                 MAX_DECAY_MULT
             );
-        float lightHoneyDecayBaseline =
+        var lightHoneyDecayBaseline =
             decayMult
             * Math.Min(
                 0.625f * lightMap.LightDecayThroughHoney.Length() / Vector3.One.Length()

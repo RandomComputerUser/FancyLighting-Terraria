@@ -11,7 +11,7 @@ internal static class ToneMapper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToneMap(ref Vector3 color)
     {
-        float luminance = 0.2126f * color.X + 0.7152f * color.Y + 0.0722f * color.Z;
+        var luminance = 0.2126f * color.X + 0.7152f * color.Y + 0.0722f * color.Z;
         var mult = (1f + luminance * (1f / WHITE_POINT / WHITE_POINT)) / (1f + luminance);
         Vector3.Multiply(ref color, mult, out color);
     }

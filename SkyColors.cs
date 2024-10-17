@@ -98,7 +98,7 @@ public static class SkyColors
 
     public static void SetBaseSkyColor(ref Color bgColor)
     {
-        double hour = Main.dayTime
+        var hour = Main.dayTime
             ? 4.5 + (Main.time / 3600.0)
             : 12.0 + 7.5 + (Main.time / 3600.0);
         VectorToColor.Assign(ref bgColor, 1f, CalculateSkyColor(hour));
