@@ -10,7 +10,7 @@ namespace FancyLighting.Core.Sky;
 public static class FancySkyClouds
 {
     private const int BlurPassCount = 5;
-    private const float Mix = 0.6f;
+    private const float Mix = 0.7f;
     private static readonly Vector3 _baseCloudColor = new(
         198 / 255f,
         224 / 255f,

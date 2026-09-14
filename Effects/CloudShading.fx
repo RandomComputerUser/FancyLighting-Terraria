@@ -140,9 +140,9 @@ float4 GenerateGradients_PS(
         cloudColor = float4(0, 0, 0, 0);
     }
     
-    float2 luminanceGradient = 25.0 * float2(
+    float2 luminanceGradient = 20.0 * float2(
         ddx(blurredLuminance),
-        ddy(blurredLuminance) + 0.01
+        ddy(blurredLuminance)
     );
     luminanceGradient = smoothstep(-1.0, 1.0, luminanceGradient);
     float cloudLuma = pow(saturate(Luminance(max(cloudColor.rgb, 0))), InverseGamma);
